@@ -11,7 +11,7 @@ Laravel-based modular monolith for managing karaoke night queues.
 ## Requirements
 - PHP 8.2+
 - Composer
-- Postgres (preferred) or MySQL
+- MySQL (default) or Postgres
 
 ## Local setup
 ```bash

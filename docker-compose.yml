@@ -16,15 +16,16 @@ services:
       - db
 
   db:
-    image: postgres:16
+    image: mysql:8.3
     environment:
-      POSTGRES_DB: karaoke
-      POSTGRES_USER: karaoke
-      POSTGRES_PASSWORD: karaoke
+      MYSQL_DATABASE: karaoke
+      MYSQL_USER: karaoke
+      MYSQL_PASSWORD: karaoke
+      MYSQL_ROOT_PASSWORD: root
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
 
 volumes:
   db_data:
