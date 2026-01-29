@@ -17,6 +17,7 @@ return [
         Illuminate\Database\DatabaseServiceProvider::class,
         Illuminate\Encryption\EncryptionServiceProvider::class,
         Illuminate\Cookie\CookieServiceProvider::class,
+        Illuminate\Hashing\HashServiceProvider::class,
         Illuminate\Filesystem\FilesystemServiceProvider::class,
         Illuminate\Foundation\Providers\FoundationServiceProvider::class,
         Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
