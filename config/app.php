@@ -15,6 +15,7 @@ return [
         Illuminate\Auth\AuthServiceProvider::class,
         Illuminate\Database\MigrationServiceProvider::class,
         Illuminate\Database\DatabaseServiceProvider::class,
+        Illuminate\Encryption\EncryptionServiceProvider::class,
         Illuminate\Filesystem\FilesystemServiceProvider::class,
         Illuminate\Foundation\Providers\FoundationServiceProvider::class,
         Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
