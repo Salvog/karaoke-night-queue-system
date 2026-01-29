@@ -13,9 +13,12 @@ return [
 
     'providers' => [
         Illuminate\Auth\AuthServiceProvider::class,
+        Illuminate\Database\MigrationServiceProvider::class,
         Illuminate\Database\DatabaseServiceProvider::class,
         Illuminate\Filesystem\FilesystemServiceProvider::class,
         Illuminate\Foundation\Providers\FoundationServiceProvider::class,
+        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+        Illuminate\Foundation\Providers\ArtisanServiceProvider::class,
         Illuminate\Log\LogServiceProvider::class,
         Illuminate\Pagination\PaginationServiceProvider::class,
         Illuminate\Routing\RoutingServiceProvider::class,
