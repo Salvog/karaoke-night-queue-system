@@ -1,11 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Modules\PublicScreen\Controllers\PublicJoinController;
 
-Route::get('/join/{eventCode}/{joinToken}', function (string $eventCode, string $joinToken) {
-    return response()->json([
-        'message' => 'Public join stub',
-        'eventCode' => $eventCode,
-        'joinToken' => $joinToken,
-    ]);
-});
+Route::get('/join/{eventCode}/{joinToken}', PublicJoinController::class);

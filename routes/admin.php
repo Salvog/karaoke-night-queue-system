@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Modules\Auth\Controllers\AdminDashboardController;
 
-Route::get('/', function () {
-    return response()->json(['message' => 'Admin area stub']);
-});
+Route::get('/', AdminDashboardController::class);
