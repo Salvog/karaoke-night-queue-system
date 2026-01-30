@@ -2,6 +2,7 @@
 /.vscode
 /vendor
 /node_modules
+/.phpunit.result.cache
 /.env
 /storage/*.key
 /storage/framework/cache/*

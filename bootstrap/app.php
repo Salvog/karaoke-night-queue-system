@@ -11,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php'
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\Authenticate::class,
+            'admin.auth' => \App\Http\Middleware\AdminAuthenticate::class,
+            'admin.role' => \App\Http\Middleware\AdminRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

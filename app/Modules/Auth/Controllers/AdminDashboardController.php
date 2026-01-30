@@ -3,15 +3,16 @@
 namespace App\Modules\Auth\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class AdminDashboardController extends Controller
 {
-    public function __invoke(): JsonResponse
+    public function index(Request $request): View
     {
-        Gate::authorize('access-admin');
+        Gate::forUser($request->user('admin'))->authorize('access-admin');
 
-        return response()->json(['message' => 'Admin area stub']);
+        return view('admin.dashboard');
     }
 }
