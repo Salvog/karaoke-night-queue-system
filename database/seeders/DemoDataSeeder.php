@@ -24,6 +24,7 @@ class DemoDataSeeder extends Seeder
             'code' => 'EVENT1',
             'break_seconds' => 120,
             'request_cooldown_seconds' => 300,
+            'join_pin' => '1234',
             'status' => EventNight::STATUS_LIVE,
         ]);
 

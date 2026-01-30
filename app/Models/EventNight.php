@@ -29,6 +29,7 @@ class EventNight extends Model
         'code',
         'break_seconds',
         'request_cooldown_seconds',
+        'join_pin',
         'status',
     ];
 
