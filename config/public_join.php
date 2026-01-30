@@ -1,0 +1,9 @@
+<?php
+
+return [
+    'device_cookie_name' => 'device_cookie_id',
+    'join_token_storage_key' => 'join_token',
+    'rate_limit_per_ip' => env('PUBLIC_JOIN_RATE_LIMIT_IP', 20),
+    'rate_limit_per_participant' => env('PUBLIC_JOIN_RATE_LIMIT_PARTICIPANT', 10),
+    'rate_limit_decay_seconds' => env('PUBLIC_JOIN_RATE_LIMIT_DECAY', 60),
+];

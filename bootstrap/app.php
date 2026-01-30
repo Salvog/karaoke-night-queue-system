@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\Authenticate::class,
             'admin.auth' => \App\Http\Middleware\AdminAuthenticate::class,
             'admin.role' => \App\Http\Middleware\AdminRole::class,
+            'public.rate_limit' => \App\Http\Middleware\PublicJoinRateLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
