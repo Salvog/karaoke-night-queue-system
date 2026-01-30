@@ -4,13 +4,12 @@ namespace App\Modules\Admin\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventNight;
-use App\Models\PlaybackState;
 use App\Models\SongRequest;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
+use App\Modules\Queue\Services\QueueEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -32,7 +31,7 @@ class AdminQueueController extends Controller
         ]);
     }
 
-    public function skip(Request $request, EventNight $eventNight, LogAdminAction $logger): RedirectResponse
+    public function skip(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
     {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
@@ -49,18 +48,7 @@ class AdminQueueController extends Controller
 
         $songRequest = $eventNight->songRequests()->whereKey($songRequestId)->firstOrFail();
 
-        DB::transaction(function () use ($songRequest, $eventNight) {
-            // Simplest deterministic reset: mark skipped and clear playback state.
-            $songRequest->update([
-                'status' => SongRequest::STATUS_SKIPPED,
-                'played_at' => now(),
-            ]);
-
-            $eventNight->playbackState()->updateOrCreate(
-                ['event_night_id' => $eventNight->id],
-                ['state' => PlaybackState::STATE_IDLE, 'current_request_id' => null]
-            );
-        });
+        $queueEngine->skip($eventNight, $songRequest);
 
         $logger->execute(new AdminActionData(
             userId: $adminUser->id,
@@ -76,7 +64,7 @@ class AdminQueueController extends Controller
         return back()->with('status', 'Song request skipped.');
     }
 
-    public function cancel(Request $request, EventNight $eventNight, LogAdminAction $logger): RedirectResponse
+    public function cancel(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
     {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
@@ -87,18 +75,7 @@ class AdminQueueController extends Controller
 
         $songRequest = $eventNight->songRequests()->whereKey($data['song_request_id'])->firstOrFail();
 
-        DB::transaction(function () use ($songRequest, $eventNight) {
-            $songRequest->update([
-                'status' => SongRequest::STATUS_CANCELED,
-            ]);
-
-            if ($eventNight->playbackState?->current_request_id === $songRequest->id) {
-                $eventNight->playbackState()->update([
-                    'state' => PlaybackState::STATE_IDLE,
-                    'current_request_id' => null,
-                ]);
-            }
-        });
+        $queueEngine->cancel($eventNight, $songRequest);
 
         $logger->execute(new AdminActionData(
             userId: $adminUser->id,
@@ -114,18 +91,12 @@ class AdminQueueController extends Controller
         return back()->with('status', 'Song request canceled.');
     }
 
-    public function stop(Request $request, EventNight $eventNight, LogAdminAction $logger): RedirectResponse
+    public function stop(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
     {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        DB::transaction(function () use ($eventNight) {
-            // Simplest deterministic stop: clear the current request and mark idle.
-            $eventNight->playbackState()->updateOrCreate(
-                ['event_night_id' => $eventNight->id],
-                ['state' => PlaybackState::STATE_IDLE, 'current_request_id' => null]
-            );
-        });
+        $queueEngine->stop($eventNight);
 
         $logger->execute(new AdminActionData(
             userId: $adminUser->id,
@@ -138,5 +109,25 @@ class AdminQueueController extends Controller
         ));
 
         return back()->with('status', 'Playback stopped.');
+    }
+
+    public function next(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
+    {
+        $adminUser = $request->user('admin');
+        Gate::forUser($adminUser)->authorize('manage-event-nights');
+
+        $nextRequest = $queueEngine->next($eventNight);
+
+        $logger->execute(new AdminActionData(
+            userId: $adminUser->id,
+            action: 'queue.next',
+            subjectType: SongRequest::class,
+            subjectId: $nextRequest ? (string) $nextRequest->id : 'none',
+            metadata: [
+                'event_night_id' => $eventNight->id,
+            ]
+        ));
+
+        return back()->with('status', 'Moved to the next song.');
     }
 }
