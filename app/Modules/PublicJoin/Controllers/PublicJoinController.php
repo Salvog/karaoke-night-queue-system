@@ -60,8 +60,8 @@ class PublicJoinController extends Controller
 
         $deviceCookieId = $this->requireDeviceCookie($request);
         $eventNight = $this->service->findLiveEvent($eventCode);
-        $this->service->resolveParticipant($eventNight, $deviceCookieId);
-        $this->service->validatePin($eventNight, $data['pin'] ?? null);
+        $participant = $this->service->resolveParticipant($eventNight, $deviceCookieId);
+        $this->service->activateParticipant($eventNight, $participant, $data['pin'] ?? null);
 
         return back()->with('status', 'Access granted.');
     }

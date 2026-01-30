@@ -62,6 +62,19 @@ class PublicJoinService
         }
     }
 
+    public function activateParticipant(EventNight $eventNight, Participant $participant, ?string $pin): void
+    {
+        $this->validatePin($eventNight, $pin);
+
+        if (! $eventNight->join_pin) {
+            return;
+        }
+
+        $participant->forceFill([
+            'pin_verified_at' => now(),
+        ])->save();
+    }
+
     public function requestSong(
         EventNight $eventNight,
         Participant $participant,
@@ -69,6 +82,7 @@ class PublicJoinService
         int $songId
     ): SongRequest {
         $this->assertJoinToken($participant, $joinToken);
+        $this->assertPinVerified($eventNight, $participant);
 
         $song = Song::findOrFail($songId);
 
@@ -107,6 +121,19 @@ class PublicJoinService
         if (! hash_equals($participant->join_token_hash, $this->hashToken($joinToken))) {
             throw ValidationException::withMessages([
                 'join_token' => 'Join token is invalid.',
+            ]);
+        }
+    }
+
+    private function assertPinVerified(EventNight $eventNight, Participant $participant): void
+    {
+        if (! $eventNight->join_pin) {
+            return;
+        }
+
+        if (! $participant->pin_verified_at) {
+            throw ValidationException::withMessages([
+                'pin' => 'PIN activation required.',
             ]);
         }
     }

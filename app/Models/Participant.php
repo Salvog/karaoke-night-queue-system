@@ -15,7 +15,12 @@ class Participant extends Model
         'event_night_id',
         'device_cookie_id',
         'join_token_hash',
+        'pin_verified_at',
         'display_name',
+    ];
+
+    protected $casts = [
+        'pin_verified_at' => 'datetime',
     ];
 
     public function eventNight(): BelongsTo
