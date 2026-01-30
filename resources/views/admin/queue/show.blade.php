@@ -9,6 +9,10 @@
             @csrf
             <button class="button danger" type="submit">Stop Playback</button>
         </form>
+        <form method="POST" action="{{ route('admin.queue.next', $eventNight) }}">
+            @csrf
+            <button class="button" type="submit">Next Song</button>
+        </form>
     </div>
 
     <table>
