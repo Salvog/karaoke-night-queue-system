@@ -2,8 +2,8 @@
 
 namespace App\Modules\Auth\Actions;
 
+use App\Models\AdminAuditLog;
 use App\Modules\Auth\DTOs\AdminActionData;
-use App\Modules\Auth\Models\AdminAuditLog;
 use App\Modules\Auth\Services\AdminAuditLogger;
 
 class LogAdminAction

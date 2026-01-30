@@ -8,7 +8,6 @@ Route::middleware('web')->group(function () {
     });
 
     Route::prefix('admin')
-        ->middleware('auth')
         ->group(base_path('routes/admin.php'));
 
     Route::prefix('public')

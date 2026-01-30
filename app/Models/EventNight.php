@@ -24,6 +24,8 @@ class EventNight extends Model
 
     protected $fillable = [
         'venue_id',
+        'theme_id',
+        'ad_banner_id',
         'code',
         'break_seconds',
         'request_cooldown_seconds',
@@ -33,6 +35,16 @@ class EventNight extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
+    }
+
+    public function theme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class);
+    }
+
+    public function adBanner(): BelongsTo
+    {
+        return $this->belongsTo(AdBanner::class);
     }
 
     public function participants(): HasMany

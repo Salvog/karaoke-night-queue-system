@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\QueryException;
 
 class SongRequest extends Model
 {
@@ -36,6 +37,16 @@ class SongRequest extends Model
     protected $casts = [
         'played_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (SongRequest $songRequest) {
+            // Simplest guard: enforce status constraints when SQLite skips CHECK constraints.
+            if (! in_array($songRequest->status, self::STATUSES, true)) {
+                throw new QueryException('sqlite', '', [], new \RuntimeException('Invalid status.'));
+            }
+        });
+    }
 
     public function eventNight(): BelongsTo
     {
