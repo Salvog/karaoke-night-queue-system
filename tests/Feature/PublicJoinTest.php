@@ -139,4 +139,63 @@ class PublicJoinTest extends TestCase
 
         $second->assertStatus(429);
     }
+
+    public function test_request_requires_pin_activation_when_configured(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT4',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_LIVE,
+            'join_pin' => '4321',
+        ]);
+
+        $song = Song::create([
+            'title' => 'Song C',
+            'artist' => 'Artist C',
+            'duration_seconds' => 180,
+        ]);
+
+        $joinToken = 'join-token-87654321';
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-456',
+            'join_token_hash' => hash('sha256', $joinToken),
+        ]);
+
+        $response = $this->from("/e/{$eventNight->code}")
+            ->withCookie(config('public_join.device_cookie_name', 'device_cookie_id'), $participant->device_cookie_id)
+            ->post("/e/{$eventNight->code}/request", [
+                'song_id' => $song->id,
+                'join_token' => $joinToken,
+            ]);
+
+        $response->assertSessionHasErrors(['pin']);
+
+        $activate = $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->post("/e/{$eventNight->code}/activate", [
+            'pin' => '4321',
+        ]);
+
+        $activate->assertSessionHas('status');
+
+        $approved = $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->post("/e/{$eventNight->code}/request", [
+            'song_id' => $song->id,
+            'join_token' => $joinToken,
+        ]);
+
+        $approved->assertSessionHas('status');
+        $this->assertDatabaseCount('song_requests', 1);
+    }
 }
