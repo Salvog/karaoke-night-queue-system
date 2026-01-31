@@ -202,4 +202,87 @@ class PublicJoinTest extends TestCase
         $approved->assertSessionHas('status');
         $this->assertDatabaseCount('song_requests', 1);
     }
+
+    public function test_search_endpoint_returns_paginated_results(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT5',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        Song::create([
+            'title' => 'Hello World',
+            'artist' => 'Tester',
+            'duration_seconds' => 180,
+        ]);
+
+        Song::create([
+            'title' => 'Goodbye',
+            'artist' => 'Another',
+            'duration_seconds' => 200,
+        ]);
+
+        $response = $this->getJson("/e/{$eventNight->code}/songs?q=hello&per_page=1");
+
+        $response->assertOk()
+            ->assertJsonPath('meta.per_page', 1)
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_duplicate_song_requests_are_blocked(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT6',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $song = Song::create([
+            'title' => 'Repeat',
+            'artist' => 'Artist',
+            'duration_seconds' => 200,
+        ]);
+
+        $joinToken = 'join-token-12345678';
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-456',
+            'join_token_hash' => hash('sha256', $joinToken),
+        ]);
+
+        $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->post("/e/{$eventNight->code}/request", [
+            'song_id' => $song->id,
+            'join_token' => $joinToken,
+        ])->assertSessionHas('status');
+
+        $response = $this->from("/e/{$eventNight->code}")
+            ->withCookie(config('public_join.device_cookie_name', 'device_cookie_id'), $participant->device_cookie_id)
+            ->post("/e/{$eventNight->code}/request", [
+                'song_id' => $song->id,
+                'join_token' => $joinToken,
+            ]);
+
+        $response->assertSessionHasErrors(['song_id']);
+        $this->assertSame(1, SongRequest::count());
+    }
 }
