@@ -93,6 +93,7 @@ class PublicJoinService
 
         $songRequest = DB::transaction(function () use ($eventNight, $participant, $song) {
             $this->enforceCooldown($eventNight, $participant);
+            $this->enforceUniqueSong($eventNight, $participant, $song);
 
             $maxPosition = SongRequest::where('event_night_id', $eventNight->id)->max('position');
 
@@ -108,6 +109,11 @@ class PublicJoinService
         $this->publisher->publishQueueUpdated($eventNight);
 
         return $songRequest;
+    }
+
+    public function validateJoinToken(Participant $participant, string $joinToken): void
+    {
+        $this->assertJoinToken($participant, $joinToken);
     }
 
     public function generateDeviceCookieId(): string
@@ -143,6 +149,20 @@ class PublicJoinService
         if (! $participant->pin_verified_at) {
             throw ValidationException::withMessages([
                 'pin' => 'PIN activation required.',
+            ]);
+        }
+    }
+
+    private function enforceUniqueSong(EventNight $eventNight, Participant $participant, Song $song): void
+    {
+        $alreadyRequested = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('participant_id', $participant->id)
+            ->where('song_id', $song->id)
+            ->exists();
+
+        if ($alreadyRequested) {
+            throw ValidationException::withMessages([
+                'song_id' => 'You already requested this song for tonight.',
             ]);
         }
     }

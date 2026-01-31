@@ -14,11 +14,17 @@
         .song:last-child { border-bottom: none; }
         .button { background: #38bdf8; color: #0f172a; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; }
         .button.secondary { background: #64748b; color: #f8fafc; }
+        .button[disabled] { opacity: 0.5; cursor: not-allowed; }
         .status { color: #38bdf8; margin-bottom: 12px; }
         .errors { color: #fca5a5; margin-bottom: 12px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; }
         input[type="password"] { padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; width: 200px; }
+        input[type="text"] { padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; width: 100%; }
         .cooldown { font-size: 14px; color: #cbd5f5; }
+        .search-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+        .search-meta { font-size: 14px; color: #cbd5f5; }
+        .pagination { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+        .empty-state { color: #cbd5f5; font-style: italic; padding: 12px 0; }
     </style>
 </head>
 <body>
@@ -57,27 +63,170 @@
         @if ($eventNight->request_cooldown_seconds > 0)
             <p class="cooldown">You can request a song every {{ $eventNight->request_cooldown_seconds }} seconds.</p>
         @endif
-        @foreach ($songs as $song)
-            <div class="song">
-                <div>
-                    <strong>{{ $song->title }}</strong><br>
-                    <span>{{ $song->artist }}</span>
-                </div>
-                <form method="POST" action="{{ route('public.join.request', $eventNight->code) }}">
-                    @csrf
-                    <input type="hidden" name="song_id" value="{{ $song->id }}">
-                    <input type="hidden" name="join_token" value="{{ $joinToken }}">
-                    <button class="button" type="submit">Request</button>
-                </form>
-            </div>
-        @endforeach
+        <div class="search-bar">
+            <label for="song-search">Search by title or artist</label>
+            <input id="song-search" type="text" placeholder="Start typing to search...">
+        </div>
+        <div class="search-meta" id="search-meta">Showing results.</div>
+        <div id="song-results"></div>
+        <div class="pagination">
+            <button class="button secondary" id="prev-page" type="button">Previous</button>
+            <span id="page-info"></span>
+            <button class="button secondary" id="next-page" type="button">Next</button>
+        </div>
+        <noscript>
+            <p class="empty-state">Enable JavaScript to search songs.</p>
+        </noscript>
     </div>
 </main>
 <script>
-    localStorage.setItem('{{ config('public_join.join_token_storage_key', 'join_token') }}', @json($joinToken));
-    document.querySelectorAll('input[name="join_token"]').forEach((input) => {
-        input.value = @json($joinToken);
+    const joinTokenKey = @json(config('public_join.join_token_storage_key', 'join_token'));
+    const joinToken = @json($joinToken);
+    const eventCode = @json($eventNight->code);
+    const requestUrl = @json(route('public.join.request', $eventNight->code));
+    const searchUrl = @json(route('public.join.songs', $eventNight->code));
+    const etaUrl = @json(route('public.join.eta', $eventNight->code));
+    const csrfToken = @json(csrf_token());
+
+    localStorage.setItem(joinTokenKey, joinToken);
+
+    const elements = {
+        searchInput: document.getElementById('song-search'),
+        results: document.getElementById('song-results'),
+        meta: document.getElementById('search-meta'),
+        prevPage: document.getElementById('prev-page'),
+        nextPage: document.getElementById('next-page'),
+        pageInfo: document.getElementById('page-info'),
+    };
+
+    const state = {
+        query: '',
+        page: 1,
+        lastPage: 1,
+        perPage: 10,
+        pending: null,
+    };
+
+    const formatDuration = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const remaining = seconds % 60;
+        if (minutes <= 0) {
+            return `${remaining}s`;
+        }
+        return `${minutes}m ${remaining}s`;
+    };
+
+    const renderResults = (payload) => {
+        elements.results.innerHTML = '';
+        if (payload.data.length === 0) {
+            elements.results.innerHTML = '<div class="empty-state">No songs found.</div>';
+        } else {
+            payload.data.forEach((song) => {
+                const container = document.createElement('div');
+                container.className = 'song';
+                container.innerHTML = `
+                    <div>
+                        <strong>${song.title}</strong><br>
+                        <span>${song.artist ?? 'Unknown artist'}</span><br>
+                        <span class="search-meta">${formatDuration(song.duration_seconds)}</span>
+                    </div>
+                    <form class="song-request-form" method="POST" action="${requestUrl}">
+                        <input type="hidden" name="_token" value="${csrfToken}">
+                        <input type="hidden" name="song_id" value="${song.id}">
+                        <input type="hidden" name="join_token" value="${joinToken}">
+                        <button class="button" type="submit">Request</button>
+                    </form>
+                `;
+                elements.results.appendChild(container);
+            });
+        }
+
+        elements.pageInfo.textContent = `Page ${payload.meta.current_page} of ${payload.meta.last_page}`;
+        elements.prevPage.disabled = payload.meta.current_page <= 1;
+        elements.nextPage.disabled = payload.meta.current_page >= payload.meta.last_page;
+        elements.meta.textContent = `Showing ${payload.meta.total} result(s).`;
+    };
+
+    const fetchSongs = async () => {
+        const params = new URLSearchParams({
+            q: state.query,
+            page: state.page,
+            per_page: state.perPage,
+        });
+
+        elements.meta.textContent = 'Loading songs...';
+
+        const response = await fetch(`${searchUrl}?${params.toString()}`, {
+            headers: { 'Accept': 'application/json' },
+        });
+
+        if (!response.ok) {
+            elements.meta.textContent = 'Unable to load songs.';
+            return;
+        }
+
+        const payload = await response.json();
+        state.lastPage = payload.meta.last_page;
+        renderResults(payload);
+    };
+
+    const scheduleSearch = () => {
+        if (state.pending) {
+            clearTimeout(state.pending);
+        }
+        state.pending = setTimeout(() => {
+            state.page = 1;
+            fetchSongs();
+        }, 250);
+    };
+
+    elements.searchInput.addEventListener('input', (event) => {
+        state.query = event.target.value.trim();
+        scheduleSearch();
     });
+
+    elements.prevPage.addEventListener('click', () => {
+        if (state.page > 1) {
+            state.page -= 1;
+            fetchSongs();
+        }
+    });
+
+    elements.nextPage.addEventListener('click', () => {
+        if (state.page < state.lastPage) {
+            state.page += 1;
+            fetchSongs();
+        }
+    });
+
+    elements.results.addEventListener('submit', async (event) => {
+        if (!event.target.matches('.song-request-form')) {
+            return;
+        }
+
+        event.preventDefault();
+
+        try {
+            const response = await fetch(`${etaUrl}?join_token=${encodeURIComponent(joinToken)}`, {
+                headers: { 'Accept': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Unable to fetch ETA');
+            }
+
+            const payload = await response.json();
+            const shouldSubmit = confirm(`Estimated wait: ${payload.eta_label}. Confirm request?`);
+
+            if (shouldSubmit) {
+                event.target.submit();
+            }
+        } catch (error) {
+            alert('Unable to calculate ETA right now. Please try again.');
+        }
+    });
+
+    fetchSongs();
 </script>
 </body>
 </html>

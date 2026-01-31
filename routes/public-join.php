@@ -13,3 +13,10 @@ Route::post('/e/{eventCode}/activate', [PublicJoinController::class, 'activate']
 Route::post('/e/{eventCode}/request', [PublicJoinController::class, 'requestSong'])
     ->middleware('public.rate_limit')
     ->name('public.join.request');
+
+Route::get('/e/{eventCode}/songs', [PublicJoinController::class, 'searchSongs'])
+    ->name('public.join.songs');
+
+Route::get('/e/{eventCode}/eta', [PublicJoinController::class, 'eta'])
+    ->middleware('public.rate_limit')
+    ->name('public.join.eta');
