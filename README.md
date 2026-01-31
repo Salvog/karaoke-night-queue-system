@@ -22,6 +22,26 @@ php artisan migrate
 php artisan serve
 ```
 
+## UI screenshots
+For automated UI screenshots with Playwright in this environment, prefer Firefox because Chromium headless can crash due to missing system services.
+Example (run your web server first):
+```bash
+python - <<'PY'
+import asyncio
+from playwright.async_api import async_playwright
+
+async def main():
+    async with async_playwright() as p:
+        browser = await p.firefox.launch()
+        page = await browser.new_page(viewport={"width": 1280, "height": 720})
+        await page.goto("http://127.0.0.1:8000/screen/EVENT1", wait_until="networkidle")
+        await page.screenshot(path="public-screen.png", full_page=True)
+        await browser.close()
+
+asyncio.run(main())
+PY
+```
+
 ## Docker
 ```bash
 docker compose up --build
