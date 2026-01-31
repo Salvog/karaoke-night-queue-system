@@ -11,7 +11,7 @@ class EventNightService
     public function create(array $data): EventNight
     {
         return DB::transaction(function () use ($data) {
-            $data['code'] = $this->generateUniqueCode();
+            $data['code'] = $data['code'] ?? $this->generateUniqueCode();
 
             return EventNight::create($data);
         });

@@ -4,10 +4,12 @@ namespace App\Modules\Admin\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventNight;
+use App\Models\Song;
 use App\Models\SongRequest;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
 use App\Modules\Queue\Services\QueueEngine;
+use App\Modules\Queue\Services\QueueManualService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,15 +21,23 @@ class AdminQueueController extends Controller
     {
         Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
 
-        $eventNight->load(['venue', 'playbackState', 'songRequests.song', 'songRequests.participant']);
+        $eventNight->load(['venue', 'playbackState.currentRequest.song', 'songRequests.song', 'songRequests.participant']);
 
         $queue = $eventNight->songRequests
             ->whereIn('status', [SongRequest::STATUS_QUEUED, SongRequest::STATUS_PLAYING])
             ->sortBy(fn (SongRequest $songRequest) => [$songRequest->position ?? PHP_INT_MAX, $songRequest->id]);
 
+        $history = $eventNight->songRequests
+            ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED, SongRequest::STATUS_CANCELED])
+            ->sortByDesc(fn (SongRequest $songRequest) => $songRequest->played_at ?? $songRequest->updated_at);
+
+        $songs = Song::orderBy('artist')->orderBy('title')->get();
+
         return view('admin.queue.show', [
             'eventNight' => $eventNight,
             'queue' => $queue,
+            'history' => $history,
+            'songs' => $songs,
         ]);
     }
 
@@ -108,7 +118,47 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Playback stopped.');
+        return back()->with('status', 'Playback paused.');
+    }
+
+    public function start(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
+    {
+        $adminUser = $request->user('admin');
+        Gate::forUser($adminUser)->authorize('manage-event-nights');
+
+        $queueEngine->startNext($eventNight);
+
+        $logger->execute(new AdminActionData(
+            userId: $adminUser->id,
+            action: 'queue.start',
+            subjectType: EventNight::class,
+            subjectId: (string) $eventNight->id,
+            metadata: [
+                'event_night_id' => $eventNight->id,
+            ]
+        ));
+
+        return back()->with('status', 'Playback started.');
+    }
+
+    public function resume(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
+    {
+        $adminUser = $request->user('admin');
+        Gate::forUser($adminUser)->authorize('manage-event-nights');
+
+        $queueEngine->resume($eventNight);
+
+        $logger->execute(new AdminActionData(
+            userId: $adminUser->id,
+            action: 'queue.resume',
+            subjectType: EventNight::class,
+            subjectId: (string) $eventNight->id,
+            metadata: [
+                'event_night_id' => $eventNight->id,
+            ]
+        ));
+
+        return back()->with('status', 'Playback resumed.');
     }
 
     public function next(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -129,5 +179,32 @@ class AdminQueueController extends Controller
         ));
 
         return back()->with('status', 'Moved to the next song.');
+    }
+
+    public function add(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueManualService $queueManualService): RedirectResponse
+    {
+        $adminUser = $request->user('admin');
+        Gate::forUser($adminUser)->authorize('manage-event-nights');
+
+        $data = $request->validate([
+            'display_name' => ['required', 'string', 'max:255'],
+            'song_id' => ['required', 'integer', 'exists:songs,id'],
+        ]);
+
+        $songRequest = $queueManualService->addParticipantRequest($eventNight, $data['display_name'], $data['song_id']);
+
+        $logger->execute(new AdminActionData(
+            userId: $adminUser->id,
+            action: 'queue.add',
+            subjectType: SongRequest::class,
+            subjectId: (string) $songRequest->id,
+            metadata: [
+                'event_night_id' => $eventNight->id,
+                'participant_name' => $data['display_name'],
+                'song_id' => $data['song_id'],
+            ]
+        ));
+
+        return back()->with('status', 'Participant added to the queue.');
     }
 }
