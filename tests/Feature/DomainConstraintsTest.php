@@ -38,7 +38,8 @@ class DomainConstraintsTest extends TestCase
             'code' => 'TEST1',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_SCHEDULED,
+            'status' => EventNight::STATUS_DRAFT,
+            'starts_at' => now(),
         ]);
 
         $song = Song::create([

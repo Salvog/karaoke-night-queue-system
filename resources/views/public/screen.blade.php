@@ -16,6 +16,9 @@
             font-family: "Segoe UI", sans-serif;
             background: var(--secondary-color);
             color: var(--text-color);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
         header {
             padding: 24px 32px;
@@ -108,9 +111,31 @@
             color: rgba(226, 232, 240, 0.7);
             margin-top: 8px;
         }
+        .overlay-texts {
+            position: fixed;
+            top: 96px;
+            left: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 5;
+            max-width: 40%;
+        }
+        .overlay-text {
+            background: rgba(15, 23, 42, 0.75);
+            border-radius: 12px;
+            padding: 8px 14px;
+            font-size: 18px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
         @media (max-width: 900px) {
             main {
                 grid-template-columns: 1fr;
+            }
+            .overlay-texts {
+                position: static;
+                margin: 16px 32px 0;
+                max-width: none;
             }
         }
     </style>
@@ -123,6 +148,7 @@
     </div>
     <div class="status-pill" id="playback-status"></div>
 </header>
+<div class="overlay-texts" id="overlay-texts"></div>
 <main>
     <section class="panel now-playing">
         <h2>Current Song</h2>
@@ -166,6 +192,7 @@
         bannerImage: document.getElementById('banner-image'),
         bannerTitle: document.getElementById('banner-title'),
         themeUpdated: document.getElementById('theme-updated'),
+        overlayTexts: document.getElementById('overlay-texts'),
     };
 
     const formatSong = (song) => {
@@ -224,6 +251,12 @@
         document.documentElement.style.setProperty('--secondary-color', secondary);
         document.documentElement.style.setProperty('--panel-color', '#111827');
 
+        if (theme.background_image_url) {
+            document.body.style.backgroundImage = `url('${theme.background_image_url}')`;
+        } else {
+            document.body.style.backgroundImage = '';
+        }
+
         if (theme.banner && theme.banner.is_active && theme.banner.image_url) {
             elements.banner.hidden = false;
             elements.bannerImage.src = theme.banner.image_url;
@@ -233,6 +266,16 @@
             elements.bannerImage.removeAttribute('src');
             elements.bannerTitle.textContent = '';
         }
+
+        elements.overlayTexts.innerHTML = '';
+        const overlays = theme.overlay_texts || [];
+        overlays.forEach((text) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'overlay-text';
+            wrapper.textContent = text;
+            elements.overlayTexts.appendChild(wrapper);
+        });
+
         elements.themeUpdated.textContent = theme.theme?.name ? `Theme: ${theme.theme.name}` : '';
     };
 

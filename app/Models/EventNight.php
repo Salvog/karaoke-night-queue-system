@@ -12,14 +12,20 @@ class EventNight extends Model
 {
     use HasFactory;
 
-    public const STATUS_SCHEDULED = 'scheduled';
-    public const STATUS_LIVE = 'live';
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_ACTIVE = 'active';
     public const STATUS_CLOSED = 'closed';
 
     public const STATUSES = [
-        self::STATUS_SCHEDULED,
-        self::STATUS_LIVE,
+        self::STATUS_DRAFT,
+        self::STATUS_ACTIVE,
         self::STATUS_CLOSED,
+    ];
+
+    public const STATUS_LABELS = [
+        self::STATUS_DRAFT => 'Draft',
+        self::STATUS_ACTIVE => 'Active',
+        self::STATUS_CLOSED => 'Closed',
     ];
 
     protected $fillable = [
@@ -27,11 +33,24 @@ class EventNight extends Model
         'theme_id',
         'ad_banner_id',
         'code',
+        'starts_at',
         'break_seconds',
         'request_cooldown_seconds',
         'join_pin',
         'status',
+        'background_image_path',
+        'overlay_texts',
     ];
+
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'overlay_texts' => 'array',
+    ];
+
+    public static function statusOptions(): array
+    {
+        return self::STATUS_LABELS;
+    }
 
     public function venue(): BelongsTo
     {

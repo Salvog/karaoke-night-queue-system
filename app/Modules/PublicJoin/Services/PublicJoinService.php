@@ -22,8 +22,8 @@ class PublicJoinService
     {
         $eventNight = EventNight::where('code', $eventCode)->firstOrFail();
 
-        if ($eventNight->status !== EventNight::STATUS_LIVE) {
-            throw new AuthorizationException('Event is not live.');
+        if ($eventNight->status !== EventNight::STATUS_ACTIVE) {
+            throw new AuthorizationException('Event is not active.');
         }
 
         return $eventNight;

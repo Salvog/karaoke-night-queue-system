@@ -31,7 +31,8 @@ class AdminEventAuthorizationTest extends TestCase
             'code' => 'EVENT123456',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_SCHEDULED,
+            'status' => EventNight::STATUS_DRAFT,
+            'starts_at' => now(),
         ]);
 
         $response = $this->actingAs($staff, 'admin')->delete("/admin/events/{$eventNight->id}");

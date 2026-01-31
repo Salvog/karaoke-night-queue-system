@@ -6,6 +6,7 @@ use App\Models\EventNight;
 use App\Models\PlaybackState;
 use App\Models\SongRequest;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Storage;
 
 class PublicScreenService
 {
@@ -13,8 +14,8 @@ class PublicScreenService
     {
         $eventNight = EventNight::where('code', $eventCode)->firstOrFail();
 
-        if ($eventNight->status !== EventNight::STATUS_LIVE) {
-            throw new AuthorizationException('Event is not live.');
+        if ($eventNight->status !== EventNight::STATUS_ACTIVE) {
+            throw new AuthorizationException('Event is not active.');
         }
 
         return $eventNight;
@@ -116,6 +117,10 @@ class PublicScreenService
                 'image_url' => $eventNight->adBanner->image_url,
                 'is_active' => (bool) $eventNight->adBanner->is_active,
             ] : null,
+            'background_image_url' => $eventNight->background_image_path
+                ? Storage::disk('public')->url($eventNight->background_image_path)
+                : null,
+            'overlay_texts' => $eventNight->overlay_texts ?? [],
         ];
     }
 }

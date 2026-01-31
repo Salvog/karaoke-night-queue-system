@@ -63,6 +63,10 @@ composer run pint
 - Public screen: `routes/public-screen.php` (screen at `/screen/{eventCode}`, SSE stream at `/screen/{eventCode}/stream`).
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
 
+## Admin event management
+- Create/edit event nights with venue, date/time, break/cooldown, optional PIN, and status (draft/active/closed).
+- Per-event theme configuration supports background image uploads, overlay texts, and ad banner CRUD from the Theme/Ads screen.
+
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
 - Optional PIN activation uses `event_nights.join_pin`.

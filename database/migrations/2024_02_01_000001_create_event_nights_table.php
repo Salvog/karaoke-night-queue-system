@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['venue_id', 'status']);
-            $table->check("status in ('scheduled','live','closed')");
+            $table->check("status in ('draft','active','closed')");
         });
     }
 
