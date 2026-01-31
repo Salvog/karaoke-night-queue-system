@@ -19,10 +19,26 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $events = EventNight::with('venue')->orderByDesc('id')->get();
+        $now = now();
+        $currentEvent = EventNight::with('venue')
+            ->where('status', EventNight::STATUS_ACTIVE)
+            ->whereNotNull('starts_at')
+            ->where('starts_at', '<=', $now)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>=', $now);
+            })
+            ->orderBy('starts_at')
+            ->first();
+
+        $events = EventNight::with('venue')
+            ->when($currentEvent, fn ($query) => $query->whereKeyNot($currentEvent->id))
+            ->orderBy('starts_at')
+            ->get();
 
         return view('admin.events.index', [
             'events' => $events,
+            'currentEvent' => $currentEvent,
             'adminUser' => $adminUser,
         ]);
     }
@@ -48,6 +64,7 @@ class AdminEventsController extends Controller
 
         $data = $this->validatedEventData($request);
         $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
+        $data['code'] = $this->normalizeCode($data['code'] ?? null);
 
         $eventNight = $service->create($data);
 
@@ -76,8 +93,9 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $data = $this->validatedEventData($request);
+        $data = $this->validatedEventData($request, $eventNight);
         $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
+        $data['code'] = $this->normalizeCode($data['code'] ?? null);
 
         $service->update($eventNight, $data);
 
@@ -98,11 +116,19 @@ class AdminEventsController extends Controller
             ->with('status', 'Event deleted.');
     }
 
-    private function validatedEventData(Request $request): array
+    private function validatedEventData(Request $request, ?EventNight $eventNight = null): array
     {
         return $request->validate([
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')],
+            'code' => [
+                'required',
+                'string',
+                'min:4',
+                'max:12',
+                Rule::unique('event_nights', 'code')->ignore($eventNight?->id),
+            ],
             'starts_at' => ['required', 'date'],
+            'ends_at' => ['required', 'date', 'after:starts_at'],
             'break_seconds' => ['required', 'integer', 'min:0'],
             'request_cooldown_seconds' => ['required', 'integer', 'min:0'],
             'join_pin' => ['nullable', 'string', 'max:10'],
@@ -115,5 +141,16 @@ class AdminEventsController extends Controller
         $trimmed = $pin !== null ? trim($pin) : null;
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function normalizeCode(?string $code): ?string
+    {
+        if ($code === null) {
+            return null;
+        }
+
+        $trimmed = trim($code);
+
+        return $trimmed === '' ? null : strtoupper($trimmed);
     }
 }

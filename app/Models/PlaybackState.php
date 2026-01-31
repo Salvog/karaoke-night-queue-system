@@ -26,11 +26,13 @@ class PlaybackState extends Model
         'state',
         'started_at',
         'expected_end_at',
+        'paused_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'expected_end_at' => 'datetime',
+        'paused_at' => 'datetime',
     ];
 
     public function eventNight(): BelongsTo

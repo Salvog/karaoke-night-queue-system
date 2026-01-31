@@ -63,8 +63,10 @@ class QueueEngineTest extends TestCase
         $requests = $this->seedRequests($eventNight);
         $queueEngine = $this->app->make(QueueEngine::class);
 
+        $pausedAt = Carbon::parse('2024-01-01 10:02:00');
+
         $queueEngine->startNext($eventNight, Carbon::parse('2024-01-01 10:00:00'));
-        $queueEngine->stop($eventNight);
+        $queueEngine->stop($eventNight, $pausedAt);
 
         $queueEngine->advanceIfNeeded($eventNight, Carbon::parse('2024-01-01 10:05:00'));
 
@@ -74,6 +76,29 @@ class QueueEngineTest extends TestCase
         $this->assertSame($requests['first']->id, $playbackState->current_request_id);
         $this->assertSame(SongRequest::STATUS_PLAYING, $requests['first']->fresh()->status);
         $this->assertSame(SongRequest::STATUS_QUEUED, $requests['second']->fresh()->status);
+        $this->assertNotNull($playbackState->paused_at);
+        $this->assertNotNull($playbackState->expected_end_at);
+    }
+
+    public function test_resume_continues_paused_playback(): void
+    {
+        $eventNight = $this->seedEvent();
+        $requests = $this->seedRequests($eventNight);
+        $queueEngine = $this->app->make(QueueEngine::class);
+
+        $startedAt = Carbon::parse('2024-01-01 10:00:00');
+        $queueEngine->startNext($eventNight, $startedAt);
+        $queueEngine->stop($eventNight, Carbon::parse('2024-01-01 10:02:00'));
+
+        $resumeAt = Carbon::parse('2024-01-01 10:05:00');
+        $queueEngine->resume($eventNight, $resumeAt);
+
+        $playbackState = PlaybackState::firstOrFail();
+
+        $this->assertSame(PlaybackState::STATE_PLAYING, $playbackState->state);
+        $this->assertNull($playbackState->paused_at);
+        $this->assertSame($requests['first']->id, $playbackState->current_request_id);
+        $this->assertTrue($playbackState->expected_end_at->greaterThan($resumeAt));
     }
 
     public function test_queue_advance_command_processes_live_events(): void

@@ -155,18 +155,64 @@ class QueueEngine
         }
     }
 
-    public function stop(EventNight $eventNight): void
+    public function stop(EventNight $eventNight, ?Carbon $now = null): void
     {
-        DB::transaction(function () use ($eventNight) {
+        $now = $now ?? now();
+
+        DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
+
+            if ($playbackState->state !== PlaybackState::STATE_PLAYING) {
+                return;
+            }
 
             $playbackState->fill([
                 'state' => PlaybackState::STATE_PAUSED,
-                'expected_end_at' => null,
+                'paused_at' => $now,
             ])->save();
         });
 
         $this->publisher->publishPlaybackUpdated($eventNight);
+    }
+
+    public function resume(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
+    {
+        $now = $now ?? now();
+
+        $shouldStartNext = false;
+        $result = DB::transaction(function () use ($eventNight, $now, &$shouldStartNext) {
+            $playbackState = $this->lockPlaybackState($eventNight);
+
+            if ($playbackState->state !== PlaybackState::STATE_PAUSED) {
+                return null;
+            }
+
+            if (! $playbackState->current_request_id || ! $playbackState->expected_end_at || ! $playbackState->paused_at) {
+                $this->setIdle($playbackState);
+                $shouldStartNext = true;
+
+                return null;
+            }
+
+            $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at);
+            $remainingSeconds = max(1, $remainingSeconds);
+
+            $playbackState->fill([
+                'state' => PlaybackState::STATE_PLAYING,
+                'expected_end_at' => $now->copy()->addSeconds($remainingSeconds),
+                'paused_at' => null,
+            ])->save();
+
+            return $playbackState->currentRequest;
+        });
+
+        if ($shouldStartNext) {
+            return $this->startNext($eventNight, $now);
+        }
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
+
+        return $result;
     }
 
     public function next(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
@@ -264,6 +310,7 @@ class QueueEngine
             'current_request_id' => $songRequest->id,
             'started_at' => $now,
             'expected_end_at' => $now->copy()->addSeconds($durationSeconds),
+            'paused_at' => null,
         ])->save();
 
         return $songRequest;
@@ -284,6 +331,7 @@ class QueueEngine
             'current_request_id' => null,
             'started_at' => null,
             'expected_end_at' => null,
+            'paused_at' => null,
         ])->save();
     }
 
