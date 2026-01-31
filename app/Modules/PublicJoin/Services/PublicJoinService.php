@@ -6,6 +6,7 @@ use App\Models\EventNight;
 use App\Models\Participant;
 use App\Models\Song;
 use App\Models\SongRequest;
+use App\Modules\PublicScreen\Realtime\RealtimePublisher;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,6 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class PublicJoinService
 {
+    public function __construct(private readonly RealtimePublisher $publisher)
+    {
+    }
+
     public function findLiveEvent(string $eventCode): EventNight
     {
         $eventNight = EventNight::where('code', $eventCode)->firstOrFail();
@@ -86,7 +91,7 @@ class PublicJoinService
 
         $song = Song::findOrFail($songId);
 
-        return DB::transaction(function () use ($eventNight, $participant, $song) {
+        $songRequest = DB::transaction(function () use ($eventNight, $participant, $song) {
             $this->enforceCooldown($eventNight, $participant);
 
             $maxPosition = SongRequest::where('event_night_id', $eventNight->id)->max('position');
@@ -99,6 +104,10 @@ class PublicJoinService
                 'position' => ($maxPosition ?? 0) + 1,
             ]);
         });
+
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        return $songRequest;
     }
 
     public function generateDeviceCookieId(): string

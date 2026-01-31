@@ -8,6 +8,7 @@ use App\Models\EventNight;
 use App\Models\Theme;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
+use App\Modules\PublicScreen\Realtime\RealtimePublisher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +32,12 @@ class AdminThemeController extends Controller
         ]);
     }
 
-    public function update(Request $request, EventNight $eventNight, LogAdminAction $logger): RedirectResponse
+    public function update(
+        Request $request,
+        EventNight $eventNight,
+        LogAdminAction $logger,
+        RealtimePublisher $publisher
+    ): RedirectResponse
     {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
@@ -66,6 +72,8 @@ class AdminThemeController extends Controller
                 'ad_banner_id' => $data['ad_banner_id'] ?? null,
             ]
         ));
+
+        $publisher->publishThemeUpdated($eventNight);
 
         return back()->with('status', 'Theme/ads updated.');
     }

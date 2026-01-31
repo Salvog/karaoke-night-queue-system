@@ -5,6 +5,7 @@ namespace App\Modules\Queue\Services;
 use App\Models\EventNight;
 use App\Models\PlaybackState;
 use App\Models\SongRequest;
+use App\Modules\PublicScreen\Realtime\RealtimePublisher;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +13,15 @@ use InvalidArgumentException;
 
 class QueueEngine
 {
+    public function __construct(private readonly RealtimePublisher $publisher)
+    {
+    }
+
     public function startNext(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
     {
         $now = $now ?? now();
 
-        return DB::transaction(function () use ($eventNight, $now) {
+        $result = DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
             $nextRequest = $this->findNextQueuedRequest($eventNight);
 
@@ -28,13 +33,20 @@ class QueueEngine
 
             return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
         });
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        return $result;
     }
 
     public function advanceIfNeeded(EventNight $eventNight, ?Carbon $now = null): void
     {
         $now = $now ?? now();
 
-        DB::transaction(function () use ($eventNight, $now) {
+        $updated = false;
+
+        DB::transaction(function () use ($eventNight, $now, &$updated) {
             $playbackState = $this->lockPlaybackState($eventNight);
 
             if ($playbackState->state !== PlaybackState::STATE_PLAYING || ! $playbackState->expected_end_at) {
@@ -49,6 +61,7 @@ class QueueEngine
 
             if (! $currentRequest) {
                 $this->setIdle($playbackState);
+                $updated = true;
 
                 return;
             }
@@ -59,19 +72,28 @@ class QueueEngine
 
             if (! $nextRequest) {
                 $this->setIdle($playbackState);
+                $updated = true;
 
                 return;
             }
 
             $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+            $updated = true;
         });
+
+        if ($updated) {
+            $this->publisher->publishPlaybackUpdated($eventNight);
+            $this->publisher->publishQueueUpdated($eventNight);
+        }
     }
 
     public function skip(EventNight $eventNight, SongRequest $songRequest, ?Carbon $now = null): void
     {
         $now = $now ?? now();
 
-        DB::transaction(function () use ($eventNight, $songRequest, $now) {
+        $playbackUpdated = false;
+
+        DB::transaction(function () use ($eventNight, $songRequest, $now, &$playbackUpdated) {
             $this->assertSameEvent($eventNight, $songRequest);
 
             $playbackState = $this->lockPlaybackState($eventNight);
@@ -87,20 +109,30 @@ class QueueEngine
 
                 if (! $nextRequest) {
                     $this->setIdle($playbackState);
+                    $playbackUpdated = true;
 
                     return;
                 }
 
                 $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+                $playbackUpdated = true;
             }
         });
+
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        if ($playbackUpdated) {
+            $this->publisher->publishPlaybackUpdated($eventNight);
+        }
     }
 
     public function cancel(EventNight $eventNight, SongRequest $songRequest, ?Carbon $now = null): void
     {
         $now = $now ?? now();
 
-        DB::transaction(function () use ($eventNight, $songRequest, $now) {
+        $playbackUpdated = false;
+
+        DB::transaction(function () use ($eventNight, $songRequest, $now, &$playbackUpdated) {
             $this->assertSameEvent($eventNight, $songRequest);
 
             $playbackState = $this->lockPlaybackState($eventNight);
@@ -112,8 +144,15 @@ class QueueEngine
 
             if ($playbackState->current_request_id === $lockedRequest->id) {
                 $this->setIdle($playbackState);
+                $playbackUpdated = true;
             }
         });
+
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        if ($playbackUpdated) {
+            $this->publisher->publishPlaybackUpdated($eventNight);
+        }
     }
 
     public function stop(EventNight $eventNight): void
@@ -126,13 +165,15 @@ class QueueEngine
                 'expected_end_at' => null,
             ])->save();
         });
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
     }
 
     public function next(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
     {
         $now = $now ?? now();
 
-        return DB::transaction(function () use ($eventNight, $now) {
+        $result = DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
 
             if ($playbackState->current_request_id) {
@@ -153,6 +194,11 @@ class QueueEngine
 
             return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
         });
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        return $result;
     }
 
     private function lockPlaybackState(EventNight $eventNight): PlaybackState
