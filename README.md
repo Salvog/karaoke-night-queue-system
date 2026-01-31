@@ -18,9 +18,28 @@ Laravel-based modular monolith for managing karaoke night queues.
 cp .env.example .env
 composer install
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
+php artisan storage:link
 php artisan serve
 ```
+
+## Demo data
+The default seeder creates a realistic dataset for UI/UX validation and includes admin credentials:
+- Admin: `admin@example.com` / `password`
+- Staff: `staff@example.com` / `password`
+
+You can re-run the demo data at any time:
+```bash
+php artisan db:seed --class=DemoDataSeeder
+```
+
+## Environment variables
+Key settings to review in `.env`:
+- `APP_URL`: Base URL used for asset links.
+- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: Database connection.
+- `SESSION_DRIVER`: Defaults to database-backed sessions.
+- `PUBLIC_SCREEN_REALTIME_ENABLED`: Toggle SSE updates for public screens.
+- `PUBLIC_JOIN_RATE_LIMIT_IP`, `PUBLIC_JOIN_RATE_LIMIT_PARTICIPANT`, `PUBLIC_JOIN_RATE_LIMIT_DECAY`: Public join rate limits.
 
 ## UI screenshots
 For automated UI screenshots with Playwright in this environment, prefer Firefox because Chromium headless can crash due to missing system services.
@@ -78,3 +97,9 @@ composer run pint
 - Screen (`GET /screen/{eventCode}`) shows now playing, next/recent queue, and theme/banner overlays.
 - Real-time updates stream via SSE (`GET /screen/{eventCode}/stream`) when enabled; clients fall back to polling every 5 seconds.
 - Configure counts and realtime settings in `config/public_screen.php` (set `PUBLIC_SCREEN_REALTIME_ENABLED=false` to disable SSE).
+
+## Queue automation
+Use the queue engine command to auto-advance playback (schedule it with cron or Laravel scheduler):
+```bash
+php artisan queue:advance
+```

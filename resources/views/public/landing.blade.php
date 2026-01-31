@@ -119,24 +119,63 @@
     const renderResults = (payload) => {
         elements.results.innerHTML = '';
         if (payload.data.length === 0) {
-            elements.results.innerHTML = '<div class="empty-state">No songs found.</div>';
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = 'No songs found.';
+            elements.results.appendChild(empty);
         } else {
             payload.data.forEach((song) => {
                 const container = document.createElement('div');
                 container.className = 'song';
-                container.innerHTML = `
-                    <div>
-                        <strong>${song.title}</strong><br>
-                        <span>${song.artist ?? 'Unknown artist'}</span><br>
-                        <span class="search-meta">${formatDuration(song.duration_seconds)}</span>
-                    </div>
-                    <form class="song-request-form" method="POST" action="${requestUrl}">
-                        <input type="hidden" name="_token" value="${csrfToken}">
-                        <input type="hidden" name="song_id" value="${song.id}">
-                        <input type="hidden" name="join_token" value="${joinToken}">
-                        <button class="button" type="submit">Request</button>
-                    </form>
-                `;
+
+                const details = document.createElement('div');
+                const title = document.createElement('strong');
+                title.textContent = song.title;
+                const artist = document.createElement('span');
+                artist.textContent = song.artist ?? 'Unknown artist';
+                const duration = document.createElement('span');
+                duration.className = 'search-meta';
+                duration.textContent = formatDuration(song.duration_seconds);
+
+                details.appendChild(title);
+                details.appendChild(document.createElement('br'));
+                details.appendChild(artist);
+                details.appendChild(document.createElement('br'));
+                details.appendChild(duration);
+
+                const form = document.createElement('form');
+                form.className = 'song-request-form';
+                form.method = 'POST';
+                form.action = requestUrl;
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+
+                const songInput = document.createElement('input');
+                songInput.type = 'hidden';
+                songInput.name = 'song_id';
+                songInput.value = song.id;
+
+                const joinInput = document.createElement('input');
+                joinInput.type = 'hidden';
+                joinInput.name = 'join_token';
+                joinInput.value = joinToken;
+
+                const button = document.createElement('button');
+                button.className = 'button';
+                button.type = 'submit';
+                button.textContent = 'Request';
+
+                form.appendChild(csrfInput);
+                form.appendChild(songInput);
+                form.appendChild(joinInput);
+                form.appendChild(button);
+
+                container.appendChild(details);
+                container.appendChild(form);
+
                 elements.results.appendChild(container);
             });
         }
@@ -145,6 +184,18 @@
         elements.prevPage.disabled = payload.meta.current_page <= 1;
         elements.nextPage.disabled = payload.meta.current_page >= payload.meta.last_page;
         elements.meta.textContent = `Showing ${payload.meta.total} result(s).`;
+    };
+
+    const renderError = (message) => {
+        elements.results.innerHTML = '';
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.textContent = message;
+        elements.results.appendChild(empty);
+        elements.pageInfo.textContent = '';
+        elements.prevPage.disabled = true;
+        elements.nextPage.disabled = true;
+        elements.meta.textContent = message;
     };
 
     const fetchSongs = async () => {
@@ -161,7 +212,7 @@
         });
 
         if (!response.ok) {
-            elements.meta.textContent = 'Unable to load songs.';
+            renderError('Unable to load songs.');
             return;
         }
 
@@ -222,7 +273,10 @@
                 event.target.submit();
             }
         } catch (error) {
-            alert('Unable to calculate ETA right now. Please try again.');
+            const shouldSubmit = confirm('Unable to calculate ETA right now. Request anyway?');
+            if (shouldSubmit) {
+                event.target.submit();
+            }
         }
     });
 
