@@ -77,7 +77,7 @@ composer run pint
 
 ## Routing
 - Admin area routes: `routes/admin.php` (mounted under `/admin` with session auth middleware).
-- Public area routes: `routes/public.php` (mounted under `/public`).
+- Public area routes: `routes/public.php` (mounted under `/public`, includes the public landing at `/public`).
 - Public join flow: `routes/public-join.php` (landing at `/e/{eventCode}` plus activate/request POST endpoints).
 - Public screen: `routes/public-screen.php` (screen at `/screen/{eventCode}`, SSE stream at `/screen/{eventCode}/stream`).
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
