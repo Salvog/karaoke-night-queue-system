@@ -10,6 +10,7 @@ use App\Modules\Admin\Services\QueueManagementService;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
 use App\Modules\Queue\Services\QueueEngine;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,35 +23,29 @@ class AdminQueueController extends Controller
     {
         Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
 
-        $eventNight->load([
-            'venue',
-            'playbackState.currentRequest.song',
-            'playbackState.currentRequest.participant',
-        ]);
-
-        $queue = SongRequest::where('event_night_id', $eventNight->id)
-            ->whereIn('status', [SongRequest::STATUS_QUEUED, SongRequest::STATUS_PLAYING])
-            ->orderByRaw('position is null')
-            ->orderBy('position')
-            ->orderBy('id')
-            ->with(['song', 'participant'])
-            ->get();
-
-        $history = SongRequest::where('event_night_id', $eventNight->id)
-            ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED, SongRequest::STATUS_CANCELED])
-            ->orderByDesc('played_at')
-            ->orderByDesc('id')
-            ->with(['song', 'participant'])
-            ->get();
+        $data = $this->buildQueueState($eventNight);
 
         $songs = Song::orderBy('artist')->orderBy('title')->get();
 
         return view('admin.queue.show', [
             'eventNight' => $eventNight,
-            'queue' => $queue,
-            'history' => $history,
+            'queue' => $data['queue'],
+            'history' => $data['history'],
+            'playback' => $data['playback'],
+            'timezone' => $data['timezone'],
             'songs' => $songs,
         ]);
+    }
+
+    public function state(Request $request, EventNight $eventNight, QueueEngine $queueEngine): JsonResponse
+    {
+        Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
+
+        if ($eventNight->status === EventNight::STATUS_ACTIVE) {
+            $queueEngine->advanceIfNeeded($eventNight);
+        }
+
+        return response()->json($this->buildQueueState($eventNight));
     }
 
     public function skip(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -200,5 +195,60 @@ class AdminQueueController extends Controller
         ));
 
         return back()->with('status', 'Manual request added to the queue.');
+    }
+
+    private function buildQueueState(EventNight $eventNight): array
+    {
+        $eventNight->load([
+            'venue',
+            'playbackState.currentRequest.song',
+            'playbackState.currentRequest.participant',
+        ]);
+
+        $timezone = $eventNight->venue?->timezone ?? config('app.timezone');
+        $playbackState = $eventNight->playbackState;
+        $currentRequest = $playbackState?->currentRequest;
+        $expectedEndAt = $playbackState?->expected_end_at?->copy()->setTimezone($timezone);
+
+        $queue = SongRequest::where('event_night_id', $eventNight->id)
+            ->whereIn('status', [SongRequest::STATUS_QUEUED, SongRequest::STATUS_PLAYING])
+            ->orderByRaw('position is null')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->with(['song', 'participant'])
+            ->get();
+
+        $history = SongRequest::where('event_night_id', $eventNight->id)
+            ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED, SongRequest::STATUS_CANCELED])
+            ->orderByDesc('played_at')
+            ->orderByDesc('id')
+            ->with(['song', 'participant'])
+            ->get();
+
+        return [
+            'timezone' => $timezone,
+            'playback' => [
+                'state' => $playbackState?->state ?? 'idle',
+                'expected_end_at' => $expectedEndAt?->toIso8601String(),
+                'expected_end_label' => $expectedEndAt?->format('H:i:s'),
+                'current_song' => $currentRequest?->song?->title ?? 'None',
+                'current_participant' => $currentRequest?->participant?->display_name ?? 'Guest',
+            ],
+            'queue' => $queue->map(fn (SongRequest $request) => [
+                'id' => $request->id,
+                'position' => $request->position,
+                'participant' => $request->participant?->display_name ?? 'Guest',
+                'song' => $request->song?->title ?? 'Unknown',
+                'status' => $request->status,
+            ])->all(),
+            'history' => $history->map(fn (SongRequest $request) => [
+                'id' => $request->id,
+                'played_at' => $request->played_at?->toIso8601String(),
+                'played_at_label' => $request->played_at?->copy()->setTimezone($timezone)->format('H:i'),
+                'participant' => $request->participant?->display_name ?? 'Guest',
+                'song' => $request->song?->title ?? 'Unknown',
+                'status' => $request->status,
+            ])->all(),
+        ];
     }
 }

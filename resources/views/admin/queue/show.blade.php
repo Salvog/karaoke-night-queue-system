@@ -13,23 +13,29 @@
     @php
         $playbackState = $eventNight->playbackState;
         $currentRequest = $playbackState?->currentRequest;
+        $expectedEndLabel = $playbackState?->expected_end_at
+            ? $playbackState->expected_end_at->copy()->setTimezone($timezone)->format('H:i:s')
+            : '—';
     @endphp
 
     <div style="margin: 16px 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px;">
         <h2 style="margin-top: 0;">Playback Status</h2>
-        <p>State: <strong>{{ $playbackState?->state ?? 'idle' }}</strong></p>
+        <p>State: <strong id="playback-state">{{ $playbackState?->state ?? 'idle' }}</strong></p>
         <p>
             Current song:
-            <strong>{{ $currentRequest?->song?->title ?? 'None' }}</strong>
+            <strong id="playback-current-song">{{ $currentRequest?->song?->title ?? 'None' }}</strong>
             @if ($currentRequest?->participant)
-                ({{ $currentRequest->participant->display_name ?? 'Guest' }})
+                (<span id="playback-current-participant">{{ $currentRequest->participant->display_name ?? 'Guest' }}</span>)
+            @else
+                (<span id="playback-current-participant">Guest</span>)
             @endif
         </p>
-        <p>Expected end: {{ $playbackState?->expected_end_at?->format('H:i:s') ?? '—' }}</p>
+        <p>Expected end: <span id="playback-expected-end">{{ $expectedEndLabel }}</span> ({{ $timezone }})</p>
         <p>Break: {{ $eventNight->break_seconds }}s | Request cooldown: {{ $eventNight->request_cooldown_seconds }}s</p>
         <p style="margin-bottom: 0; color: #6b7280;">
             Break seconds add extra time after each song. Cooldown seconds limit how often participants can request.
         </p>
+        <p style="margin-top: 8px; color: #6b7280;">Last refresh: <span id="queue-last-refresh">just now</span></p>
     </div>
 
     <div class="actions" style="margin-bottom: 16px;">
@@ -88,7 +94,7 @@
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="queue-body">
         @forelse ($queue as $request)
             <tr>
                 <td>{{ $request->position ?? '—' }}</td>
@@ -128,10 +134,15 @@
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="history-body">
         @forelse ($history as $request)
+            @php
+                $playedLabel = $request->played_at
+                    ? $request->played_at->copy()->setTimezone($timezone)->format('H:i')
+                    : '—';
+            @endphp
             <tr>
-                <td>{{ $request->played_at?->format('H:i') ?? '—' }}</td>
+                <td>{{ $playedLabel }}</td>
                 <td>{{ $request->participant?->display_name ?? 'Guest' }}</td>
                 <td>{{ $request->song?->title ?? 'Unknown' }}</td>
                 <td><span class="pill">{{ $request->status }}</span></td>
@@ -143,4 +154,87 @@
         @endforelse
         </tbody>
     </table>
+
+    <script>
+        const queueStateUrl = @json(route('admin.queue.state', $eventNight));
+        const queuePollMs = 5000;
+
+        const playbackStateEl = document.getElementById('playback-state');
+        const playbackSongEl = document.getElementById('playback-current-song');
+        const playbackParticipantEl = document.getElementById('playback-current-participant');
+        const playbackExpectedEl = document.getElementById('playback-expected-end');
+        const queueBodyEl = document.getElementById('queue-body');
+        const historyBodyEl = document.getElementById('history-body');
+        const queueRefreshEl = document.getElementById('queue-last-refresh');
+
+        const renderQueueRows = (items) => {
+            if (!items || items.length === 0) {
+                return '<tr><td colspan="5">No queued songs.</td></tr>';
+            }
+
+            return items.map((item) => (
+                `<tr>
+                    <td>${item.position ?? '—'}</td>
+                    <td>${item.participant}</td>
+                    <td>${item.song}</td>
+                    <td><span class="pill">${item.status}</span></td>
+                    <td>
+                        <div class="actions">
+                            <form method="POST" action="{{ route('admin.queue.skip', $eventNight) }}">
+                                @csrf
+                                <input type="hidden" name="song_request_id" value="${item.id}">
+                                <button class="button secondary" type="submit">Skip</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.queue.cancel', $eventNight) }}">
+                                @csrf
+                                <input type="hidden" name="song_request_id" value="${item.id}">
+                                <button class="button danger" type="submit">Cancel</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>`
+            )).join('');
+        };
+
+        const renderHistoryRows = (items) => {
+            if (!items || items.length === 0) {
+                return '<tr><td colspan="4">No completed requests yet.</td></tr>';
+            }
+
+            return items.map((item) => (
+                `<tr>
+                    <td>${item.played_at_label ?? '—'}</td>
+                    <td>${item.participant}</td>
+                    <td>${item.song}</td>
+                    <td><span class="pill">${item.status}</span></td>
+                </tr>`
+            )).join('');
+        };
+
+        const updateQueueState = (state) => {
+            playbackStateEl.textContent = state.playback?.state ?? 'idle';
+            playbackSongEl.textContent = state.playback?.current_song ?? 'None';
+            playbackParticipantEl.textContent = state.playback?.current_participant ?? 'Guest';
+            playbackExpectedEl.textContent = state.playback?.expected_end_label ?? '—';
+            queueBodyEl.innerHTML = renderQueueRows(state.queue);
+            historyBodyEl.innerHTML = renderHistoryRows(state.history);
+            queueRefreshEl.textContent = new Date().toLocaleTimeString();
+        };
+
+        const pollQueueState = async () => {
+            try {
+                const response = await fetch(queueStateUrl, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) {
+                    return;
+                }
+                const state = await response.json();
+                updateQueueState(state);
+            } catch (error) {
+                console.warn('Queue polling failed', error);
+            }
+        };
+
+        pollQueueState();
+        setInterval(pollQueueState, queuePollMs);
+    </script>
 @endsection

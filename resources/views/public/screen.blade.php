@@ -195,6 +195,9 @@
         overlayTexts: document.getElementById('overlay-texts'),
     };
 
+    let currentBackgroundUrl = null;
+    let currentBannerUrl = null;
+
     const formatSong = (song) => {
         if (!song) {
             return 'No song queued';
@@ -251,17 +254,25 @@
         document.documentElement.style.setProperty('--secondary-color', secondary);
         document.documentElement.style.setProperty('--panel-color', '#111827');
 
-        if (theme.background_image_url) {
+        if (theme.background_image_url && theme.background_image_url !== currentBackgroundUrl) {
+            currentBackgroundUrl = theme.background_image_url;
             document.body.style.backgroundImage = `url('${theme.background_image_url}')`;
-        } else {
+        }
+
+        if (!theme.background_image_url && currentBackgroundUrl !== null) {
+            currentBackgroundUrl = null;
             document.body.style.backgroundImage = '';
         }
 
         if (theme.banner && theme.banner.is_active && theme.banner.image_url) {
+            if (currentBannerUrl !== theme.banner.image_url) {
+                currentBannerUrl = theme.banner.image_url;
+                elements.bannerImage.src = theme.banner.image_url;
+            }
             elements.banner.hidden = false;
-            elements.bannerImage.src = theme.banner.image_url;
             elements.bannerTitle.textContent = theme.banner.title ?? '';
         } else {
+            currentBannerUrl = null;
             elements.banner.hidden = true;
             elements.bannerImage.removeAttribute('src');
             elements.bannerTitle.textContent = '';
