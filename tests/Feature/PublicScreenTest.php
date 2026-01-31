@@ -44,7 +44,9 @@ class PublicScreenTest extends TestCase
             'code' => 'SCREEN1',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+            'overlay_texts' => ['Welcome singers!'],
         ]);
 
         $participant = Participant::create([
@@ -113,7 +115,8 @@ class PublicScreenTest extends TestCase
             'code' => 'SCREEN2',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
         ]);
 
         $participant = Participant::create([
@@ -163,7 +166,8 @@ class PublicScreenTest extends TestCase
             'code' => 'SCREEN3',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_SCHEDULED,
+            'status' => EventNight::STATUS_DRAFT,
+            'starts_at' => now(),
         ]);
 
         $response = $this->get("/screen/{$eventNight->code}");

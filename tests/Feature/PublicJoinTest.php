@@ -26,7 +26,8 @@ class PublicJoinTest extends TestCase
             'code' => 'EVENT1',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
         ]);
 
         Song::create([
@@ -56,7 +57,8 @@ class PublicJoinTest extends TestCase
             'code' => 'EVENT2',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 300,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
         ]);
 
         $song = Song::create([
@@ -112,7 +114,8 @@ class PublicJoinTest extends TestCase
             'code' => 'EVENT3',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
         ]);
 
         $participant = Participant::create([
@@ -152,7 +155,8 @@ class PublicJoinTest extends TestCase
             'code' => 'EVENT4',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
             'join_pin' => '4321',
         ]);
 

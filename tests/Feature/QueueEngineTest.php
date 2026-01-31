@@ -106,7 +106,8 @@ class QueueEngineTest extends TestCase
             'code' => 'EVENT100',
             'break_seconds' => 10,
             'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_LIVE,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
         ]);
     }
 

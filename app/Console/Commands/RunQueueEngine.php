@@ -10,13 +10,13 @@ class RunQueueEngine extends Command
 {
     protected $signature = 'queue:advance';
 
-    protected $description = 'Advance playback for live events when expected end times are reached.';
+    protected $description = 'Advance playback for active events when expected end times are reached.';
 
     public function handle(QueueEngine $queueEngine): int
     {
         $now = now();
 
-        EventNight::where('status', EventNight::STATUS_LIVE)
+        EventNight::where('status', EventNight::STATUS_ACTIVE)
             ->select('id')
             ->chunkById(100, function ($events) use ($queueEngine, $now) {
                 foreach ($events as $eventNight) {
