@@ -194,8 +194,14 @@ class QueueEngine
                 return null;
             }
 
-            $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at);
-            $remainingSeconds = max(1, $remainingSeconds);
+            $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at, false);
+
+            if ($remainingSeconds <= 0) {
+                $this->setIdle($playbackState);
+                $shouldStartNext = true;
+
+                return null;
+            }
 
             $playbackState->fill([
                 'state' => PlaybackState::STATE_PLAYING,
