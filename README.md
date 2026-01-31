@@ -38,6 +38,7 @@ Key settings to review in `.env`:
 - `APP_URL`: Base URL used for asset links.
 - `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: Database connection.
 - `SESSION_DRIVER`: Defaults to database-backed sessions.
+- `CACHE_DRIVER`: Use a shared cache (e.g., Redis or Memcached) for multi-instance deployments; avoid `array` or local `file` drivers if you need cross-instance realtime state.
 - `PUBLIC_SCREEN_REALTIME_ENABLED`: Toggle SSE updates for public screens.
 - `PUBLIC_JOIN_RATE_LIMIT_IP`, `PUBLIC_JOIN_RATE_LIMIT_PARTICIPANT`, `PUBLIC_JOIN_RATE_LIMIT_DECAY`: Public join rate limits.
 
