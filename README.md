@@ -103,3 +103,22 @@ Use the queue engine command to auto-advance playback (schedule it with cron or 
 ```bash
 php artisan queue:advance
 ```
+
+### Scheduler runtime
+The scheduler must run continuously so `queue:advance` executes every five seconds (configured in `app/Console/Kernel.php`).
+
+**Traditional hosts (cron):**
+```bash
+* * * * * php /path/to/artisan schedule:run >> /var/log/laravel-scheduler.log 2>&1
+```
+
+**Containerized hosts (long-running worker):**
+```bash
+php artisan schedule:work
+```
+
+You can also supervise `php artisan queue:advance` directly with an equivalent cadence if you prefer.
+
+**Runtime verification:**
+- Check your application logs for entries indicating the scheduler is running and `queue:advance` is being executed.
+- Confirm active events advance by verifying `QueueEngine::advanceIfNeeded` is called for active event nights.
