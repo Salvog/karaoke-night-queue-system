@@ -15,6 +15,7 @@ class Song extends Model
         'title',
         'artist',
         'duration_seconds',
+        'lyrics',
     ];
 
     protected $casts = [

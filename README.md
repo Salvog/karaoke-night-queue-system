@@ -40,9 +40,15 @@ composer run pint
 - Admin area routes: `routes/admin.php` (mounted under `/admin` with session auth middleware).
 - Public area routes: `routes/public.php` (mounted under `/public`).
 - Public join flow: `routes/public-join.php` (landing at `/e/{eventCode}` plus activate/request POST endpoints).
+- Public screen: `routes/public-screen.php` (screen at `/screen/{eventCode}`, SSE stream at `/screen/{eventCode}/stream`).
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
 
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
 - Optional PIN activation uses `event_nights.join_pin`.
 - Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds`.
+
+## Public screen
+- Screen (`GET /screen/{eventCode}`) shows now playing, next/recent queue, and theme/banner overlays.
+- Real-time updates stream via SSE (`GET /screen/{eventCode}/stream`) when enabled; clients fall back to polling every 5 seconds.
+- Configure counts and realtime settings in `config/public_screen.php` (set `PUBLIC_SCREEN_REALTIME_ENABLED=false` to disable SSE).

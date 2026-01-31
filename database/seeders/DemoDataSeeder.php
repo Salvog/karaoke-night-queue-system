@@ -37,6 +37,7 @@ class DemoDataSeeder extends Seeder
             [
                 'title' => 'Take On Me',
                 'artist' => 'a-ha',
+                'lyrics' => 'Talking away, I don’t know what I’m to say...',
                 'duration_seconds' => 225,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -44,6 +45,7 @@ class DemoDataSeeder extends Seeder
             [
                 'title' => 'Don’t Stop Believin’',
                 'artist' => 'Journey',
+                'lyrics' => 'Just a small-town girl, living in a lonely world...',
                 'duration_seconds' => 250,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -51,6 +53,7 @@ class DemoDataSeeder extends Seeder
             [
                 'title' => 'Livin’ on a Prayer',
                 'artist' => 'Bon Jovi',
+                'lyrics' => 'Whoa, we’re halfway there...',
                 'duration_seconds' => 249,
                 'created_at' => now(),
                 'updated_at' => now(),

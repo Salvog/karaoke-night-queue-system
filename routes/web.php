@@ -14,4 +14,5 @@ Route::middleware('web')->group(function () {
         ->group(base_path('routes/public.php'));
 
     Route::group([], base_path('routes/public-join.php'));
+    Route::group([], base_path('routes/public-screen.php'));
 });
