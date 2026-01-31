@@ -42,7 +42,8 @@
                 </div>
                 <div>
                     <div class="label">Expected End</div>
-                    <div class="value">{{ $eventNight->playbackState?->expected_end_at?->format('H:i:s') ?? '—' }}</div>
+                    @php($expectedEndAt = $eventNight->playbackState?->expected_end_at)
+                    <div class="value">{{ $expectedEndAt ? $expectedEndAt->setTimezone(date_default_timezone_get())->format('H:i:s') : '—' }}</div>
                 </div>
             </div>
             <div class="actions" style="margin-top: 16px;">
