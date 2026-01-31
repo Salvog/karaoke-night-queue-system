@@ -169,6 +169,46 @@ class QueueEngine
         $this->publisher->publishPlaybackUpdated($eventNight);
     }
 
+    public function resume(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
+    {
+        $now = $now ?? now();
+
+        $result = DB::transaction(function () use ($eventNight, $now) {
+            $playbackState = $this->lockPlaybackState($eventNight);
+
+            if ($playbackState->state === PlaybackState::STATE_PLAYING && $playbackState->expected_end_at) {
+                return $this->lockCurrentRequest($playbackState);
+            }
+
+            if ($playbackState->current_request_id) {
+                $currentRequest = $this->lockCurrentRequest($playbackState);
+
+                if (! $currentRequest) {
+                    $this->setIdle($playbackState);
+
+                    return null;
+                }
+
+                return $this->startPlaybackForRequest($eventNight, $playbackState, $currentRequest, $now);
+            }
+
+            $nextRequest = $this->findNextQueuedRequest($eventNight);
+
+            if (! $nextRequest) {
+                $this->setIdle($playbackState);
+
+                return null;
+            }
+
+            return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+        });
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        return $result;
+    }
+
     public function next(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
     {
         $now = $now ?? now();

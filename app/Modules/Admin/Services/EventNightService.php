@@ -11,7 +11,8 @@ class EventNightService
     public function create(array $data): EventNight
     {
         return DB::transaction(function () use ($data) {
-            $data['code'] = $this->generateUniqueCode();
+            $code = $this->normalizeCode($data['code'] ?? null);
+            $data['code'] = $code ?: $this->generateUniqueCode();
 
             return EventNight::create($data);
         });
@@ -20,6 +21,10 @@ class EventNightService
     public function update(EventNight $eventNight, array $data): EventNight
     {
         return DB::transaction(function () use ($eventNight, $data) {
+            if (array_key_exists('code', $data)) {
+                $data['code'] = $this->normalizeCode($data['code']);
+            }
+
             $eventNight->update($data);
 
             return $eventNight;
@@ -33,5 +38,16 @@ class EventNightService
         } while (EventNight::where('code', $code)->exists());
 
         return $code;
+    }
+
+    private function normalizeCode(?string $code): ?string
+    {
+        $trimmed = $code !== null ? trim($code) : null;
+
+        if ($trimmed === '' || $trimmed === null) {
+            return null;
+        }
+
+        return Str::upper($trimmed);
     }
 }

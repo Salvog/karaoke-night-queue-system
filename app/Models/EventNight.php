@@ -34,6 +34,7 @@ class EventNight extends Model
         'ad_banner_id',
         'code',
         'starts_at',
+        'ends_at',
         'break_seconds',
         'request_cooldown_seconds',
         'join_pin',
@@ -44,6 +45,7 @@ class EventNight extends Model
 
     protected $casts = [
         'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
         'overlay_texts' => 'array',
     ];
 

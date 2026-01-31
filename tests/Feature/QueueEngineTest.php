@@ -76,6 +76,28 @@ class QueueEngineTest extends TestCase
         $this->assertSame(SongRequest::STATUS_QUEUED, $requests['second']->fresh()->status);
     }
 
+    public function test_resume_restarts_paused_playback(): void
+    {
+        $eventNight = $this->seedEvent();
+        $requests = $this->seedRequests($eventNight);
+        $queueEngine = $this->app->make(QueueEngine::class);
+
+        $queueEngine->startNext($eventNight, Carbon::parse('2024-01-01 10:00:00'));
+        $queueEngine->stop($eventNight);
+
+        $resumedAt = Carbon::parse('2024-01-01 10:05:00');
+        $queueEngine->resume($eventNight, $resumedAt);
+
+        $playbackState = PlaybackState::firstOrFail();
+
+        $this->assertSame(PlaybackState::STATE_PLAYING, $playbackState->state);
+        $this->assertSame($requests['first']->id, $playbackState->current_request_id);
+        $this->assertSame(
+            $resumedAt->copy()->addSeconds(190)->toDateTimeString(),
+            $playbackState->expected_end_at->toDateTimeString()
+        );
+    }
+
     public function test_queue_advance_command_processes_live_events(): void
     {
         $eventNight = $this->seedEvent();

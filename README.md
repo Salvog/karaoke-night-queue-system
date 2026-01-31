@@ -84,6 +84,8 @@ composer run pint
 
 ## Admin event management
 - Create/edit event nights with venue, date/time, break/cooldown, optional PIN, and status (draft/active/closed).
+- Manage venues (create/edit/delete) and select them during event creation.
+- Edit and remove songs from the admin Songs section.
 - Per-event theme configuration supports background image uploads, overlay texts, and ad banner CRUD from the Theme/Ads screen.
 
 ## Public join flow

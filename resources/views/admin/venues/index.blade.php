@@ -1,26 +1,27 @@
 @extends('admin.layout')
 
 @section('content')
-    <h1>Songs</h1>
+    <h1>Venues</h1>
+    <div style="margin-bottom: 16px;">
+        <a class="button" href="{{ route('admin.venues.create') }}">Add Venue</a>
+    </div>
     <table>
         <thead>
             <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Duration</th>
+                <th>Name</th>
+                <th>Timezone</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-        @forelse ($songs as $song)
+        @forelse ($venues as $venue)
             <tr>
-                <td>{{ $song->title }}</td>
-                <td>{{ $song->artist ?? 'Unknown' }}</td>
-                <td>{{ $song->duration_seconds }}s</td>
+                <td>{{ $venue->name }}</td>
+                <td>{{ $venue->timezone }}</td>
                 <td>
                     <div class="actions">
-                        <a class="button secondary" href="{{ route('admin.songs.edit', $song) }}">Edit</a>
-                        <form method="POST" action="{{ route('admin.songs.destroy', $song) }}">
+                        <a class="button secondary" href="{{ route('admin.venues.edit', $venue) }}">Edit</a>
+                        <form method="POST" action="{{ route('admin.venues.destroy', $venue) }}">
                             @csrf
                             @method('DELETE')
                             <button class="button danger" type="submit">Delete</button>
@@ -30,7 +31,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="4">No songs available.</td>
+                <td colspan="3">No venues available.</td>
             </tr>
         @endforelse
         </tbody>

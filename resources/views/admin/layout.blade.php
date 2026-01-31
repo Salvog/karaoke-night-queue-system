@@ -25,6 +25,7 @@
 <nav>
     <a href="{{ route('admin.dashboard') }}">Dashboard</a>
     <a href="{{ route('admin.events.index') }}">Events</a>
+    <a href="{{ route('admin.venues.index') }}">Venues</a>
     <a href="{{ route('admin.songs.index') }}">Songs</a>
     @isset($eventNight)
         <a href="{{ route('admin.queue.show', $eventNight) }}">Queue</a>

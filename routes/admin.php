@@ -23,12 +23,24 @@ Route::middleware(['admin.auth', 'admin.role'])->group(function () {
     Route::delete('/events/{eventNight}', [AdminEventsController::class, 'destroy'])->name('admin.events.destroy');
 
     Route::get('/songs', [AdminSongsController::class, 'index'])->name('admin.songs.index');
+    Route::get('/songs/{song}/edit', [AdminSongsController::class, 'edit'])->name('admin.songs.edit');
+    Route::put('/songs/{song}', [AdminSongsController::class, 'update'])->name('admin.songs.update');
+    Route::delete('/songs/{song}', [AdminSongsController::class, 'destroy'])->name('admin.songs.destroy');
+
+    Route::get('/venues', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'index'])->name('admin.venues.index');
+    Route::get('/venues/create', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'create'])->name('admin.venues.create');
+    Route::post('/venues', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'store'])->name('admin.venues.store');
+    Route::get('/venues/{venue}/edit', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'edit'])->name('admin.venues.edit');
+    Route::put('/venues/{venue}', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'update'])->name('admin.venues.update');
+    Route::delete('/venues/{venue}', [\App\Modules\Admin\Controllers\AdminVenuesController::class, 'destroy'])->name('admin.venues.destroy');
 
     Route::get('/events/{eventNight}/queue', [AdminQueueController::class, 'show'])->name('admin.queue.show');
     Route::post('/events/{eventNight}/queue/skip', [AdminQueueController::class, 'skip'])->name('admin.queue.skip');
     Route::post('/events/{eventNight}/queue/cancel', [AdminQueueController::class, 'cancel'])->name('admin.queue.cancel');
+    Route::post('/events/{eventNight}/queue/start', [AdminQueueController::class, 'start'])->name('admin.queue.start');
     Route::post('/events/{eventNight}/queue/stop', [AdminQueueController::class, 'stop'])->name('admin.queue.stop');
     Route::post('/events/{eventNight}/queue/next', [AdminQueueController::class, 'next'])->name('admin.queue.next');
+    Route::post('/events/{eventNight}/queue/add', [AdminQueueController::class, 'add'])->name('admin.queue.add');
 
     Route::get('/events/{eventNight}/theme-ads', [AdminThemeController::class, 'show'])->name('admin.theme.show');
     Route::post('/events/{eventNight}/theme-ads', [AdminThemeController::class, 'update'])->name('admin.theme.update');
