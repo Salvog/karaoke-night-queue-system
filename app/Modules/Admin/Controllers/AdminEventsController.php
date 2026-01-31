@@ -19,10 +19,31 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $events = EventNight::with('venue')->orderByDesc('id')->get();
+        $now = now();
+
+        $currentEvent = EventNight::with('venue')
+            ->where('status', EventNight::STATUS_ACTIVE)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($query) use ($now) {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>=', $now);
+            })
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->first();
+
+        $events = EventNight::with('venue')
+            ->when($currentEvent, fn ($query) => $query->whereKeyNot($currentEvent->id))
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->get();
 
         return view('admin.events.index', [
             'events' => $events,
+            'currentEvent' => $currentEvent,
             'adminUser' => $adminUser,
         ]);
     }
@@ -76,7 +97,7 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $data = $this->validatedEventData($request);
+        $data = $this->validatedEventData($request, $eventNight);
         $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
 
         $service->update($eventNight, $data);
@@ -98,11 +119,18 @@ class AdminEventsController extends Controller
             ->with('status', 'Event deleted.');
     }
 
-    private function validatedEventData(Request $request): array
+    private function validatedEventData(Request $request, ?EventNight $eventNight = null): array
     {
         return $request->validate([
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')],
+            'code' => [
+                'required',
+                'string',
+                'max:12',
+                Rule::unique('event_nights', 'code')->ignore($eventNight?->id),
+            ],
             'starts_at' => ['required', 'date'],
+            'ends_at' => ['required', 'date', 'after_or_equal:starts_at'],
             'break_seconds' => ['required', 'integer', 'min:0'],
             'request_cooldown_seconds' => ['required', 'integer', 'min:0'],
             'join_pin' => ['nullable', 'string', 'max:10'],

@@ -28,7 +28,9 @@ class AdminEventCrudTest extends TestCase
 
         $response = $this->actingAs($admin, 'admin')->post('/admin/events', [
             'venue_id' => $venue->id,
+            'code' => 'KARAOKE01',
             'starts_at' => '2024-04-01 19:00:00',
+            'ends_at' => '2024-04-02 01:00:00',
             'break_seconds' => 120,
             'request_cooldown_seconds' => 60,
             'join_pin' => '1234',
@@ -39,8 +41,9 @@ class AdminEventCrudTest extends TestCase
         $this->assertDatabaseCount('event_nights', 1);
 
         $eventNight = EventNight::firstOrFail();
-        $this->assertNotEmpty($eventNight->code);
+        $this->assertSame('KARAOKE01', $eventNight->code);
         $this->assertSame($venue->id, $eventNight->venue_id);
         $this->assertSame(EventNight::STATUS_DRAFT, $eventNight->status);
+        $this->assertSame('2024-04-02 01:00:00', $eventNight->ends_at?->format('Y-m-d H:i:s'));
     }
 }

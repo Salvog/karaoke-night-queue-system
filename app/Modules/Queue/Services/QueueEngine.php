@@ -40,6 +40,60 @@ class QueueEngine
         return $result;
     }
 
+    public function start(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
+    {
+        $now = $now ?? now();
+
+        $result = DB::transaction(function () use ($eventNight, $now) {
+            $playbackState = $this->lockPlaybackState($eventNight);
+
+            if ($playbackState->state === PlaybackState::STATE_PLAYING) {
+                return $this->lockCurrentRequest($playbackState);
+            }
+
+            if ($playbackState->state === PlaybackState::STATE_PAUSED && $playbackState->current_request_id) {
+                $currentRequest = $this->lockCurrentRequest($playbackState);
+
+                if (! $currentRequest) {
+                    $this->setIdle($playbackState);
+
+                    return null;
+                }
+
+                $currentRequest->loadMissing('song');
+
+                if (! $currentRequest->song) {
+                    throw new ModelNotFoundException('Song not found for request.');
+                }
+
+                $durationSeconds = $currentRequest->song->duration_seconds + $eventNight->break_seconds;
+
+                $playbackState->fill([
+                    'state' => PlaybackState::STATE_PLAYING,
+                    'started_at' => $now,
+                    'expected_end_at' => $now->copy()->addSeconds($durationSeconds),
+                ])->save();
+
+                return $currentRequest;
+            }
+
+            $nextRequest = $this->findNextQueuedRequest($eventNight);
+
+            if (! $nextRequest) {
+                $this->setIdle($playbackState);
+
+                return null;
+            }
+
+            return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+        });
+
+        $this->publisher->publishPlaybackUpdated($eventNight);
+        $this->publisher->publishQueueUpdated($eventNight);
+
+        return $result;
+    }
+
     public function advanceIfNeeded(EventNight $eventNight, ?Carbon $now = null): void
     {
         $now = $now ?? now();
@@ -155,7 +209,7 @@ class QueueEngine
         }
     }
 
-    public function stop(EventNight $eventNight): void
+    public function pause(EventNight $eventNight): void
     {
         DB::transaction(function () use ($eventNight) {
             $playbackState = $this->lockPlaybackState($eventNight);
@@ -163,6 +217,7 @@ class QueueEngine
             $playbackState->fill([
                 'state' => PlaybackState::STATE_PAUSED,
                 'expected_end_at' => null,
+                'started_at' => null,
             ])->save();
         });
 

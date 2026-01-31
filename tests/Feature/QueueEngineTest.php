@@ -57,14 +57,14 @@ class QueueEngineTest extends TestCase
         $this->assertSame($requests['second']->id, PlaybackState::firstOrFail()->current_request_id);
     }
 
-    public function test_stop_freezes_playback(): void
+    public function test_pause_freezes_playback(): void
     {
         $eventNight = $this->seedEvent();
         $requests = $this->seedRequests($eventNight);
         $queueEngine = $this->app->make(QueueEngine::class);
 
         $queueEngine->startNext($eventNight, Carbon::parse('2024-01-01 10:00:00'));
-        $queueEngine->stop($eventNight);
+        $queueEngine->pause($eventNight);
 
         $queueEngine->advanceIfNeeded($eventNight, Carbon::parse('2024-01-01 10:05:00'));
 
@@ -108,6 +108,7 @@ class QueueEngineTest extends TestCase
             'request_cooldown_seconds' => 0,
             'status' => EventNight::STATUS_ACTIVE,
             'starts_at' => now(),
+            'ends_at' => now()->addHours(4),
         ]);
     }
 
