@@ -115,7 +115,7 @@ class PublicJoinController extends Controller
         }
 
         $songs = $query->orderBy('title')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->paginate($perPage, ['id', 'title', 'artist', 'duration_seconds'], 'page', $page);
 
         return response()->json([
             'data' => $songs->items(),
