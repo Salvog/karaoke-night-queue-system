@@ -197,6 +197,12 @@ class QueueEngine
             $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at, false);
 
             if ($remainingSeconds <= 0) {
+                $currentRequest = $this->lockCurrentRequest($playbackState);
+
+                if ($currentRequest) {
+                    $this->markPlayed($currentRequest, $now);
+                }
+
                 $this->setIdle($playbackState);
                 $shouldStartNext = true;
 
