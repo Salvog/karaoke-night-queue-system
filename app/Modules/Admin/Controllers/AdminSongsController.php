@@ -15,11 +15,37 @@ class AdminSongsController extends Controller
     {
         Gate::forUser($request->user('admin'))->authorize('access-admin');
 
-        $songs = Song::orderBy('artist')->orderBy('title')->get();
+        $title = trim((string) $request->query('title', ''));
+        $artist = trim((string) $request->query('artist', ''));
+
+        $songs = Song::query()
+            ->when($title !== '', fn ($query) => $query->where('title', 'like', '%' . $title . '%'))
+            ->when($artist !== '', fn ($query) => $query->where('artist', 'like', '%' . $artist . '%'))
+            ->orderBy('artist')
+            ->orderBy('title')
+            ->get();
 
         return view('admin.songs.index', [
             'songs' => $songs,
+            'filters' => [
+                'title' => $title,
+                'artist' => $artist,
+            ],
+            'newSong' => new Song(),
         ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        Gate::forUser($request->user('admin'))->authorize('access-admin');
+
+        $data = $this->validatedData($request);
+
+        Song::create($data);
+
+        return redirect()
+            ->route('admin.songs.index')
+            ->with('status', 'Song added.');
     }
 
     public function edit(Request $request, Song $song): View
