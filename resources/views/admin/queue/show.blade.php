@@ -43,7 +43,13 @@
                 <div>
                     <div class="label">Expected End</div>
                     @php($expectedEndAt = $eventNight->playbackState?->expected_end_at)
-                    <div class="value">{{ $expectedEndAt ? $expectedEndAt->setTimezone(date_default_timezone_get())->format('H:i:s') : '—' }}</div>
+                    <div class="value">
+                        @if ($expectedEndAt)
+                            <span data-expected-end="{{ $expectedEndAt->toIso8601String() }}">{{ $expectedEndAt->format('H:i:s') }}</span>
+                        @else
+                            —
+                        @endif
+                    </div>
                 </div>
             </div>
             <div class="actions" style="margin-top: 16px;">
@@ -180,4 +186,15 @@
             </table>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('[data-expected-end]').forEach((element) => {
+            const isoValue = element.dataset.expectedEnd;
+            const parsed = isoValue ? new Date(isoValue) : null;
+
+            if (parsed && !Number.isNaN(parsed.getTime())) {
+                element.textContent = parsed.toLocaleTimeString();
+            }
+        });
+    </script>
 @endsection
