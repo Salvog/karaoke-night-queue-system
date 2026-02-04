@@ -70,7 +70,7 @@ class AdminEventsController extends Controller
 
         return redirect()
             ->route('admin.events.edit', $eventNight)
-            ->with('status', 'Event created.');
+            ->with('status', 'Evento creato.');
     }
 
     public function edit(Request $request, EventNight $eventNight): View
@@ -101,7 +101,7 @@ class AdminEventsController extends Controller
 
         return redirect()
             ->route('admin.events.edit', $eventNight)
-            ->with('status', 'Event updated.');
+            ->with('status', 'Evento aggiornato.');
     }
 
     public function destroy(Request $request, EventNight $eventNight): RedirectResponse
@@ -113,7 +113,7 @@ class AdminEventsController extends Controller
 
         return redirect()
             ->route('admin.events.index')
-            ->with('status', 'Event deleted.');
+            ->with('status', 'Evento eliminato.');
     }
 
     private function validatedEventData(Request $request, ?EventNight $eventNight = null): array

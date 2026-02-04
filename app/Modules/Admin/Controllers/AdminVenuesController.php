@@ -40,7 +40,7 @@ class AdminVenuesController extends Controller
 
         return redirect()
             ->route('admin.venues.edit', $venue)
-            ->with('status', 'Venue created.');
+            ->with('status', 'Location creata.');
     }
 
     public function edit(Request $request, Venue $venue): View
@@ -62,7 +62,7 @@ class AdminVenuesController extends Controller
 
         return redirect()
             ->route('admin.venues.edit', $venue)
-            ->with('status', 'Venue updated.');
+            ->with('status', 'Location aggiornata.');
     }
 
     public function destroy(Request $request, Venue $venue): RedirectResponse
@@ -73,7 +73,7 @@ class AdminVenuesController extends Controller
 
         return redirect()
             ->route('admin.venues.index')
-            ->with('status', 'Venue deleted.');
+            ->with('status', 'Location eliminata.');
     }
 
     private function validatedData(Request $request, ?Venue $venue = null): array

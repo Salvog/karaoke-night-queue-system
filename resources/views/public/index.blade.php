@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Karaoke Night | Public</title>
+    <title>Karaoke Night | Pubblico</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #f8fafc; }
         header { padding: 24px; background: #111827; }
@@ -20,18 +20,18 @@
 </head>
 <body>
 <header>
-    <h1>Public access</h1>
-    <div>Enter the event code to join or open the public screen.</div>
+    <h1>Accesso pubblico</h1>
+    <div>Inserisci il codice evento per partecipare o aprire lo schermo pubblico.</div>
 </header>
 <main>
     <div class="card">
-        <label for="event-code">Event code</label>
-        <input id="event-code" type="text" placeholder="e.g. EVENT1" autocomplete="off">
+        <label for="event-code">Codice evento</label>
+        <input id="event-code" type="text" placeholder="es. EVENT1" autocomplete="off">
         <div class="actions">
-            <button class="button" type="button" data-target="join">Join</button>
-            <button class="button secondary" type="button" data-target="screen">Public screen</button>
+            <button class="button" type="button" data-target="join">Partecipa</button>
+            <button class="button secondary" type="button" data-target="screen">Schermo pubblico</button>
         </div>
-        <div class="hint">Join opens the request page. Public screen is intended for a shared display.</div>
+        <div class="hint">Partecipa apre la pagina di richiesta. Lo schermo pubblico e' pensato per una visualizzazione condivisa.</div>
     </div>
 </main>
 <script>

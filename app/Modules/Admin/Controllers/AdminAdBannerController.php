@@ -37,7 +37,7 @@ class AdminAdBannerController extends Controller
 
         $publisher->publishThemeUpdated($eventNight);
 
-        return back()->with('status', 'Banner created.');
+        return back()->with('status', 'Banner creato.');
     }
 
     public function update(
@@ -73,7 +73,7 @@ class AdminAdBannerController extends Controller
 
         $this->publishBannerUpdates($adBanner, $publisher);
 
-        return back()->with('status', 'Banner updated.');
+        return back()->with('status', 'Banner aggiornato.');
     }
 
     public function destroy(
@@ -95,7 +95,7 @@ class AdminAdBannerController extends Controller
 
         $this->publishBannerUpdates($adBanner, $publisher);
 
-        return back()->with('status', 'Banner deleted.');
+        return back()->with('status', 'Banner eliminato.');
     }
 
     private function deletePublicAsset(string $url): void

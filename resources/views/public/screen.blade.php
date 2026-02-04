@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Karaoke Night | Screen</title>
+    <title>Karaoke Night | Schermo</title>
     <style>
         :root {
             --primary-color: #38bdf8;
@@ -143,7 +143,7 @@
 <body>
 <header>
     <div>
-        <h1>Now Playing</h1>
+        <h1>In riproduzione</h1>
         <div class="event-name" id="event-name"></div>
     </div>
     <div class="status-pill" id="playback-status"></div>
@@ -151,22 +151,22 @@
 <div class="overlay-texts" id="overlay-texts"></div>
 <main>
     <section class="panel now-playing">
-        <h2>Current Song</h2>
+        <h2>Canzone corrente</h2>
         <div class="song-title" id="now-title">—</div>
         <div class="song-artist" id="now-artist"></div>
-        <div class="lyrics" id="now-lyrics">Waiting for the next song...</div>
+        <div class="lyrics" id="now-lyrics">In attesa della prossima canzone...</div>
         <div class="updated-at" id="playback-updated"></div>
     </section>
 
     <section class="panel queue">
-        <h2>Up Next</h2>
+        <h2>Prossime</h2>
         <ul class="queue-list" id="next-list"></ul>
 
-        <h2 style="margin-top: 24px;">Recently Played</h2>
+        <h2 style="margin-top: 24px;">Riprodotte di recente</h2>
         <ul class="queue-list" id="recent-list"></ul>
 
         <div class="banner" id="banner" hidden>
-            <img id="banner-image" alt="Ad banner">
+            <img id="banner-image" alt="Banner pubblicitario">
             <div class="banner-title" id="banner-title"></div>
         </div>
         <div class="updated-at" id="theme-updated"></div>
@@ -197,19 +197,19 @@
 
     const formatSong = (song) => {
         if (!song) {
-            return 'No song queued';
+            return 'Nessuna canzone in coda';
         }
         return song.artist ? `${song.title} — ${song.artist}` : song.title;
     };
 
     const updatePlayback = (playback) => {
         const song = playback.song;
-        elements.nowTitle.textContent = song?.title ?? 'No song playing';
+        elements.nowTitle.textContent = song?.title ?? 'Nessuna canzone in riproduzione';
         elements.nowArtist.textContent = song?.artist ?? '';
-        elements.nowLyrics.textContent = song?.lyrics || 'Lyrics unavailable.';
-        elements.playbackStatus.textContent = playback.state ? playback.state.toUpperCase() : 'IDLE';
+        elements.nowLyrics.textContent = song?.lyrics || 'Testo non disponibile.';
+        elements.playbackStatus.textContent = playback.state ? playback.state.toUpperCase() : 'IN ATTESA';
         elements.playbackUpdated.textContent = playback.expected_end_at
-            ? `Expected end: ${new Date(playback.expected_end_at).toLocaleTimeString()}`
+            ? `Fine prevista: ${new Date(playback.expected_end_at).toLocaleTimeString()}`
             : '';
     };
 
@@ -228,9 +228,9 @@
             const meta = document.createElement('div');
             meta.className = 'queue-meta';
             if (item.position) {
-                meta.textContent = `Position ${item.position}`;
+                meta.textContent = `Posizione ${item.position}`;
             } else if (item.played_at) {
-                meta.textContent = `Played ${new Date(item.played_at).toLocaleTimeString()}`;
+                meta.textContent = `Riprodotta ${new Date(item.played_at).toLocaleTimeString()}`;
             }
             li.appendChild(title);
             li.appendChild(meta);
@@ -239,8 +239,8 @@
     };
 
     const updateQueue = (queue) => {
-        renderList(elements.nextList, queue.next, 'No upcoming songs yet.');
-        renderList(elements.recentList, queue.recent, 'Nothing played yet.');
+        renderList(elements.nextList, queue.next, 'Nessuna prossima canzone al momento.');
+        renderList(elements.recentList, queue.recent, 'Nessuna canzone riprodotta finora.');
     };
 
     const updateTheme = (theme) => {
@@ -276,7 +276,7 @@
             elements.overlayTexts.appendChild(wrapper);
         });
 
-        elements.themeUpdated.textContent = theme.theme?.name ? `Theme: ${theme.theme.name}` : '';
+        elements.themeUpdated.textContent = theme.theme?.name ? `Tema: ${theme.theme.name}` : '';
     };
 
     const renderState = (state) => {

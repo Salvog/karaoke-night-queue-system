@@ -64,7 +64,7 @@ class PublicJoinController extends Controller
         $participant = $this->service->resolveParticipant($eventNight, $deviceCookieId);
         $this->service->activateParticipant($eventNight, $participant, $data['pin'] ?? null);
 
-        return back()->with('status', 'Access granted.');
+        return back()->with('status', 'Accesso consentito.');
     }
 
     public function requestSong(Request $request, string $eventCode): RedirectResponse
@@ -85,7 +85,7 @@ class PublicJoinController extends Controller
             (int) $data['song_id']
         );
 
-        return back()->with('status', 'Song requested.');
+        return back()->with('status', 'Canzone richiesta.');
     }
 
     public function searchSongs(Request $request, string $eventCode): JsonResponse

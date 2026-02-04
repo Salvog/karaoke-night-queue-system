@@ -23,9 +23,9 @@ class EventNight extends Model
     ];
 
     public const STATUS_LABELS = [
-        self::STATUS_DRAFT => 'Draft',
-        self::STATUS_ACTIVE => 'Active',
-        self::STATUS_CLOSED => 'Closed',
+        self::STATUS_DRAFT => 'Bozza',
+        self::STATUS_ACTIVE => 'Attivo',
+        self::STATUS_CLOSED => 'Chiuso',
     ];
 
     protected $fillable = [

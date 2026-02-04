@@ -71,7 +71,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Song request skipped.');
+        return back()->with('status', 'Richiesta canzone saltata.');
     }
 
     public function cancel(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -98,7 +98,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Song request canceled.');
+        return back()->with('status', 'Richiesta canzone annullata.');
     }
 
     public function stop(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -118,7 +118,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Playback paused.');
+        return back()->with('status', 'Riproduzione in pausa.');
     }
 
     public function start(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -138,7 +138,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Playback started.');
+        return back()->with('status', 'Riproduzione avviata.');
     }
 
     public function resume(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -158,7 +158,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Playback resumed.');
+        return back()->with('status', 'Riproduzione ripresa.');
     }
 
     public function next(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse
@@ -178,7 +178,7 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Moved to the next song.');
+        return back()->with('status', 'Passato alla prossima canzone.');
     }
 
     public function add(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueManualService $queueManualService): RedirectResponse
@@ -205,6 +205,6 @@ class AdminQueueController extends Controller
             ]
         ));
 
-        return back()->with('status', 'Participant added to the queue.');
+        return back()->with('status', 'Partecipante aggiunto alla coda.');
     }
 }

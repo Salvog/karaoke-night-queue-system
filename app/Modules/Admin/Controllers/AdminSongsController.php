@@ -45,7 +45,7 @@ class AdminSongsController extends Controller
 
         return redirect()
             ->route('admin.songs.index')
-            ->with('status', 'Song added.');
+            ->with('status', 'Canzone aggiunta.');
     }
 
     public function edit(Request $request, Song $song): View
@@ -67,7 +67,7 @@ class AdminSongsController extends Controller
 
         return redirect()
             ->route('admin.songs.edit', $song)
-            ->with('status', 'Song updated.');
+            ->with('status', 'Canzone aggiornata.');
     }
 
     public function destroy(Request $request, Song $song): RedirectResponse
@@ -78,7 +78,7 @@ class AdminSongsController extends Controller
 
         return redirect()
             ->route('admin.songs.index')
-            ->with('status', 'Song deleted.');
+            ->with('status', 'Canzone eliminata.');
     }
 
     private function validatedData(Request $request): array

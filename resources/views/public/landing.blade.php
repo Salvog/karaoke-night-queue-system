@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Karaoke Night | Join</title>
+    <title>Karaoke Night | Partecipa</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #f8fafc; }
         header { padding: 24px; background: #111827; }
@@ -29,8 +29,8 @@
 </head>
 <body>
 <header>
-    <h1>Join {{ $eventNight->venue?->name ?? 'Karaoke Night' }}</h1>
-    <div>Event code: <strong>{{ $eventNight->code }}</strong></div>
+    <h1>Partecipa a {{ $eventNight->venue?->name ?? 'Karaoke Night' }}</h1>
+    <div>Codice evento: <strong>{{ $eventNight->code }}</strong></div>
 </header>
 <main>
     @if (session('status'))
@@ -51,31 +51,31 @@
         <div class="card">
             <form method="POST" action="{{ route('public.join.activate', $eventNight->code) }}">
                 @csrf
-                <label for="pin">Enter PIN to activate</label>
+                <label for="pin">Inserisci il PIN per attivare</label>
                 <input id="pin" name="pin" type="password" autocomplete="one-time-code">
-                <button class="button secondary" type="submit">Activate</button>
+                <button class="button secondary" type="submit">Attiva</button>
             </form>
         </div>
     @endif
 
     <div class="card">
-        <h2>Request a song</h2>
+        <h2>Richiedi una canzone</h2>
         @if ($eventNight->request_cooldown_seconds > 0)
-            <p class="cooldown">You can request a song every {{ $eventNight->request_cooldown_seconds }} seconds.</p>
+            <p class="cooldown">Puoi richiedere una canzone ogni {{ $eventNight->request_cooldown_seconds }} secondi.</p>
         @endif
         <div class="search-bar">
-            <label for="song-search">Search by title or artist</label>
-            <input id="song-search" type="text" placeholder="Start typing to search...">
+            <label for="song-search">Cerca per titolo o artista</label>
+            <input id="song-search" type="text" placeholder="Inizia a digitare per cercare...">
         </div>
-        <div class="search-meta" id="search-meta">Showing results.</div>
+        <div class="search-meta" id="search-meta">Mostro i risultati.</div>
         <div id="song-results"></div>
         <div class="pagination">
-            <button class="button secondary" id="prev-page" type="button">Previous</button>
+            <button class="button secondary" id="prev-page" type="button">Precedente</button>
             <span id="page-info"></span>
-            <button class="button secondary" id="next-page" type="button">Next</button>
+            <button class="button secondary" id="next-page" type="button">Successivo</button>
         </div>
         <noscript>
-            <p class="empty-state">Enable JavaScript to search songs.</p>
+            <p class="empty-state">Abilita JavaScript per cercare le canzoni.</p>
         </noscript>
     </div>
 </main>
@@ -121,7 +121,7 @@
         if (payload.data.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'empty-state';
-            empty.textContent = 'No songs found.';
+            empty.textContent = 'Nessuna canzone trovata.';
             elements.results.appendChild(empty);
         } else {
             payload.data.forEach((song) => {
@@ -132,7 +132,7 @@
                 const title = document.createElement('strong');
                 title.textContent = song.title;
                 const artist = document.createElement('span');
-                artist.textContent = song.artist ?? 'Unknown artist';
+                artist.textContent = song.artist ?? 'Artista sconosciuto';
                 const duration = document.createElement('span');
                 duration.className = 'search-meta';
                 duration.textContent = formatDuration(song.duration_seconds);
@@ -166,7 +166,7 @@
                 const button = document.createElement('button');
                 button.className = 'button';
                 button.type = 'submit';
-                button.textContent = 'Request';
+                button.textContent = 'Richiedi';
 
                 form.appendChild(csrfInput);
                 form.appendChild(songInput);
@@ -180,10 +180,10 @@
             });
         }
 
-        elements.pageInfo.textContent = `Page ${payload.meta.current_page} of ${payload.meta.last_page}`;
+        elements.pageInfo.textContent = `Pagina ${payload.meta.current_page} di ${payload.meta.last_page}`;
         elements.prevPage.disabled = payload.meta.current_page <= 1;
         elements.nextPage.disabled = payload.meta.current_page >= payload.meta.last_page;
-        elements.meta.textContent = `Showing ${payload.meta.total} result(s).`;
+        elements.meta.textContent = `Mostrati ${payload.meta.total} risultati.`;
     };
 
     const renderError = (message) => {
@@ -205,14 +205,14 @@
             per_page: state.perPage,
         });
 
-        elements.meta.textContent = 'Loading songs...';
+        elements.meta.textContent = 'Caricamento canzoni...';
 
         const response = await fetch(`${searchUrl}?${params.toString()}`, {
             headers: { 'Accept': 'application/json' },
         });
 
         if (!response.ok) {
-            renderError('Unable to load songs.');
+            renderError('Impossibile caricare le canzoni.');
             return;
         }
 
@@ -263,17 +263,17 @@
             });
 
             if (!response.ok) {
-                throw new Error('Unable to fetch ETA');
+                throw new Error('Impossibile recuperare l\'attesa');
             }
 
             const payload = await response.json();
-            const shouldSubmit = confirm(`Estimated wait: ${payload.eta_label}. Confirm request?`);
+            const shouldSubmit = confirm(`Attesa stimata: ${payload.eta_label}. Confermi la richiesta?`);
 
             if (shouldSubmit) {
                 event.target.submit();
             }
         } catch (error) {
-            const shouldSubmit = confirm('Unable to calculate ETA right now. Request anyway?');
+            const shouldSubmit = confirm('Impossibile calcolare l\'attesa al momento. Vuoi richiedere comunque?');
             if (shouldSubmit) {
                 event.target.submit();
             }
