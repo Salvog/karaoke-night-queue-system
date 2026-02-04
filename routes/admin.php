@@ -24,6 +24,7 @@ Route::middleware(['admin.auth', 'admin.role'])->group(function () {
     Route::delete('/events/{eventNight}', [AdminEventsController::class, 'destroy'])->name('admin.events.destroy');
 
     Route::get('/songs', [AdminSongsController::class, 'index'])->name('admin.songs.index');
+    Route::post('/songs', [AdminSongsController::class, 'store'])->name('admin.songs.store');
     Route::get('/songs/{song}/edit', [AdminSongsController::class, 'edit'])->name('admin.songs.edit');
     Route::put('/songs/{song}', [AdminSongsController::class, 'update'])->name('admin.songs.update');
     Route::delete('/songs/{song}', [AdminSongsController::class, 'destroy'])->name('admin.songs.destroy');

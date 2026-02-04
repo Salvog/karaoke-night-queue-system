@@ -18,7 +18,7 @@
         th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
         th { background: #f9fafb; font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em; color: #6b7280; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .button { background: #111827; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .button { background: #111827; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .button.secondary { background: #4b5563; }
         .button.danger { background: #b91c1c; }
         .button.success { background: #16a34a; }
@@ -38,6 +38,8 @@
         .form-grid { display: grid; gap: 12px; }
         input[type="text"], input[type="number"], input[type="datetime-local"], textarea, select {
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             padding: 10px 12px;
             border-radius: 6px;
             border: 1px solid #d1d5db;
