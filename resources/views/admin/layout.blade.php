@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin | Karaoke Night</title>
+    <title>Amministrazione | Karaoke Night</title>
     <style>
         body { font-family: 'Inter', Arial, sans-serif; margin: 0; background: #f3f4f6; color: #111827; }
         nav { background: #0f172a; padding: 16px 24px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
@@ -51,18 +51,18 @@
 <body>
 <nav>
     <div class="nav-links">
-        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
-        <a href="{{ route('admin.events.index') }}">Events</a>
-        <a href="{{ route('admin.songs.index') }}">Songs</a>
-        <a href="{{ route('admin.venues.index') }}">Venues</a>
+        <a href="{{ route('admin.dashboard') }}">Panoramica</a>
+        <a href="{{ route('admin.events.index') }}">Eventi</a>
+        <a href="{{ route('admin.songs.index') }}">Canzoni</a>
+        <a href="{{ route('admin.venues.index') }}">Location</a>
         @isset($eventNight)
-            <a href="{{ route('admin.queue.show', $eventNight) }}">Queue</a>
-            <a href="{{ route('admin.theme.show', $eventNight) }}">Theme/Ads</a>
+            <a href="{{ route('admin.queue.show', $eventNight) }}">Coda</a>
+            <a href="{{ route('admin.theme.show', $eventNight) }}">Tema/Annunci</a>
         @endisset
     </div>
     <form method="POST" action="{{ route('admin.logout') }}">
         @csrf
-        <button class="button secondary" type="submit">Logout</button>
+        <button class="button secondary" type="submit">Esci</button>
     </form>
 </nav>
 <main>

@@ -95,7 +95,7 @@ class AdminThemeController extends Controller
 
         $publisher->publishThemeUpdated($eventNight);
 
-        return back()->with('status', 'Theme/ads updated.');
+        return back()->with('status', 'Tema/annunci aggiornati.');
     }
 
     private function buildEventThemeUpdate(Request $request, EventNight $eventNight, array $base): array

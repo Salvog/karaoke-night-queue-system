@@ -1,6 +1,6 @@
 @extends('admin.layout')
 
 @section('content')
-    <h1>Admin Dashboard</h1>
-    <p>Welcome to the admin area. Use the navigation to manage events, songs, queue, and themes.</p>
+    <h1>Pannello di controllo</h1>
+    <p>Benvenuto nell'area admin. Usa la navigazione per gestire eventi, canzoni, coda e temi.</p>
 @endsection

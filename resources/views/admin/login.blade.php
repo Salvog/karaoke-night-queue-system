@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Login</title>
+    <title>Accesso admin</title>
     <style>
         body { font-family: Arial, sans-serif; background: #111827; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
         .card { background: #fff; padding: 32px; border-radius: 8px; width: 360px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="card">
-    <h1>Admin Login</h1>
+    <h1>Accesso admin</h1>
     @if ($errors->any())
         <div class="error">{{ $errors->first() }}</div>
     @endif
@@ -28,10 +28,10 @@
         <input id="password" name="password" type="password" required>
 
         <label>
-            <input type="checkbox" name="remember" value="1"> Remember me
+            <input type="checkbox" name="remember" value="1"> Ricordami
         </label>
 
-        <button class="button" type="submit">Login</button>
+        <button class="button" type="submit">Accedi</button>
     </form>
 </div>
 </body>
