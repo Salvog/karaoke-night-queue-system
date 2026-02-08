@@ -29,7 +29,7 @@ class PublicScreenService
             'event' => [
                 'code' => $eventNight->code,
                 'venue' => $eventNight->venue?->name,
-                'timezone' => $eventNight->venue?->timezone,
+                'timezone' => $eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'),
             ],
             'playback' => $this->buildPlaybackPayload($eventNight),
             'queue' => $this->buildQueuePayload($eventNight),

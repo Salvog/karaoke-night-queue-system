@@ -7,7 +7,7 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Europe/Rome'),
     'locale' => 'en',
     'fallback_locale' => 'en',
     'key' => env('APP_KEY'),

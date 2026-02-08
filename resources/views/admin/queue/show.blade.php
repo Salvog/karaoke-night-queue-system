@@ -188,13 +188,24 @@
     </div>
 
     <script>
-        document.querySelectorAll('[data-expected-end]').forEach((element) => {
-            const isoValue = element.dataset.expectedEnd;
-            const parsed = isoValue ? new Date(isoValue) : null;
+        (function () {
+            const eventTimezone = @json($eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'));
+            const formatTime = (date) => {
+                try {
+                    return date.toLocaleTimeString('it-IT', { timeZone: eventTimezone });
+                } catch (error) {
+                    return date.toLocaleTimeString('it-IT');
+                }
+            };
 
-            if (parsed && !Number.isNaN(parsed.getTime())) {
-                element.textContent = parsed.toLocaleTimeString();
-            }
-        });
+            document.querySelectorAll('[data-expected-end]').forEach((element) => {
+                const isoValue = element.dataset.expectedEnd;
+                const parsed = isoValue ? new Date(isoValue) : null;
+
+                if (parsed && !Number.isNaN(parsed.getTime())) {
+                    element.textContent = formatTime(parsed);
+                }
+            });
+        })();
     </script>
 @endsection

@@ -5,7 +5,7 @@
     </div>
     <div>
         <label for="timezone">Fuso orario</label>
-        <input id="timezone" type="text" name="timezone" value="{{ old('timezone', $venue->timezone ?? 'UTC') }}" required>
+        <input id="timezone" type="text" name="timezone" value="{{ old('timezone', $venue->timezone ?? config('app.timezone', 'Europe/Rome')) }}" required>
         <div class="helper">Usa un identificatore TZ valido (es. Europe/Rome).</div>
     </div>
 </div>

@@ -195,6 +195,19 @@
         overlayTexts: document.getElementById('overlay-texts'),
     };
 
+    const resolveTimezone = () => state?.event?.timezone || 'Europe/Rome';
+    const formatTime = (isoValue) => {
+        const date = isoValue ? new Date(isoValue) : null;
+        if (!date || Number.isNaN(date.getTime())) {
+            return '';
+        }
+        try {
+            return date.toLocaleTimeString('it-IT', { timeZone: resolveTimezone() });
+        } catch (error) {
+            return date.toLocaleTimeString('it-IT');
+        }
+    };
+
     const formatSong = (song) => {
         if (!song) {
             return 'Nessuna canzone in coda';
@@ -209,7 +222,7 @@
         elements.nowLyrics.textContent = song?.lyrics || 'Testo non disponibile.';
         elements.playbackStatus.textContent = playback.state ? playback.state.toUpperCase() : 'IN ATTESA';
         elements.playbackUpdated.textContent = playback.expected_end_at
-            ? `Fine prevista: ${new Date(playback.expected_end_at).toLocaleTimeString()}`
+            ? `Fine prevista: ${formatTime(playback.expected_end_at)}`
             : '';
     };
 
@@ -230,7 +243,7 @@
             if (item.position) {
                 meta.textContent = `Posizione ${item.position}`;
             } else if (item.played_at) {
-                meta.textContent = `Riprodotta ${new Date(item.played_at).toLocaleTimeString()}`;
+                meta.textContent = `Riprodotta ${formatTime(item.played_at)}`;
             }
             li.appendChild(title);
             li.appendChild(meta);
