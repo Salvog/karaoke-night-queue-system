@@ -52,10 +52,12 @@
                     </div>
                 </div>
             </div>
+            @php($playbackState = $eventNight->playbackState)
+            @php($startDisabled = in_array($playbackState?->state, [\App\Models\PlaybackState::STATE_PLAYING, \App\Models\PlaybackState::STATE_PAUSED], true))
             <div class="actions" style="margin-top: 16px;">
                 <form method="POST" action="{{ route('admin.queue.start', $eventNight) }}">
                     @csrf
-                    <button class="button success" type="submit">Avvia riproduzione</button>
+                    <button class="button success" type="submit" {{ $startDisabled ? 'disabled' : '' }}>Avvia riproduzione</button>
                 </form>
                 <form method="POST" action="{{ route('admin.queue.stop', $eventNight) }}">
                     @csrf

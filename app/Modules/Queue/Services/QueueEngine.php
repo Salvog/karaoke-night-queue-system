@@ -23,15 +23,17 @@ class QueueEngine
 
         $result = DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
-            $nextRequest = $this->findNextQueuedRequest($eventNight);
+            $currentRequest = $this->normalizePlaybackState($eventNight, $playbackState);
 
-            if (! $nextRequest) {
-                $this->setIdle($playbackState);
-
-                return null;
+            if ($playbackState->state === PlaybackState::STATE_PLAYING && $currentRequest) {
+                return $currentRequest;
             }
 
-            return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+            if ($playbackState->state === PlaybackState::STATE_PAUSED) {
+                return $this->resumePausedPlayback($eventNight, $playbackState, $currentRequest, $now);
+            }
+
+            return $this->startNextQueuedRequest($eventNight, $playbackState, $now);
         });
 
         $this->publisher->publishPlaybackUpdated($eventNight);
@@ -179,50 +181,19 @@ class QueueEngine
     {
         $now = $now ?? now();
 
-        $shouldStartNext = false;
-        $result = DB::transaction(function () use ($eventNight, $now, &$shouldStartNext) {
+        $result = DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
+            $currentRequest = $this->normalizePlaybackState($eventNight, $playbackState);
 
             if ($playbackState->state !== PlaybackState::STATE_PAUSED) {
                 return null;
             }
 
-            if (! $playbackState->current_request_id || ! $playbackState->expected_end_at || ! $playbackState->paused_at) {
-                $this->setIdle($playbackState);
-                $shouldStartNext = true;
-
-                return null;
-            }
-
-            $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at, false);
-
-            if ($remainingSeconds <= 0) {
-                $currentRequest = $this->lockCurrentRequest($playbackState);
-
-                if ($currentRequest) {
-                    $this->markPlayed($currentRequest, $now);
-                }
-
-                $this->setIdle($playbackState);
-                $shouldStartNext = true;
-
-                return null;
-            }
-
-            $playbackState->fill([
-                'state' => PlaybackState::STATE_PLAYING,
-                'expected_end_at' => $now->copy()->addSeconds($remainingSeconds),
-                'paused_at' => null,
-            ])->save();
-
-            return $playbackState->currentRequest;
+            return $this->resumePausedPlayback($eventNight, $playbackState, $currentRequest, $now);
         });
 
-        if ($shouldStartNext) {
-            return $this->startNext($eventNight, $now);
-        }
-
         $this->publisher->publishPlaybackUpdated($eventNight);
+        $this->publisher->publishQueueUpdated($eventNight);
 
         return $result;
     }
@@ -233,24 +204,13 @@ class QueueEngine
 
         $result = DB::transaction(function () use ($eventNight, $now) {
             $playbackState = $this->lockPlaybackState($eventNight);
+            $currentRequest = $this->normalizePlaybackState($eventNight, $playbackState);
 
-            if ($playbackState->current_request_id) {
-                $currentRequest = $this->lockCurrentRequest($playbackState);
-
-                if ($currentRequest) {
-                    $this->markPlayed($currentRequest, $now);
-                }
+            if ($currentRequest) {
+                $this->markPlayed($currentRequest, $now);
             }
 
-            $nextRequest = $this->findNextQueuedRequest($eventNight);
-
-            if (! $nextRequest) {
-                $this->setIdle($playbackState);
-
-                return null;
-            }
-
-            return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+            return $this->startNextQueuedRequest($eventNight, $playbackState, $now);
         });
 
         $this->publisher->publishPlaybackUpdated($eventNight);
@@ -296,6 +256,112 @@ class QueueEngine
             ->orderBy('id')
             ->lockForUpdate()
             ->first();
+    }
+
+    private function normalizePlaybackState(EventNight $eventNight, PlaybackState $playbackState): ?SongRequest
+    {
+        $currentRequest = $this->lockCurrentRequest($playbackState);
+
+        $orphanedQuery = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('status', SongRequest::STATUS_PLAYING);
+
+        if ($currentRequest) {
+            $orphanedQuery->where('id', '!=', $currentRequest->id);
+        }
+
+        $orphanedQuery->update([
+            'status' => SongRequest::STATUS_QUEUED,
+            'played_at' => null,
+        ]);
+
+        if (! $currentRequest) {
+            if ($playbackState->state !== PlaybackState::STATE_IDLE || $playbackState->current_request_id) {
+                $this->setIdle($playbackState);
+            }
+
+            return null;
+        }
+
+        if ($playbackState->state === PlaybackState::STATE_IDLE) {
+            if ($currentRequest->status === SongRequest::STATUS_PLAYING) {
+                $currentRequest->update([
+                    'status' => SongRequest::STATUS_QUEUED,
+                    'played_at' => null,
+                ]);
+            }
+
+            $this->setIdle($playbackState);
+
+            return null;
+        }
+
+        if ($currentRequest->status === SongRequest::STATUS_QUEUED) {
+            $currentRequest->update([
+                'status' => SongRequest::STATUS_PLAYING,
+                'played_at' => null,
+            ]);
+        } elseif ($currentRequest->status !== SongRequest::STATUS_PLAYING) {
+            $this->setIdle($playbackState);
+
+            return null;
+        }
+
+        return $currentRequest;
+    }
+
+    private function startNextQueuedRequest(
+        EventNight $eventNight,
+        PlaybackState $playbackState,
+        Carbon $now
+    ): ?SongRequest
+    {
+        $nextRequest = $this->findNextQueuedRequest($eventNight);
+
+        if (! $nextRequest) {
+            $this->setIdle($playbackState);
+
+            return null;
+        }
+
+        return $this->startPlaybackForRequest($eventNight, $playbackState, $nextRequest, $now);
+    }
+
+    private function resumePausedPlayback(
+        EventNight $eventNight,
+        PlaybackState $playbackState,
+        ?SongRequest $currentRequest,
+        Carbon $now
+    ): ?SongRequest
+    {
+        if (! $currentRequest || ! $playbackState->expected_end_at || ! $playbackState->paused_at) {
+            if ($currentRequest && $currentRequest->status === SongRequest::STATUS_PLAYING) {
+                $currentRequest->update([
+                    'status' => SongRequest::STATUS_QUEUED,
+                    'played_at' => null,
+                ]);
+            }
+
+            $this->setIdle($playbackState);
+
+            return $this->startNextQueuedRequest($eventNight, $playbackState, $now);
+        }
+
+        $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at, false);
+
+        if ($remainingSeconds <= 0) {
+            $this->markPlayed($currentRequest, $now);
+            $this->setIdle($playbackState);
+
+            return $this->startNextQueuedRequest($eventNight, $playbackState, $now);
+        }
+
+        $playbackState->fill([
+            'state' => PlaybackState::STATE_PLAYING,
+            'expected_end_at' => $now->copy()->addSeconds($remainingSeconds),
+            'paused_at' => null,
+        ])->save();
+
+        return $currentRequest;
     }
 
     private function startPlaybackForRequest(
