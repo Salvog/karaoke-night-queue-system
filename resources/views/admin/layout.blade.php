@@ -85,7 +85,7 @@
         .topbar-inner {
             max-width: 1240px;
             margin: 0 auto;
-            padding: 14px 20px;
+            padding: 12px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -117,9 +117,9 @@
         .nav-links a {
             color: var(--text);
             text-decoration: none;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
-            padding: 8px 12px;
+            padding: 7px 12px;
             border-radius: 999px;
             border: 1px solid transparent;
             transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
@@ -138,7 +138,7 @@
         main {
             max-width: 1240px;
             margin: 0 auto;
-            padding: 28px 20px 44px;
+            padding: 22px 18px 34px;
         }
 
         .status,
@@ -170,7 +170,7 @@
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            padding: 22px;
+            padding: 18px;
             border-radius: 18px;
             box-shadow: var(--shadow);
             backdrop-filter: blur(5px);
@@ -202,7 +202,7 @@
 
         th,
         td {
-            padding: 11px 12px;
+            padding: 9px 11px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.09);
             text-align: left;
             vertical-align: top;
@@ -215,7 +215,7 @@
         th {
             background: rgba(255, 255, 255, 0.06);
             color: var(--muted);
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.12em;
             font-weight: 700;
@@ -230,8 +230,8 @@
         .button {
             border: 1px solid transparent;
             border-radius: 999px;
-            padding: 8px 14px;
-            font-size: 13px;
+            padding: 7px 13px;
+            font-size: 14px;
             font-weight: 700;
             color: #0a0a1f;
             background: linear-gradient(120deg, var(--accent-gold), #fff4b8);
@@ -278,7 +278,7 @@
             align-items: center;
             border-radius: 999px;
             padding: 4px 10px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
@@ -290,7 +290,7 @@
         .panel {
             background: rgba(255, 255, 255, 0.04);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -306,16 +306,17 @@
         }
 
         .label {
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.12em;
             color: var(--muted);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .value {
             font-weight: 700;
             color: #fff;
+            font-size: 1.03rem;
         }
 
         .grid {
@@ -336,7 +337,7 @@
         }
 
         .helper {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--muted);
             margin-top: 6px;
         }
@@ -362,10 +363,10 @@
             max-width: 100%;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 11px;
-            padding: 10px 12px;
+            padding: 9px 11px;
             color: #f6f8ff;
             background: rgba(6, 8, 27, 0.72);
-            font-size: 14px;
+            font-size: 15px;
             box-sizing: border-box;
             transition: border-color 150ms ease, box-shadow 150ms ease;
         }
@@ -451,9 +452,13 @@
             </ul>
         </div>
     @endif
-    <div class="card">
+    @if (trim($__env->yieldContent('without_content_card')))
         @yield('content')
-    </div>
+    @else
+        <div class="card">
+            @yield('content')
+        </div>
+    @endif
 </main>
 </body>
 </html>

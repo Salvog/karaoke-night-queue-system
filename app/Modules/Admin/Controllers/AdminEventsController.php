@@ -20,25 +20,47 @@ class AdminEventsController extends Controller
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
         $now = now();
-        $currentEvent = EventNight::with('venue')
-            ->where('status', EventNight::STATUS_ACTIVE)
-            ->whereNotNull('starts_at')
-            ->where('starts_at', '<=', $now)
-            ->where(function ($query) use ($now) {
-                $query->whereNull('ends_at')
-                    ->orWhere('ends_at', '>=', $now);
-            })
-            ->orderBy('starts_at')
-            ->first();
-
         $events = EventNight::with('venue')
-            ->when($currentEvent, fn ($query) => $query->whereKeyNot($currentEvent->id))
-            ->orderBy('starts_at')
+            ->orderByDesc('starts_at')
             ->get();
 
+        $isOngoing = static function (EventNight $eventNight) use ($now): bool {
+            if (! $eventNight->starts_at) {
+                return false;
+            }
+
+            if ($eventNight->starts_at->gt($now)) {
+                return false;
+            }
+
+            return ! $eventNight->ends_at || $eventNight->ends_at->gte($now);
+        };
+
+        $isFuture = static function (EventNight $eventNight) use ($now): bool {
+            return $eventNight->starts_at?->gt($now) ?? false;
+        };
+
+        $ongoingEvents = $events
+            ->filter($isOngoing)
+            ->sortBy('starts_at')
+            ->values();
+
+        $futureEvents = $events
+            ->reject($isOngoing)
+            ->filter($isFuture)
+            ->sortBy('starts_at')
+            ->values();
+
+        $pastEvents = $events
+            ->reject($isOngoing)
+            ->reject($isFuture)
+            ->sortByDesc(fn (EventNight $eventNight) => $eventNight->ends_at ?? $eventNight->starts_at)
+            ->values();
+
         return view('admin.events.index', [
-            'events' => $events,
-            'currentEvent' => $currentEvent,
+            'ongoingEvents' => $ongoingEvents,
+            'futureEvents' => $futureEvents,
+            'pastEvents' => $pastEvents,
             'adminUser' => $adminUser,
         ]);
     }

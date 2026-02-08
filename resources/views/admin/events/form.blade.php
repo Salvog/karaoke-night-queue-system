@@ -5,7 +5,7 @@
 
     $startsAt = old('starts_at', optional($eventNight?->starts_at)->format('Y-m-d\TH:i') ?? $defaultStart->format('Y-m-d\TH:i'));
     $endsAt = old('ends_at', optional($eventNight?->ends_at)->format('Y-m-d\TH:i') ?? $defaultEnd->format('Y-m-d\TH:i'));
-    $currentStatus = old('status', $eventNight->status ?? \App\Models\EventNight::STATUS_DRAFT);
+    $currentStatus = old('status', $eventNight->status ?? \App\Models\EventNight::STATUS_ACTIVE);
     $selectedVenueId = (int) old('venue_id', $eventNight->venue_id ?? ($venues->first()->id ?? 0));
     $breakSeconds = (int) old('break_seconds', $eventNight->break_seconds ?? 40);
 
@@ -38,16 +38,17 @@
 
     @media (min-width: 768px) {
         .event-form-grid {
-            grid-template-columns: repeat(2, minmax(250px, 360px));
+            grid-template-columns: repeat(2, minmax(260px, 380px));
             justify-content: start;
             column-gap: 22px;
         }
     }
 
-    @media (min-width: 1280px) {
-        .event-form-grid {
-            grid-template-columns: repeat(3, minmax(230px, 340px));
-        }
+    .event-field.code-field input {
+        max-width: 180px;
+        font-family: 'Consolas', 'Courier New', monospace;
+        letter-spacing: 0.08em;
+        font-size: 13px;
     }
 </style>
 
@@ -63,10 +64,9 @@
         </select>
     </div>
 
-    <div class="event-field">
-        <label for="code_preview">Codice evento</label>
+    <div class="event-field code-field">
+        <label for="code_preview">Codice evento (generato automaticamente)</label>
         <input id="code_preview" type="text" value="{{ $eventCode }}" readonly>
-        <p class="helper event-helper">Generato automaticamente e bloccato per evitare errori manuali.</p>
     </div>
 
     <div class="event-field">
