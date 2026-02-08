@@ -85,7 +85,7 @@
                     <div class="helper">Aggiunti dopo ogni canzone per consentire le transizioni.</div>
                 </div>
                 <div>
-                    <div class="label">Attesa richieste</div>
+                    <div class="label">Attesa richieste (minuti)</div>
                     <div class="value">{{ $eventNight->request_cooldown_seconds }}</div>
                     <div class="helper">Attesa minima tra le richieste per cantante.</div>
                 </div>

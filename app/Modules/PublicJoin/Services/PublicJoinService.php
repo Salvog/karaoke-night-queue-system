@@ -169,9 +169,13 @@ class PublicJoinService
 
     private function enforceCooldown(EventNight $eventNight, Participant $participant): void
     {
-        if ($eventNight->request_cooldown_seconds <= 0) {
+        $cooldownMinutes = (int) $eventNight->request_cooldown_seconds;
+
+        if ($cooldownMinutes <= 0) {
             return;
         }
+
+        $cooldownSeconds = $cooldownMinutes * 60;
 
         $latestRequest = SongRequest::where('event_night_id', $eventNight->id)
             ->where('participant_id', $participant->id)
@@ -184,14 +188,15 @@ class PublicJoinService
 
         $secondsSinceLast = $latestRequest->created_at?->diffInSeconds(now()) ?? PHP_INT_MAX;
 
-        if ($secondsSinceLast >= $eventNight->request_cooldown_seconds) {
+        if ($secondsSinceLast >= $cooldownSeconds) {
             return;
         }
 
-        $remaining = $eventNight->request_cooldown_seconds - $secondsSinceLast;
+        $remainingSeconds = $cooldownSeconds - $secondsSinceLast;
+        $remainingMinutes = (int) ceil($remainingSeconds / 60);
 
         throw ValidationException::withMessages([
-            'cooldown' => "Please wait {$remaining} seconds before requesting another song.",
+            'cooldown' => "Please wait {$remainingMinutes} minutes before requesting another song.",
         ]);
     }
 }
