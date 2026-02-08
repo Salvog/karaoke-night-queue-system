@@ -12,6 +12,7 @@ Laravel-based modular monolith for managing karaoke night queues.
 - PHP 8.2+
 - Composer
 - MySQL (default) or Postgres
+- GD extension (optional, recommended for full image-upload test coverage)
 
 ## Local setup
 ```bash
@@ -32,6 +33,11 @@ You can re-run the demo data at any time:
 ```bash
 php artisan db:seed --class=DemoDataSeeder
 ```
+
+Notes:
+- `DemoDataSeeder` runs only in `local` and `testing` environments.
+- It is idempotent for core entities (admin users, venues, themes, banners, songs, events).
+- It refreshes runtime data (participants, queue requests, playback state) for the seeded demo events.
 
 ## Environment variables
 Key settings to review in `.env`:
@@ -76,6 +82,12 @@ composer run stan
 composer run pint
 ```
 
+## Testing
+- Prefer `php artisan test` in this project.
+- The custom `test` command forces a safe test runtime (`APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`).
+- There is an additional hard guard in `tests/CreatesApplication.php`: tests abort if the DB is not `sqlite/:memory:` to prevent accidental data loss.
+- If GD is not installed, image-upload tests in `AdminThemeAssetsTest` are skipped automatically.
+
 ## Routing
 - Admin area routes: `routes/admin.php` (mounted under `/admin` with session auth middleware).
 - Public area routes: `routes/public.php` (mounted under `/public`, includes the public landing at `/public`).
@@ -85,12 +97,20 @@ composer run pint
 
 ## Admin event management
 - Create/edit event nights with venue, date/time, break/cooldown, optional PIN, and status (draft/active/closed).
+- Event code is auto-generated and read-only in the admin form.
+- Event creation defaults:
+  - start datetime: current day at `19:00`
+  - end datetime: next day at `02:00`
+  - break between songs: `40` seconds
+  - request cooldown input: `20` minutes (stored as `request_cooldown_seconds`)
+- On larger viewports, event form fields are presented in a multi-column layout (at least two fields per row).
 - Per-event theme configuration supports background image uploads, overlay texts, and ad banner CRUD from the Theme/Ads screen.
 
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
 - Optional PIN activation uses `event_nights.join_pin`.
 - Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds`.
+- Cooldown messaging for participants is shown in minutes.
 - Song search (`GET /e/{eventCode}/songs`) returns paginated JSON filtered by title/artist.
 - ETA lookup (`GET /e/{eventCode}/eta`) returns JSON with estimated wait time before a new request starts.
 
