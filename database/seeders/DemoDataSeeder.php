@@ -193,7 +193,7 @@ class DemoDataSeeder extends Seeder
             'code' => 'EVENT1',
             'starts_at' => now()->addHours(2),
             'break_seconds' => 90,
-            'request_cooldown_seconds' => 240,
+            'request_cooldown_seconds' => 4,
             'join_pin' => '1234',
             'status' => EventNight::STATUS_ACTIVE,
             'overlay_texts' => [
@@ -220,7 +220,7 @@ class DemoDataSeeder extends Seeder
             'code' => 'EVENTCLOSED',
             'starts_at' => now()->subDays(2),
             'break_seconds' => 90,
-            'request_cooldown_seconds' => 180,
+            'request_cooldown_seconds' => 3,
             'join_pin' => null,
             'status' => EventNight::STATUS_CLOSED,
         ]);

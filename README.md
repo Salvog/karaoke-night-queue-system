@@ -84,13 +84,13 @@ composer run pint
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
 
 ## Admin event management
-- Create/edit event nights with venue, date/time, break/cooldown, optional PIN, and status (draft/active/closed).
+- Create/edit event nights with venue, date/time, break seconds, request cooldown (minutes), optional PIN, and status (draft/active/closed).
 - Per-event theme configuration supports background image uploads, overlay texts, and ad banner CRUD from the Theme/Ads screen.
 
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
 - Optional PIN activation uses `event_nights.join_pin`.
-- Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds`.
+- Song requests enforce per-participant cooldown in minutes via `event_nights.request_cooldown_seconds`.
 - Song search (`GET /e/{eventCode}/songs`) returns paginated JSON filtered by title/artist.
 - ETA lookup (`GET /e/{eventCode}/eta`) returns JSON with estimated wait time before a new request starts.
 
@@ -104,6 +104,20 @@ Use the queue engine command to auto-advance playback (schedule it with cron or 
 ```bash
 php artisan queue:advance
 ```
+
+## Testing & QA checklist
+Backend checks:
+```bash
+php artisan test
+composer run stan
+composer run pint
+```
+
+Frontend QA (manual):
+1. Start the app (`php artisan serve`) and login as admin.
+2. Open `/admin/events/create` and verify responsive layout on mobile and desktop.
+3. Confirm default dates/times, break seconds, and request cooldown minutes are pre-filled.
+4. Submit a new event and verify the auto-generated code and cooldown rules on the public join page.
 
 ### Scheduler runtime
 The scheduler must run continuously so `queue:advance` executes every five seconds (configured in `app/Console/Kernel.php`).
