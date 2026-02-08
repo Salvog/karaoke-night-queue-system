@@ -189,9 +189,11 @@ class PublicJoinService
         }
 
         $remaining = $eventNight->request_cooldown_seconds - $secondsSinceLast;
+        $remainingMinutes = (int) ceil($remaining / 60);
+        $minuteLabel = $remainingMinutes === 1 ? 'minute' : 'minutes';
 
         throw ValidationException::withMessages([
-            'cooldown' => "Please wait {$remaining} seconds before requesting another song.",
+            'cooldown' => "Please wait {$remainingMinutes} {$minuteLabel} before requesting another song.",
         ]);
     }
 }

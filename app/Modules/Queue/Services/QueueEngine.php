@@ -346,7 +346,8 @@ class QueueEngine
             return $this->startNextQueuedRequest($eventNight, $playbackState, $now);
         }
 
-        $remainingSeconds = $playbackState->expected_end_at->diffInSeconds($playbackState->paused_at, false);
+        // Remaining time must be measured from pause instant to expected end.
+        $remainingSeconds = $playbackState->paused_at->diffInSeconds($playbackState->expected_end_at, false);
 
         if ($remainingSeconds <= 0) {
             $this->markPlayed($currentRequest, $now);
