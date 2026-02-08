@@ -60,8 +60,9 @@
 
     <div class="card">
         <h2>Richiedi una canzone</h2>
-        @if ($eventNight->request_cooldown_seconds > 0)
-            <p class="cooldown">Puoi richiedere una canzone ogni {{ $eventNight->request_cooldown_seconds }} secondi.</p>
+        @php($cooldownMinutes = (int) ceil(($eventNight->request_cooldown_seconds ?? 0) / 60))
+        @if ($cooldownMinutes > 0)
+            <p class="cooldown">Puoi richiedere una canzone ogni {{ $cooldownMinutes }} {{ $cooldownMinutes === 1 ? 'minuto' : 'minuti' }}.</p>
         @endif
         <div class="search-bar">
             <label for="song-search">Cerca per titolo o artista</label>

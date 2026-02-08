@@ -32,7 +32,7 @@ class AdminEventCrudTest extends TestCase
             'starts_at' => '2024-04-01 19:00:00',
             'ends_at' => '2024-04-01 23:30:00',
             'break_seconds' => 120,
-            'request_cooldown_seconds' => 60,
+            'request_cooldown_minutes' => 1,
             'join_pin' => '1234',
             'status' => EventNight::STATUS_DRAFT,
         ]);

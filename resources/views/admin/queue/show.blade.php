@@ -78,6 +78,7 @@
             <h2 style="margin-top: 0;">Impostazioni coda</h2>
             <div class="helper">Queste impostazioni regolano il flusso automatico durante la riproduzione.</div>
             <div class="divider"></div>
+            @php($cooldownMinutes = (int) ceil(($eventNight->request_cooldown_seconds ?? 0) / 60))
             <div class="panel-row">
                 <div>
                     <div class="label">Secondi di pausa</div>
@@ -85,8 +86,8 @@
                     <div class="helper">Aggiunti dopo ogni canzone per consentire le transizioni.</div>
                 </div>
                 <div>
-                    <div class="label">Attesa richieste</div>
-                    <div class="value">{{ $eventNight->request_cooldown_seconds }}</div>
+                    <div class="label">Minuti di attesa</div>
+                    <div class="value">{{ $cooldownMinutes }}</div>
                     <div class="helper">Attesa minima tra le richieste per cantante.</div>
                 </div>
             </div>

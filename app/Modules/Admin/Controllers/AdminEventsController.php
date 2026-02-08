@@ -63,6 +63,8 @@ class AdminEventsController extends Controller
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
         $data = $this->validatedEventData($request);
+        $data['request_cooldown_seconds'] = ((int) ($data['request_cooldown_minutes'] ?? 0)) * 60;
+        unset($data['request_cooldown_minutes']);
         $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
         $data['code'] = $this->normalizeCode($data['code'] ?? null);
 
@@ -94,6 +96,8 @@ class AdminEventsController extends Controller
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
         $data = $this->validatedEventData($request, $eventNight);
+        $data['request_cooldown_seconds'] = ((int) ($data['request_cooldown_minutes'] ?? 0)) * 60;
+        unset($data['request_cooldown_minutes']);
         $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
         $data['code'] = $this->normalizeCode($data['code'] ?? null);
 
@@ -118,19 +122,25 @@ class AdminEventsController extends Controller
 
     private function validatedEventData(Request $request, ?EventNight $eventNight = null): array
     {
+        $codeRules = [
+            'nullable',
+            'string',
+            'min:4',
+            'max:12',
+            Rule::unique('event_nights', 'code')->ignore($eventNight?->id),
+        ];
+
+        if ($eventNight) {
+            $codeRules[0] = 'required';
+        }
+
         return $request->validate([
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')],
-            'code' => [
-                'required',
-                'string',
-                'min:4',
-                'max:12',
-                Rule::unique('event_nights', 'code')->ignore($eventNight?->id),
-            ],
+            'code' => $codeRules,
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'break_seconds' => ['required', 'integer', 'min:0'],
-            'request_cooldown_seconds' => ['required', 'integer', 'min:0'],
+            'request_cooldown_minutes' => ['required', 'integer', 'min:0'],
             'join_pin' => ['nullable', 'string', 'max:10'],
             'status' => ['required', Rule::in(array_keys(EventNight::statusOptions()))],
         ]);

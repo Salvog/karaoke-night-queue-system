@@ -62,6 +62,19 @@ asyncio.run(main())
 PY
 ```
 
+## Verifica BE/FE
+Per preparare l'ambiente di verifica end-to-end:
+1. Avvia il progetto con le istruzioni di **Local setup**.
+2. Accedi all'area admin con le credenziali demo (`admin@example.com` / `password`).
+3. Verifica il flusso FE (creazione evento, gestione coda, landing pubblica) e il flusso BE (test automatici e comandi CI).
+
+Comandi consigliati per la verifica backend:
+```bash
+php artisan test
+composer run stan
+composer run pint
+```
+
 ## Docker
 ```bash
 docker compose up --build
@@ -84,13 +97,13 @@ composer run pint
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
 
 ## Admin event management
-- Create/edit event nights with venue, date/time, break/cooldown, optional PIN, and status (draft/active/closed).
+- Create/edit event nights with venue, date/time, break seconds, request cooldown in minutes, optional PIN, and status (draft/active/closed).
 - Per-event theme configuration supports background image uploads, overlay texts, and ad banner CRUD from the Theme/Ads screen.
 
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
 - Optional PIN activation uses `event_nights.join_pin`.
-- Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds`.
+- Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds` (configured in minutes in the admin UI).
 - Song search (`GET /e/{eventCode}/songs`) returns paginated JSON filtered by title/artist.
 - ETA lookup (`GET /e/{eventCode}/eta`) returns JSON with estimated wait time before a new request starts.
 
