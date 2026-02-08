@@ -16,6 +16,8 @@ class AdminThemeAssetsTest extends TestCase
 
     public function test_admin_can_update_theme_assets(): void
     {
+        $this->skipIfGdMissing();
+
         Storage::fake('public');
 
         $admin = AdminUser::create([
@@ -55,6 +57,8 @@ class AdminThemeAssetsTest extends TestCase
 
     public function test_staff_cannot_upload_theme_assets(): void
     {
+        $this->skipIfGdMissing();
+
         Storage::fake('public');
 
         $staff = AdminUser::create([
@@ -83,5 +87,12 @@ class AdminThemeAssetsTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    private function skipIfGdMissing(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD extension is required for image upload tests.');
+        }
     }
 }

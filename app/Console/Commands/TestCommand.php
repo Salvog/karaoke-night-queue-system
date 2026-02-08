@@ -17,6 +17,7 @@ class TestCommand extends Command
     public function handle(): int
     {
         $phpUnitBinary = base_path('vendor/bin/phpunit');
+        $phpUnitConfiguration = base_path('phpunit.xml');
 
         if (! file_exists($phpUnitBinary)) {
             $this->error('PHPUnit is not installed. Run: composer install');
@@ -25,6 +26,11 @@ class TestCommand extends Command
         }
 
         $arguments = [PHP_BINARY, $phpUnitBinary];
+
+        if (file_exists($phpUnitConfiguration)) {
+            $arguments[] = '--configuration';
+            $arguments[] = $phpUnitConfiguration;
+        }
 
         if ($filter = $this->option('filter')) {
             $arguments[] = '--filter';
@@ -40,7 +46,16 @@ class TestCommand extends Command
             $arguments[] = '--stop-on-failure';
         }
 
-        $process = new Process($arguments, base_path());
+        $processEnvironment = array_merge($_ENV, [
+            'APP_ENV' => 'testing',
+            'CACHE_DRIVER' => 'array',
+            'SESSION_DRIVER' => 'array',
+            'QUEUE_CONNECTION' => 'sync',
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => ':memory:',
+        ]);
+
+        $process = new Process($arguments, base_path(), $processEnvironment);
         $process->setTty(Process::isTtySupported());
         $process->run(function (string $type, string $buffer): void {
             $this->output->write($buffer);
