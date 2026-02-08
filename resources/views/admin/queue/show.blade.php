@@ -85,8 +85,9 @@
                     <div class="helper">Aggiunti dopo ogni canzone per consentire le transizioni.</div>
                 </div>
                 <div>
-                    <div class="label">Attesa richieste</div>
-                    <div class="value">{{ $eventNight->request_cooldown_seconds }}</div>
+                    @php($cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60))
+                    <div class="label">Attesa richieste (minuti)</div>
+                    <div class="value">{{ $cooldownMinutes }}</div>
                     <div class="helper">Attesa minima tra le richieste per cantante.</div>
                 </div>
             </div>

@@ -43,7 +43,7 @@ class AdminEventsController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request, EventNightService $service): View
     {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
@@ -53,6 +53,7 @@ class AdminEventsController extends Controller
         return view('admin.events.create', [
             'venues' => $venues,
             'statuses' => EventNight::statusOptions(),
+            'generatedCode' => $service->generateCode(),
             'adminUser' => $adminUser,
         ]);
     }
@@ -62,9 +63,7 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $data = $this->validatedEventData($request);
-        $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
-        $data['code'] = $this->normalizeCode($data['code'] ?? null);
+        $data = $this->normalizeEventData($this->validatedEventData($request));
 
         $eventNight = $service->create($data);
 
@@ -93,9 +92,7 @@ class AdminEventsController extends Controller
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
-        $data = $this->validatedEventData($request, $eventNight);
-        $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
-        $data['code'] = $this->normalizeCode($data['code'] ?? null);
+        $data = $this->normalizeEventData($this->validatedEventData($request));
 
         $service->update($eventNight, $data);
 
@@ -116,24 +113,27 @@ class AdminEventsController extends Controller
             ->with('status', 'Evento eliminato.');
     }
 
-    private function validatedEventData(Request $request, ?EventNight $eventNight = null): array
+    private function validatedEventData(Request $request): array
     {
         return $request->validate([
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')],
-            'code' => [
-                'required',
-                'string',
-                'min:4',
-                'max:12',
-                Rule::unique('event_nights', 'code')->ignore($eventNight?->id),
-            ],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'break_seconds' => ['required', 'integer', 'min:0'],
-            'request_cooldown_seconds' => ['required', 'integer', 'min:0'],
+            'request_cooldown_minutes' => ['required', 'integer', 'min:0'],
             'join_pin' => ['nullable', 'string', 'max:10'],
             'status' => ['required', Rule::in(array_keys(EventNight::statusOptions()))],
         ]);
+    }
+
+    private function normalizeEventData(array $data): array
+    {
+        $data['join_pin'] = $this->normalizePin($data['join_pin'] ?? null);
+        $data['request_cooldown_seconds'] = ((int) $data['request_cooldown_minutes']) * 60;
+
+        unset($data['request_cooldown_minutes']);
+
+        return $data;
     }
 
     private function normalizePin(?string $pin): ?string
@@ -143,14 +143,4 @@ class AdminEventsController extends Controller
         return $trimmed === '' ? null : $trimmed;
     }
 
-    private function normalizeCode(?string $code): ?string
-    {
-        if ($code === null) {
-            return null;
-        }
-
-        $trimmed = trim($code);
-
-        return $trimmed === '' ? null : strtoupper($trimmed);
-    }
 }
