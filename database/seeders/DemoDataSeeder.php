@@ -241,6 +241,8 @@ class DemoDataSeeder extends Seeder
                 ],
                 [
                     'image_url' => 'https://example.com/banners/happy-hour.png',
+                    'subtitle' => 'Spritz, mocktail & snack fino alle 22:00',
+                    'logo_url' => 'https://example.com/logos/happy-hour.png',
                     'is_active' => true,
                 ]
             ),
@@ -251,6 +253,8 @@ class DemoDataSeeder extends Seeder
                 ],
                 [
                     'image_url' => 'https://example.com/banners/merch.png',
+                    'subtitle' => 'T-shirt ufficiali + limited poster',
+                    'logo_url' => 'https://example.com/logos/merch.png',
                     'is_active' => false,
                 ]
             ),
@@ -261,6 +265,8 @@ class DemoDataSeeder extends Seeder
                 ],
                 [
                     'image_url' => 'https://example.com/banners/duet-challenge.png',
+                    'subtitle' => 'Premi per il duo più energico',
+                    'logo_url' => 'https://example.com/logos/duet.png',
                     'is_active' => true,
                 ]
             ),
