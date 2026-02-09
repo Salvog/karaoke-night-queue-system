@@ -20,15 +20,6 @@
 
 @section('content')
     <style>
-        .events-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: clamp(14px, 2.2vw, 24px);
-            flex-wrap: wrap;
-        }
-
         .events-page {
             display: grid;
             gap: clamp(18px, 2.5vw, 28px);
@@ -49,17 +40,6 @@
                 radial-gradient(circle at 100% -24%, var(--section-glow), transparent 52%),
                 linear-gradient(155deg, var(--section-bg-start), var(--section-bg-end));
             backdrop-filter: blur(4px);
-        }
-
-        .event-section--ongoing {
-            --section-border: rgba(42, 216, 255, 0.44);
-            --section-bg-start: rgba(16, 56, 95, 0.7);
-            --section-bg-end: rgba(44, 26, 78, 0.72);
-            --section-glow: rgba(42, 216, 255, 0.24);
-
-            gap: 14px;
-            padding: 14px;
-            box-shadow: 0 14px 34px rgba(8, 10, 28, 0.3);
         }
 
         .event-section--future {
@@ -106,13 +86,12 @@
             max-width: 66ch;
         }
 
-        .event-section--ongoing .section-copy h2 {
+        .section-copy .ongoing-title {
+            margin: 0;
             font-size: 1.24rem;
-            color: #e6faff;
-        }
-
-        .event-section--ongoing .section-copy p {
-            color: rgba(232, 247, 255, 0.9);
+            line-height: 1.2;
+            color: #b8f4ff;
+            text-shadow: 0 0 12px rgba(42, 216, 255, 0.24);
         }
 
         .event-section--future .section-copy h2 {
@@ -139,12 +118,6 @@
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-        }
-
-        .event-section--ongoing .section-count {
-            border-color: rgba(42, 216, 255, 0.5);
-            background: rgba(42, 216, 255, 0.16);
-            color: #dff8ff;
         }
 
         .event-section--future .section-count {
@@ -279,6 +252,40 @@
             background: rgba(42, 216, 255, 0.14);
         }
 
+        .queue-monitor-button {
+            min-height: 39px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(42, 216, 255, 0.5);
+            background: linear-gradient(145deg, rgba(42, 216, 255, 0.2), rgba(42, 216, 255, 0.08));
+            color: #ddf8ff;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            transition: background-color 120ms ease, transform 120ms ease;
+        }
+
+        .queue-monitor-button svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .queue-monitor-button:hover {
+            background: linear-gradient(145deg, rgba(42, 216, 255, 0.3), rgba(42, 216, 255, 0.12));
+            transform: translateY(-1px);
+        }
+
         .icon-button.theme {
             color: #ffe79f;
             border-color: rgba(255, 212, 71, 0.5);
@@ -301,7 +308,7 @@
                 font-size: 1.04rem;
             }
 
-            .event-section--ongoing .section-copy h2 {
+            .section-copy .ongoing-title {
                 font-size: 1.14rem;
             }
         }
@@ -328,28 +335,30 @@
         }
     </style>
 
-    <div class="events-header"></div>
-
     <div class="events-page">
         @if ($ongoingEvents->isEmpty())
-            <div class="panel muted">Nessun evento in corso.</div>
-            <a class="button" href="{{ route('admin.events.create') }}">Crea evento</a>
+            <div class="panel muted">
+                <p>Nessun evento in corso...</p>
+                <a class="queue-monitor-button" href="{{ route('admin.events.create') }}" aria-label="Crea Evento" title="Crea Evento">
+                    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path><path d="M10 8v8l6-4z"></path></svg>
+                    <span>Crea Evento</span>
+                </a>
+            </div>
         @else
             <div class="events-grid events-grid--ongoing">
                 @foreach ($ongoingEvents as $event)
                     <article class="event-card event-card--ongoing">
                         <header class="section-head">
                             <div class="section-copy">
-                                <h1 style="margin: 0;">Evento In Corso</h1>
+                                <h2 class="ongoing-title">Evento In Corso</h2>
                             </div>
-                            
+                            <span class="pill">{{ $statusLabel($event) }}</span>
                         </header>
                         <div class="event-main">
                             <div>
                                 <div class="event-subtitle">{{ $event->code }}</div>
                                 <div class="event-title">{{ $event->venue?->name ?? 'Location non definita' }}</div>
                             </div>
-                            <span class="pill">{{ $statusLabel($event) }}</span>
                         </div>
 
                         <div class="event-meta">
@@ -359,8 +368,9 @@
                             </div>
                         </div>
                         <div class="event-actions">
-                            <a class="icon-button queue" href="{{ route('admin.queue.show', $event) }}" aria-label="Apri coda" title="Apri coda">
-                                <svg viewBox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path></svg>
+                            <a class="queue-monitor-button" href="{{ route('admin.queue.show', $event) }}" aria-label="Monitora serata" title="Monitora serata">
+                                <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path><path d="M10 8v8l6-4z"></path></svg>
+                                <span>Monitora Serata</span>
                             </a>
                             <a class="icon-button" href="{{ route('admin.events.edit', $event) }}" aria-label="Modifica evento" title="Modifica evento">
                                 <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>
@@ -383,7 +393,7 @@
             </div>
         @endif
 
-        <br><br>
+        <br>
         
         <section class="event-section event-section--future">
             <header class="section-head">
