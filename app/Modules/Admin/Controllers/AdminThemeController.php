@@ -58,11 +58,18 @@ class AdminThemeController extends Controller
             ],
             'background_image' => ['nullable', 'image', 'max:5120'],
             'remove_background_image' => ['nullable', 'boolean'],
+            'logo_image' => ['nullable', 'image', 'max:2048'],
+            'remove_logo_image' => ['nullable', 'boolean'],
             'overlay_texts' => ['nullable', 'array', 'max:5'],
             'overlay_texts.*' => ['nullable', 'string', 'max:120'],
         ]);
 
-        if ($request->hasFile('background_image') || $request->boolean('remove_background_image')) {
+        if (
+            $request->hasFile('background_image')
+            || $request->boolean('remove_background_image')
+            || $request->hasFile('logo_image')
+            || $request->boolean('remove_logo_image')
+        ) {
             abort_unless($adminUser->isAdmin(), 403);
         }
 
@@ -89,6 +96,7 @@ class AdminThemeController extends Controller
                 'theme_id' => $data['theme_id'] ?? null,
                 'ad_banner_id' => $data['ad_banner_id'] ?? null,
                 'has_background_image' => ! empty($eventNight->background_image_path),
+                'has_logo_image' => ! empty($eventNight->logo_image_path),
                 'overlay_texts' => $overlayTexts,
             ]
         ));
@@ -114,6 +122,20 @@ class AdminThemeController extends Controller
                 Storage::disk('public')->delete($eventNight->background_image_path);
             }
             $updates['background_image_path'] = null;
+        }
+
+        if ($request->hasFile('logo_image')) {
+            if ($eventNight->logo_image_path) {
+                Storage::disk('public')->delete($eventNight->logo_image_path);
+            }
+
+            $path = $request->file('logo_image')->store("event-themes/{$eventNight->id}", 'public');
+            $updates['logo_image_path'] = $path;
+        } elseif ($request->boolean('remove_logo_image')) {
+            if ($eventNight->logo_image_path) {
+                Storage::disk('public')->delete($eventNight->logo_image_path);
+            }
+            $updates['logo_image_path'] = null;
         }
 
         return $updates;

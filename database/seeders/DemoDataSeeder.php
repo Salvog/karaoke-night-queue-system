@@ -240,7 +240,9 @@ class DemoDataSeeder extends Seeder
                     'title' => 'Happy Hour Specials',
                 ],
                 [
+                    'subtitle' => 'Cocktail 2x1 fino alle 22:00',
                     'image_url' => 'https://example.com/banners/happy-hour.png',
+                    'logo_url' => 'https://example.com/banners/logos/happy-hour.png',
                     'is_active' => true,
                 ]
             ),
@@ -250,7 +252,9 @@ class DemoDataSeeder extends Seeder
                     'title' => 'Limited Merch Drop',
                 ],
                 [
+                    'subtitle' => 'T-shirt glow in the dark disponibili al bar',
                     'image_url' => 'https://example.com/banners/merch.png',
+                    'logo_url' => 'https://example.com/banners/logos/merch.png',
                     'is_active' => false,
                 ]
             ),
@@ -260,7 +264,9 @@ class DemoDataSeeder extends Seeder
                     'title' => 'Duet Challenge',
                 ],
                 [
+                    'subtitle' => 'Canta in coppia e vinci un drink',
                     'image_url' => 'https://example.com/banners/duet-challenge.png',
+                    'logo_url' => 'https://example.com/banners/logos/duet.png',
                     'is_active' => true,
                 ]
             ),

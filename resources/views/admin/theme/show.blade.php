@@ -10,6 +10,9 @@
         $backgroundUrl = $eventNight->background_image_path
             ? Storage::disk('public')->url($eventNight->background_image_path)
             : null;
+        $logoUrl = $eventNight->logo_image_path
+            ? Storage::disk('public')->url($eventNight->logo_image_path)
+            : null;
     @endphp
 
     <form method="POST" action="{{ route('admin.theme.update', $eventNight) }}" enctype="multipart/form-data">
@@ -58,6 +61,25 @@
         </div>
 
         <div style="margin-bottom: 16px;">
+            <label for="logo_image">Logo evento</label>
+            @if ($logoUrl)
+                <div style="margin: 8px 0;">
+                    <img src="{{ $logoUrl }}" alt="Logo evento" style="max-width: 180px; border-radius: 12px; background: #fff; padding: 6px;">
+                </div>
+            @endif
+            <input id="logo_image" type="file" name="logo_image" @disabled(! $adminUser->isAdmin())>
+            @if ($logoUrl)
+                <label style="display: block; margin-top: 8px;">
+                    <input type="checkbox" name="remove_logo_image" value="1" @disabled(! $adminUser->isAdmin())>
+                    Rimuovi logo evento
+                </label>
+            @endif
+            @if (! $adminUser->isAdmin())
+                <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">Solo gli admin possono caricare risorse.</div>
+            @endif
+        </div>
+
+        <div style="margin-bottom: 16px;">
             <label>Testi sovrapposti (max 5)</label>
             <div style="display: grid; gap: 8px; margin-top: 8px;">
                 @foreach ($overlayTexts as $text)
@@ -88,8 +110,16 @@
                             <input type="text" name="title" value="{{ $ad->title }}" required>
                         </div>
                         <div style="margin-bottom: 8px;">
+                            <label>Sottotitolo</label>
+                            <input type="text" name="subtitle" value="{{ $ad->subtitle }}" maxlength="160">
+                        </div>
+                        <div style="margin-bottom: 8px;">
                             <label>Sostituisci immagine</label>
                             <input type="file" name="image" @disabled(! $adminUser->isAdmin())>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label>Logo sponsor</label>
+                            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
                         </div>
                         <div style="margin-bottom: 8px;">
                             <label>
@@ -99,6 +129,11 @@
                         </div>
                         @if ($ad->image_url)
                             <img src="{{ $ad->image_url }}" alt="{{ $ad->title }}" style="max-width: 200px; border-radius: 8px;">
+                        @endif
+                        @if ($ad->logo_url)
+                            <div style="margin-top: 8px;">
+                                <img src="{{ $ad->logo_url }}" alt="Logo {{ $ad->title }}" style="max-width: 120px; border-radius: 12px; background: #fff; padding: 4px;">
+                            </div>
                         @endif
                         <div style="margin-top: 8px;">
                             <button class="button" type="submit">Aggiorna</button>
@@ -122,8 +157,16 @@
             <input type="text" name="title" required>
         </div>
         <div style="margin-bottom: 8px;">
+            <label>Sottotitolo</label>
+            <input type="text" name="subtitle" maxlength="160">
+        </div>
+        <div style="margin-bottom: 8px;">
             <label>Immagine</label>
             <input type="file" name="image" @disabled(! $adminUser->isAdmin()) required>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label>Logo sponsor</label>
+            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
         </div>
         <div style="margin-bottom: 8px;">
             <label>

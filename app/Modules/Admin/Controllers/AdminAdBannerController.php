@@ -22,16 +22,23 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:160'],
             'image' => ['required', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:2048'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $path = $request->file('image')->store("ad-banners/{$eventNight->venue_id}", 'public');
+        $logoPath = $request->hasFile('logo')
+            ? $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public')
+            : null;
 
         AdBanner::create([
             'venue_id' => $eventNight->venue_id,
             'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
             'image_url' => Storage::disk('public')->url($path),
+            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
@@ -56,7 +63,9 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:160'],
             'image' => ['nullable', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:2048'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -66,8 +75,17 @@ class AdminAdBannerController extends Controller
             $adBanner->image_url = Storage::disk('public')->url($path);
         }
 
+        if ($request->hasFile('logo')) {
+            if ($adBanner->logo_url) {
+                $this->deletePublicAsset($adBanner->logo_url);
+            }
+            $logoPath = $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public');
+            $adBanner->logo_url = Storage::disk('public')->url($logoPath);
+        }
+
         $adBanner->fill([
             'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
             'is_active' => (bool) ($data['is_active'] ?? false),
         ])->save();
 
@@ -91,6 +109,9 @@ class AdminAdBannerController extends Controller
         }
 
         $this->deletePublicAsset($adBanner->image_url);
+        if ($adBanner->logo_url) {
+            $this->deletePublicAsset($adBanner->logo_url);
+        }
         $adBanner->delete();
 
         $this->publishBannerUpdates($adBanner, $publisher);
