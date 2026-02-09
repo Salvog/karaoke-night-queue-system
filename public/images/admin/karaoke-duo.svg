@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 560" role="img" aria-label="Coppia uomo donna che canta con microfono, stile cartoon">
+  <defs>
+    <style>
+      .ol { stroke: #584d45; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <ellipse cx="214" cy="520" rx="168" ry="16" fill="#c8c8cc" fill-opacity="0.52"/>
+
+  <g transform="translate(50 126)">
+    <circle cx="84" cy="72" r="24" fill="#e0b189" class="ol"/>
+    <path d="M57 71c2-23 19-39 39-39 16 0 31 10 35 26 3 11 2 22-2 31-6-5-14-8-23-8-8 0-16 3-22 9-11-4-20-9-27-19z" fill="#7b522f" class="ol"/>
+    <path d="M52 86c-8-12-7-26 0-38 6-10 17-16 28-18-12 8-18 16-19 27-1 9-1 18-9 29z" fill="#7b522f" class="ol"/>
+
+    <path d="M75 78c4 4 7 6 11 6 5 0 9-3 12-7" fill="none" stroke="#8a6040" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M74 95c9 8 18 8 27 0" fill="#f7f3f1"/>
+    <path d="M72 94c8 9 17 11 28 7" fill="none" stroke="#cc8c7b" stroke-width="3.4" stroke-linecap="round"/>
+
+    <path d="M77 98h14v14H77z" fill="#d9a680"/>
+    <path d="M60 114h46l16 138H52z" fill="#8cb8b4" class="ol"/>
+    <path d="M76 114h21l8 136H64z" fill="#7ea9a6"/>
+
+    <path d="M66 138c-9-10-9-22-2-33 4-6 10-10 17-12" fill="none" stroke="#e0b189" stroke-width="10.5" stroke-linecap="round"/>
+    <ellipse cx="72" cy="102" rx="7.2" ry="6.5" fill="#2e343f"/>
+    <path d="M67 106l-18 21" fill="none" stroke="#2e343f" stroke-width="6.6" stroke-linecap="round"/>
+
+    <path d="M113 144c14 4 27 12 35 24" fill="none" stroke="#e0b189" stroke-width="10" stroke-linecap="round"/>
+    <path d="M146 168c7 0 13-2 17-6" fill="none" stroke="#e0b189" stroke-width="6.6" stroke-linecap="round"/>
+
+    <path d="M76 252c-14 33-34 74-56 107l16 9c28-28 49-61 67-105z" fill="#e0b189" class="ol"/>
+    <path d="M101 252c3 37 7 74 11 111h20c2-39 0-76-5-111z" fill="#e0b189" class="ol"/>
+
+    <path d="M23 367c9-7 18-14 27-19 3 7 2 14-2 20-7 7-15 8-25 4z" fill="#343941" class="ol"/>
+    <path d="M110 363h26c3 8 1 14-5 18h-21c-4-4-4-10 0-18z" fill="#343941" class="ol"/>
+  </g>
+
+  <g transform="translate(222 116)">
+    <circle cx="74" cy="72" r="25" fill="#e0b189" class="ol"/>
+    <path d="M48 72c2-22 19-38 40-38 19 0 34 14 35 34 0 10-3 20-7 29-5-7-12-12-22-14-14-3-29-3-46-11z" fill="#7b512d" class="ol"/>
+    <path d="M59 46c11-9 26-12 38-8 11 4 20 13 22 24-13-7-25-10-38-9-8 0-14-2-22-7z" fill="#7b512d" class="ol"/>
+
+    <path d="M62 78c4 4 8 6 12 6 5 0 9-3 12-8" fill="none" stroke="#8a6040" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M61 95c10 9 20 9 30 0" fill="#f7f3f1"/>
+    <path d="M60 94c9 10 20 12 31 7" fill="none" stroke="#cc8c7b" stroke-width="3.4" stroke-linecap="round"/>
+
+    <path d="M67 98h14v14H67z" fill="#d9a680"/>
+    <path d="M40 114h69l31 126H24z" fill="#ba745f" class="ol"/>
+    <path d="M66 114h20l6 124H57z" fill="#a76452"/>
+
+    <path d="M50 138c-10-10-12-22-7-34 3-6 8-11 14-14" fill="none" stroke="#e0b189" stroke-width="10.5" stroke-linecap="round"/>
+    <ellipse cx="65" cy="101" rx="7.2" ry="6.5" fill="#2e343f"/>
+    <path d="M60 106l-22 25" fill="none" stroke="#2e343f" stroke-width="6.6" stroke-linecap="round"/>
+
+    <path d="M108 145c17 6 31 16 41 30" fill="none" stroke="#e0b189" stroke-width="10" stroke-linecap="round"/>
+    <path d="M147 175c10 2 19 1 27-3" fill="none" stroke="#e0b189" stroke-width="7" stroke-linecap="round"/>
+
+    <path d="M58 240c-6 38-11 78-10 121h24c4-41 5-82 2-121z" fill="#667289" class="ol"/>
+    <path d="M87 240c5 38 9 78 13 121h23c-2-41-6-82-13-121z" fill="#5c687f" class="ol"/>
+
+    <path d="M45 361h28c3 8 1 15-5 19H47c-4-4-4-11-2-19z" fill="#3b2d29" class="ol"/>
+    <path d="M95 361h30c3 8 1 15-5 19H99c-4-4-5-11-4-19z" fill="#3b2d29" class="ol"/>
+  </g>
+</svg>

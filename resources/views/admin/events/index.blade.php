@@ -88,10 +88,11 @@
 
         .section-copy .ongoing-title {
             margin: 0;
-            font-size: 1.24rem;
+            font-size: 1.38rem;
             line-height: 1.2;
             color: #b8f4ff;
-            text-shadow: 0 0 12px rgba(42, 216, 255, 0.24);
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 10px rgba(42, 216, 255, 0.34), 0 0 22px rgba(42, 216, 255, 0.22);
         }
 
         .event-section--future .section-copy h2 {
@@ -152,13 +153,21 @@
         }
 
         .event-card--ongoing {
-            gap: 10px;
-            padding: 14px;
+            gap: 12px;
+            padding: 17px;
             border-color: rgba(42, 216, 255, 0.36);
             background:
                 radial-gradient(circle at 10% 20%, rgba(42, 216, 255, 0.12), transparent 50%),
                 rgba(10, 27, 57, 0.58);
-            box-shadow: 0 10px 22px rgba(8, 9, 22, 0.28);
+            box-shadow:
+                0 14px 28px rgba(8, 9, 22, 0.4),
+                0 0 0 1px rgba(42, 216, 255, 0.14),
+                0 0 28px rgba(42, 216, 255, 0.16);
+        }
+
+        .event-card--ongoing .section-head {
+            border-bottom-color: rgba(42, 216, 255, 0.3);
+            box-shadow: 0 9px 20px -18px rgba(42, 216, 255, 0.72);
         }
 
         .event-main {
@@ -176,7 +185,11 @@
         }
 
         .event-card--ongoing .event-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+        }
+
+        .event-card--ongoing .event-subtitle {
+            font-size: 0.97rem;
         }
 
         .event-subtitle {
@@ -200,7 +213,7 @@
         }
 
         .event-card--ongoing .event-meta-item .value {
-            font-size: 1rem;
+            font-size: 1.08rem;
         }
 
         .event-actions {
@@ -227,8 +240,9 @@
         }
 
         .event-card--ongoing .icon-button {
-            width: 39px;
-            height: 39px;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 7px 14px rgba(5, 16, 37, 0.28);
         }
 
         .icon-button svg {
@@ -270,6 +284,17 @@
             transition: background-color 120ms ease, transform 120ms ease;
         }
 
+        .event-card--ongoing .queue-monitor-button {
+            min-height: 44px;
+            padding: 0 18px;
+            font-size: 0.93rem;
+            border-color: rgba(42, 216, 255, 0.66);
+            box-shadow:
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 9px 18px rgba(5, 16, 37, 0.3),
+                0 0 18px rgba(42, 216, 255, 0.2);
+        }
+
         .queue-monitor-button svg {
             width: 18px;
             height: 18px;
@@ -284,6 +309,13 @@
         .queue-monitor-button:hover {
             background: linear-gradient(145deg, rgba(42, 216, 255, 0.3), rgba(42, 216, 255, 0.12));
             transform: translateY(-1px);
+        }
+
+        .event-card--ongoing .queue-monitor-button:hover {
+            box-shadow:
+                0 0 0 1px rgba(42, 216, 255, 0.28),
+                0 12px 20px rgba(5, 16, 37, 0.36),
+                0 0 22px rgba(42, 216, 255, 0.28);
         }
 
         .icon-button.theme {
@@ -309,7 +341,7 @@
             }
 
             .section-copy .ongoing-title {
-                font-size: 1.14rem;
+                font-size: 1.24rem;
             }
         }
 
@@ -329,8 +361,8 @@
 
             .icon-button,
             .event-card--ongoing .icon-button {
-                width: 36px;
-                height: 36px;
+                width: 39px;
+                height: 39px;
             }
         }
     </style>

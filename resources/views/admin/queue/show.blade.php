@@ -1,192 +1,734 @@
 @extends('admin.layout')
 
+@section('without_content_card', '1')
+
 @section('content')
-    <div class="panel" style="margin-bottom: 20px;">
-        <div class="panel-row">
-            <div>
-                <div class="label">Evento</div>
-                <div class="value">#{{ $eventNight->id }} · {{ $eventNight->venue?->name ?? 'N/D' }}</div>
-            </div>
-            <div>
-                <div class="label">Inizio</div>
-                <div class="value">{{ $eventNight->starts_at?->format('Y-m-d H:i') ?? '—' }}</div>
-            </div>
-            <div>
-                <div class="label">Fine</div>
-                <div class="value">{{ $eventNight->ends_at?->format('Y-m-d H:i') ?? '—' }}</div>
-            </div>
-            <div>
-                <div class="label">Stato</div>
-                <div class="value">
-                    <span class="pill">{{ \App\Models\EventNight::STATUS_LABELS[$eventNight->status] ?? $eventNight->status }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
+    @php
+        $playbackState = $eventNight->playbackState;
+        $playbackStatus = $playbackState?->state ?? \App\Models\PlaybackState::STATE_IDLE;
+        $isPlaying = $playbackStatus === \App\Models\PlaybackState::STATE_PLAYING;
+        $isPaused = $playbackStatus === \App\Models\PlaybackState::STATE_PAUSED;
+        $playbackStatusLabels = [
+            \App\Models\PlaybackState::STATE_IDLE => 'In attesa',
+            \App\Models\PlaybackState::STATE_PLAYING => 'In riproduzione',
+            \App\Models\PlaybackState::STATE_PAUSED => 'In pausa',
+        ];
+        $playbackStatusLabel = $playbackStatusLabels[$playbackStatus] ?? ucfirst($playbackStatus);
+        $togglePlaybackRoute = $isPlaying
+            ? route('admin.queue.stop', $eventNight)
+            : ($isPaused ? route('admin.queue.resume', $eventNight) : route('admin.queue.start', $eventNight));
+        $togglePlaybackTitle = $isPlaying
+            ? 'Metti in pausa la serata'
+            : ($isPaused ? 'Riprendi la serata' : 'Avvia la serata');
+        $eventStatusLabel = \App\Models\EventNight::STATUS_LABELS[$eventNight->status] ?? $eventNight->status;
+        $expectedEndAt = $playbackState?->expected_end_at;
+        $cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60);
+    @endphp
 
-    <div class="grid two" style="margin-bottom: 20px;">
-        <div class="panel">
-            <h2 style="margin-top: 0;">Controllo riproduzione</h2>
-            <div class="helper">Avvia la serata, metti in pausa il flusso o passa al prossimo cantante.</div>
-            <div class="divider"></div>
+    <style>
+        .queue-page {
+            display: grid;
+            gap: clamp(16px, 2.4vw, 24px);
+        }
+
+        .queue-grid {
+            display: grid;
+            gap: clamp(14px, 2.1vw, 20px);
+        }
+
+        .queue-grid--top {
+            grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr);
+        }
+
+        .queue-grid--tables {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .queue-grid--tables > .queue-section {
+            min-width: 0;
+        }
+
+        .queue-section {
+            --section-border: rgba(255, 255, 255, 0.2);
+            --section-bg-start: rgba(28, 31, 63, 0.72);
+            --section-bg-end: rgba(20, 18, 40, 0.66);
+            --section-glow: rgba(255, 255, 255, 0.08);
+
+            display: grid;
+            gap: 14px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--section-border);
+            background:
+                radial-gradient(circle at 100% -26%, var(--section-glow), transparent 52%),
+                linear-gradient(155deg, var(--section-bg-start), var(--section-bg-end));
+            backdrop-filter: blur(4px);
+        }
+
+        .queue-section--overview {
+            --section-border: rgba(255, 212, 71, 0.4);
+            --section-bg-start: rgba(57, 44, 20, 0.62);
+            --section-bg-end: rgba(30, 27, 48, 0.68);
+            --section-glow: rgba(255, 212, 71, 0.18);
+        }
+
+        .queue-section--playback {
+            --section-border: rgba(42, 216, 255, 0.56);
+            --section-bg-start: rgba(16, 43, 76, 0.76);
+            --section-bg-end: rgba(14, 24, 49, 0.8);
+            --section-glow: rgba(42, 216, 255, 0.28);
+            box-shadow:
+                0 18px 32px rgba(4, 10, 30, 0.46),
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 0 36px rgba(42, 216, 255, 0.2);
+        }
+
+        .queue-section--manual {
+            --section-border: rgba(42, 216, 255, 0.56);
+            --section-bg-start: rgba(16, 43, 76, 0.76);
+            --section-bg-end: rgba(14, 24, 49, 0.8);
+            --section-glow: rgba(42, 216, 255, 0.28);
+            box-shadow:
+                0 18px 32px rgba(4, 10, 30, 0.46),
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 0 36px rgba(42, 216, 255, 0.2);
+        }
+
+        .queue-section--focus {
+            --section-border: rgba(42, 216, 255, 0.56);
+            --section-bg-start: rgba(16, 43, 76, 0.76);
+            --section-bg-end: rgba(14, 24, 49, 0.8);
+            --section-glow: rgba(42, 216, 255, 0.28);
+            box-shadow:
+                0 18px 32px rgba(4, 10, 30, 0.46),
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 0 36px rgba(42, 216, 255, 0.2);
+        }
+
+        .queue-section-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 2px 2px 11px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .queue-copy {
+            display: grid;
+            gap: 3px;
+        }
+
+        .queue-copy h2 {
+            margin: 0;
+            font-size: 1.08rem;
+            line-height: 1.2;
+            color: #fbfcff;
+        }
+
+        .queue-copy p {
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.32;
+            color: rgba(236, 241, 255, 0.88);
+        }
+
+        .queue-copy .queue-copy-title--playback {
+            font-size: 1.28rem;
+            color: #b8f4ff;
+            text-shadow: 0 0 10px rgba(42, 216, 255, 0.36), 0 0 22px rgba(42, 216, 255, 0.22);
+            letter-spacing: 0.02em;
+        }
+
+        .queue-count {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 31px;
+            min-width: 74px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(255, 255, 255, 0.08);
+            color: #f7f8ff;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .queue-section--playback .queue-count,
+        .queue-section--manual .queue-count,
+        .queue-section--focus .queue-count {
+            border-color: rgba(42, 216, 255, 0.55);
+            background: rgba(42, 216, 255, 0.15);
+            color: #dbf9ff;
+            box-shadow: 0 0 16px rgba(42, 216, 255, 0.2);
+        }
+
+        .queue-section--focus .queue-section-head {
+            border-bottom-color: rgba(42, 216, 255, 0.26);
+        }
+
+        .queue-section--focus .queue-copy h2 {
+            color: #b8f4ff;
+            text-shadow: 0 0 10px rgba(42, 216, 255, 0.36), 0 0 22px rgba(42, 216, 255, 0.22);
+            letter-spacing: 0.02em;
+        }
+
+        .queue-section--overview .queue-count {
+            border-color: rgba(255, 212, 71, 0.5);
+            background: rgba(255, 212, 71, 0.14);
+            color: #fff0c2;
+        }
+
+        .queue-meta-grid {
+            display: grid;
+            gap: 10px 12px;
+            grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        }
+
+        .queue-meta-grid .value {
+            font-size: 1.02rem;
+        }
+
+        .queue-section--playback .queue-meta-grid .value {
+            font-size: 1.08rem;
+        }
+
+        .queue-note {
+            margin: 0;
+            font-size: 0.86rem;
+            color: rgba(236, 241, 255, 0.8);
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: stretch;
+            margin-top: 8px;
+        }
+
+        .playback-control-form {
+            margin: 0;
+            display: flex;
+        }
+
+        .playback-control-button {
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+        }
+
+        .playback-control-button svg {
+            width: 21px;
+            height: 21px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .playback-control-button:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .playback-control-button[disabled] {
+            opacity: 0.46;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .playback-control-button--toggle {
+            width: 76px;
+            min-width: 76px;
+            min-height: 76px;
+            padding: 0;
+            border-radius: 18px;
+            border-color: rgba(42, 216, 255, 0.72);
+            background: linear-gradient(145deg, rgba(42, 216, 255, 0.36), rgba(42, 216, 255, 0.16));
+            color: #dff9ff;
+            box-shadow:
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 12px 22px rgba(5, 16, 37, 0.34),
+                0 0 22px rgba(42, 216, 255, 0.24);
+        }
+
+        .playback-control-button--toggle svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        .playback-control-button--play polygon {
+            fill: currentColor;
+            stroke: none;
+        }
+
+        .playback-control-button--pause {
+            border-color: rgba(255, 212, 71, 0.68);
+            background: linear-gradient(145deg, rgba(255, 212, 71, 0.34), rgba(255, 212, 71, 0.16));
+            color: #fff3ce;
+            box-shadow:
+                0 0 0 1px rgba(255, 212, 71, 0.22),
+                0 12px 22px rgba(5, 16, 37, 0.34),
+                0 0 22px rgba(255, 212, 71, 0.22);
+        }
+
+        .playback-control-button--next {
+            min-height: 76px;
+            padding: 0 22px;
+            border-color: rgba(255, 255, 255, 0.32);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+            color: #f6fbff;
+            box-shadow: 0 12px 22px rgba(5, 16, 37, 0.28);
+        }
+
+        .queue-manual-form {
+            display: grid;
+            gap: 10px 12px;
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .queue-manual-fields {
+            display: grid;
+            gap: 10px;
+        }
+
+        .queue-manual-submit {
+            display: flex;
+            align-items: end;
+        }
+
+        .queue-manual-submit .button {
+            min-height: 43px;
+            padding: 0 16px;
+            border-radius: 10px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            box-shadow: 0 10px 18px rgba(7, 13, 28, 0.26);
+        }
+
+        .queue-manual-submit-button {
+            border: 1px solid rgba(42, 216, 255, 0.64);
+            background: linear-gradient(145deg, rgba(42, 216, 255, 0.36), rgba(42, 216, 255, 0.16));
+            color: #dcf9ff;
+            box-shadow:
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 10px 18px rgba(7, 13, 28, 0.26),
+                0 0 18px rgba(42, 216, 255, 0.2);
+        }
+
+        .queue-manual-submit-button:hover {
+            background: linear-gradient(145deg, rgba(42, 216, 255, 0.46), rgba(42, 216, 255, 0.24));
+        }
+
+        .queue-table {
+            border-color: rgba(255, 255, 255, 0.16);
+            background: rgba(8, 16, 36, 0.62);
+            width: 100%;
+            max-width: 100%;
+            table-layout: fixed;
+        }
+
+        .queue-table--upcoming {
+            min-width: 720px;
+        }
+
+        .queue-table--history {
+            min-width: 620px;
+        }
+
+        .queue-table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .queue-table thead th {
+            border-bottom-color: rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(236, 241, 255, 0.86);
+        }
+
+        .queue-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .queue-table tbody tr:hover {
+            background: rgba(42, 216, 255, 0.08);
+        }
+
+        .queue-table td {
+            border-bottom-color: rgba(255, 255, 255, 0.09);
+            color: rgba(246, 248, 255, 0.96);
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .queue-table--upcoming td:nth-child(2),
+        .queue-table--upcoming td:nth-child(3) {
+            font-weight: 600;
+        }
+
+        .queue-table--upcoming th:nth-child(1),
+        .queue-table--upcoming td:nth-child(1) {
+            width: 58px;
+            text-align: center;
+        }
+
+        .queue-table--upcoming th:nth-child(4),
+        .queue-table--upcoming td:nth-child(4) {
+            width: 132px;
+        }
+
+        .queue-table--upcoming th:nth-child(5),
+        .queue-table--upcoming td:nth-child(5) {
+            width: 196px;
+        }
+
+        .queue-table--upcoming td:last-child {
+            min-width: 0;
+        }
+
+        .queue-table--history th:nth-child(1),
+        .queue-table--history td:nth-child(1) {
+            width: 92px;
+        }
+
+        .queue-table--history th:nth-child(4),
+        .queue-table--history td:nth-child(4) {
+            width: 124px;
+        }
+
+        .queue-table-actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .queue-action-button {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 6px 11px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            color: #eef4ff;
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+        }
+
+        .queue-action-button:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .queue-action-button--skip {
+            border-color: rgba(42, 216, 255, 0.48);
+            background: rgba(42, 216, 255, 0.14);
+            color: #ddf9ff;
+        }
+
+        .queue-action-button--cancel {
+            border-color: rgba(255, 98, 134, 0.46);
+            background: rgba(255, 98, 134, 0.14);
+            color: #ffdce5;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-width: 980px) {
+            .queue-grid--top {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .queue-copy .queue-copy-title--playback {
+                font-size: 1.18rem;
+            }
+
+            .playback-control-button--toggle {
+                width: 68px;
+                min-width: 68px;
+                min-height: 68px;
+                border-radius: 16px;
+            }
+
+            .playback-control-button--next {
+                min-height: 68px;
+                padding: 0 16px;
+            }
+
+            .queue-manual-form {
+                grid-template-columns: 1fr;
+            }
+
+            .queue-manual-submit {
+                justify-content: flex-start;
+            }
+
+            .queue-table {
+                display: table;
+                white-space: normal;
+            }
+
+            .queue-table--upcoming {
+                min-width: 680px;
+            }
+
+            .queue-table--history {
+                min-width: 560px;
+            }
+        }
+    </style>
+
+    <div class="queue-page">
+        <section class="queue-section queue-section--overview">
+            <header class="queue-section-head">
+                <div class="queue-copy">
+                    <h2>Evento in gestione</h2>
+                    <p>Panoramica rapida della serata attiva e delle informazioni principali.</p>
+                </div>
+                <span class="queue-count">{{ $eventStatusLabel }}</span>
+            </header>
             <div class="panel-row">
                 <div>
-                    <div class="label">Stato</div>
-                    <div class="value">{{ $eventNight->playbackState?->state ?? 'idle' }}</div>
+                    <div class="label">Evento</div>
+                    <div class="value">#{{ $eventNight->id }} · {{ $eventNight->venue?->name ?? 'N/D' }}</div>
                 </div>
                 <div>
-                    <div class="label">Canzone corrente</div>
-                    <div class="value">
-                        {{ $eventNight->playbackState?->currentRequest?->song?->title ?? '—' }}
-                    </div>
+                    <div class="label">Inizio</div>
+                    <div class="value">{{ $eventNight->starts_at?->format('Y-m-d H:i') ?? '—' }}</div>
                 </div>
-                <div>
-                    <div class="label">Fine prevista</div>
-                    @php($expectedEndAt = $eventNight->playbackState?->expected_end_at)
-                    <div class="value">
-                        @if ($expectedEndAt)
-                            <span data-expected-end="{{ $expectedEndAt->toIso8601String() }}">{{ $expectedEndAt->format('H:i:s') }}</span>
-                        @else
-                            —
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @php($playbackState = $eventNight->playbackState)
-            @php($startDisabled = in_array($playbackState?->state, [\App\Models\PlaybackState::STATE_PLAYING, \App\Models\PlaybackState::STATE_PAUSED], true))
-            <div class="actions" style="margin-top: 16px;">
-                <form method="POST" action="{{ route('admin.queue.start', $eventNight) }}">
-                    @csrf
-                    <button class="button success" type="submit" {{ $startDisabled ? 'disabled' : '' }}>Avvia riproduzione</button>
-                </form>
-                <form method="POST" action="{{ route('admin.queue.stop', $eventNight) }}">
-                    @csrf
-                    <button class="button secondary" type="submit">Metti in pausa</button>
-                </form>
-                <form method="POST" action="{{ route('admin.queue.resume', $eventNight) }}">
-                    @csrf
-                    <button class="button" type="submit">Riprendi</button>
-                </form>
-                <form method="POST" action="{{ route('admin.queue.next', $eventNight) }}">
-                    @csrf
-                    <button class="button" type="submit">Prossima canzone</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h2 style="margin-top: 0;">Impostazioni coda</h2>
-            <div class="helper">Queste impostazioni regolano il flusso automatico durante la riproduzione.</div>
-            <div class="divider"></div>
-            <div class="panel-row">
                 <div>
                     <div class="label">Secondi di pausa</div>
                     <div class="value">{{ $eventNight->break_seconds }}</div>
-                    <div class="helper">Aggiunti dopo ogni canzone per consentire le transizioni.</div>
                 </div>
                 <div>
-                    @php($cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60))
                     <div class="label">Attesa richieste (minuti)</div>
                     <div class="value">{{ $cooldownMinutes }}</div>
-                    <div class="helper">Attesa minima tra le richieste per cantante.</div>
                 </div>
             </div>
+        </section>
+
+        <div class="queue-grid queue-grid--top">
+            <section class="queue-section queue-section--playback">
+                <header class="queue-section-head">
+                    <div class="queue-copy">
+                        <h2 class="queue-copy-title--playback">Controllo riproduzione</h2>
+                        <p>Due controlli principali: avvio/pausa e passaggio alla prossima canzone.</p>
+                    </div>
+                    <span class="queue-count">{{ $playbackStatusLabel }}</span>
+                </header>
+
+                <div class="queue-meta-grid">
+                    <div>
+                        <div class="label">Stato flusso</div>
+                        <div class="value">{{ $playbackStatusLabel }}</div>
+                    </div>
+                    <div>
+                        <div class="label">Canzone corrente</div>
+                        <div class="value">{{ $playbackState?->currentRequest?->song?->title ?? '—' }}</div>
+                    </div>
+                    <div>
+                        <div class="label">Fine prevista</div>
+                        <div class="value">
+                            @if ($expectedEndAt)
+                                <span data-expected-end="{{ $expectedEndAt->toIso8601String() }}">{{ $expectedEndAt->format('H:i:s') }}</span>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="playback-controls">
+                    <form class="playback-control-form" method="POST" action="{{ $togglePlaybackRoute }}">
+                        @csrf
+                        <button
+                            class="playback-control-button playback-control-button--toggle {{ $isPlaying ? 'playback-control-button--pause' : 'playback-control-button--play' }}"
+                            type="submit"
+                            aria-label="{{ $togglePlaybackTitle }}"
+                            title="{{ $togglePlaybackTitle }}"
+                        >
+                            @if ($isPlaying)
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M8 6v12"></path>
+                                    <path d="M16 6v12"></path>
+                                </svg>
+                                <span class="sr-only">Pausa</span>
+                            @else
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <polygon points="8,6 18,12 8,18"></polygon>
+                                </svg>
+                                <span class="sr-only">Play</span>
+                            @endif
+                        </button>
+                    </form>
+
+                    <form class="playback-control-form" method="POST" action="{{ route('admin.queue.next', $eventNight) }}">
+                        @csrf
+                        <button class="playback-control-button playback-control-button--next" type="submit" aria-label="Passa alla prossima canzone" title="Passa alla prossima canzone">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m5 4 10 8-10 8V4Z"></path>
+                                <path d="M19 5v14"></path>
+                            </svg>
+                            <span>Prossima canzone</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="queue-section queue-section--manual">
+                <header class="queue-section-head">
+                    <div class="queue-copy">
+                        <h2>Aggiungi un partecipante</h2>
+                        <p>Inserisci rapidamente un cantante presente in sala direttamente nella coda corrente.</p>
+                    </div>
+                </header>
+                <form method="POST" action="{{ route('admin.queue.add', $eventNight) }}" class="queue-manual-form">
+                    @csrf
+                    <div class="queue-manual-fields">
+                        <div>
+                            <label for="display_name">Nome cantante</label>
+                            <input id="display_name" type="text" name="display_name" required>
+                        </div>
+                        <div>
+                            <label for="song_id">Canzone</label>
+                            <select id="song_id" name="song_id" required>
+                                @foreach ($songs as $song)
+                                    <option value="{{ $song->id }}">{{ $song->artist ? "{$song->artist} - {$song->title}" : $song->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="queue-manual-submit">
+                        <button class="button queue-manual-submit-button" type="submit">Aggiungi</button>
+                    </div>
+                </form>
+            </section>
         </div>
-    </div>
 
-    <div class="panel" style="margin-bottom: 20px;">
-        <h2 style="margin-top: 0;">Aggiungi partecipante manuale</h2>
-        <div class="helper">Usa questa sezione per aggiungere cantanti presenti direttamente in coda.</div>
-        <form method="POST" action="{{ route('admin.queue.add', $eventNight) }}" class="grid three" style="margin-top: 16px; align-items: end;">
-            @csrf
-            <div>
-                <label for="display_name">Nome cantante</label>
-                <input id="display_name" type="text" name="display_name" required>
-            </div>
-            <div>
-                <label for="song_id">Canzone</label>
-                <select id="song_id" name="song_id" required>
-                    @foreach ($songs as $song)
-                        <option value="{{ $song->id }}">{{ $song->artist ? "{$song->artist} - {$song->title}" : $song->title }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <button class="button success" type="submit">Aggiungi alla coda</button>
-            </div>
-        </form>
-    </div>
+        <div class="queue-grid queue-grid--tables">
+            <section class="queue-section queue-section--focus">
+                <header class="queue-section-head">
+                    <div class="queue-copy">
+                        <h2>Prossimi</h2>
+                        <p>Ordine corrente delle esibizioni in coda.</p>
+                    </div>
+                    <span class="queue-count">{{ $queue->count() }}</span>
+                </header>
+                <div class="queue-table-wrap">
+                    <table class="queue-table queue-table--upcoming">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Partecipante</th>
+                                <th>Canzone</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @forelse ($queue as $request)
+                            <tr>
+                                <td>{{ $request->position ?? '—' }}</td>
+                                <td>{{ $request->participant?->display_name ?? 'Ospite' }}</td>
+                                <td>{{ $request->song?->title ?? 'Sconosciuta' }}</td>
+                                <td><span class="pill">{{ $request->status }}</span></td>
+                                <td>
+                                    <div class="queue-table-actions">
+                                        <form method="POST" action="{{ route('admin.queue.skip', $eventNight) }}">
+                                            @csrf
+                                            <input type="hidden" name="song_request_id" value="{{ $request->id }}">
+                                            <button class="queue-action-button queue-action-button--skip" type="submit">Salta</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.queue.cancel', $eventNight) }}">
+                                            @csrf
+                                            <input type="hidden" name="song_request_id" value="{{ $request->id }}">
+                                            <button class="queue-action-button queue-action-button--cancel" type="submit">Annulla</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">Nessuna canzone in coda.</td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-    <div class="grid two">
-        <div class="panel">
-            <h2 style="margin-top: 0;">Prossimi</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Partecipante</th>
-                        <th>Canzone</th>
-                        <th>Stato</th>
-                        <th>Azioni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @forelse ($queue as $request)
-                    <tr>
-                        <td>{{ $request->position ?? '—' }}</td>
-                        <td>{{ $request->participant?->display_name ?? 'Ospite' }}</td>
-                        <td>{{ $request->song?->title ?? 'Sconosciuta' }}</td>
-                        <td><span class="pill">{{ $request->status }}</span></td>
-                        <td>
-                            <div class="actions">
-                                <form method="POST" action="{{ route('admin.queue.skip', $eventNight) }}">
-                                    @csrf
-                                    <input type="hidden" name="song_request_id" value="{{ $request->id }}">
-                                    <button class="button secondary" type="submit">Salta</button>
-                                </form>
-                                <form method="POST" action="{{ route('admin.queue.cancel', $eventNight) }}">
-                                    @csrf
-                                    <input type="hidden" name="song_request_id" value="{{ $request->id }}">
-                                    <button class="button danger" type="submit">Annulla</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5">Nessuna canzone in coda.</td>
-                    </tr>
-                @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="panel">
-            <h2 style="margin-top: 0;">Riprodotte e saltate</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Quando</th>
-                        <th>Partecipante</th>
-                        <th>Canzone</th>
-                        <th>Stato</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @forelse ($history as $request)
-                    <tr>
-                        <td>{{ ($request->played_at ?? $request->updated_at)?->format('H:i') ?? '—' }}</td>
-                        <td>{{ $request->participant?->display_name ?? 'Ospite' }}</td>
-                        <td>{{ $request->song?->title ?? 'Sconosciuta' }}</td>
-                        <td><span class="pill">{{ $request->status }}</span></td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4">Nessuna canzone completata.</td>
-                    </tr>
-                @endforelse
-                </tbody>
-            </table>
+            <section class="queue-section">
+                <header class="queue-section-head">
+                    <div class="queue-copy">
+                        <h2>Riprodotte e saltate</h2>
+                        <p>Storico recente delle canzoni gia processate.</p>
+                    </div>
+                </header>
+                <div class="queue-table-wrap">
+                    <table class="queue-table queue-table--history">
+                        <thead>
+                            <tr>
+                                <th>Quando</th>
+                                <th>Partecipante</th>
+                                <th>Canzone</th>
+                                <th>Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @forelse ($history as $request)
+                            <tr>
+                                <td>{{ ($request->played_at ?? $request->updated_at)?->format('H:i') ?? '—' }}</td>
+                                <td>{{ $request->participant?->display_name ?? 'Ospite' }}</td>
+                                <td>{{ $request->song?->title ?? 'Sconosciuta' }}</td>
+                                <td><span class="pill">{{ $request->status }}</span></td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">Nessuna canzone completata.</td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </div>
 

@@ -33,10 +33,17 @@
             color: var(--text);
             font-family: 'Poppins', 'Nunito Sans', 'Trebuchet MS', sans-serif;
             background:
+                url("{{ asset('images/admin/karaoke-duo.svg') }}") 97% 78% / 186px 244px no-repeat,
+                url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgMTYwJz4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0naGFsbycgY3g9JzUwJScgY3k9JzQ0JScgcj0nNTglJz4KICAgICAgPHN0b3Agb2Zmc2V0PScwJScgc3RvcC1jb2xvcj0nI2ZmZmZmZicgc3RvcC1vcGFjaXR5PScwLjExJy8+CiAgICAgIDxzdG9wIG9mZnNldD0nNzAlJyBzdG9wLWNvbG9yPScjYjhjN2VhJyBzdG9wLW9wYWNpdHk9JzAuMDUnLz4KICAgICAgPHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjN2Q4Y2FmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9J2JvZHknIHgxPScwJScgeTE9JzAlJyB4Mj0nMTAwJScgeTI9JzEwMCUnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjZjJmNmZmJyBzdG9wLW9wYWNpdHk9JzAuMjgnLz4KICAgICAgPHN0b3Agb2Zmc2V0PSc1NSUnIHN0b3AtY29sb3I9JyM5YWE5Y2EnIHN0b3Atb3BhY2l0eT0nMC4yMicvPgogICAgICA8c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyM0YTU3NzknIHN0b3Atb3BhY2l0eT0nMC4xOScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0nbWVzaCcgeDE9JzAlJyB5MT0nMCUnIHgyPScwJScgeTI9JzEwMCUnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjZjdmYmZmJyBzdG9wLW9wYWNpdHk9JzAuMjQnLz4KICAgICAgPHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjODY5NWJhJyBzdG9wLW9wYWNpdHk9JzAuMTUnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9J3N0ZW0nIHgxPScwJScgeTE9JzAlJyB4Mj0nMTAwJScgeTI9JzEwMCUnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjZWNmMmZmJyBzdG9wLW9wYWNpdHk9JzAuMjQnLz4KICAgICAgPHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjN2U4ZmI1JyBzdG9wLW9wYWNpdHk9JzAuMTgnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9JzgwJyBjeT0nODAnIHI9JzcyJyBmaWxsPSd1cmwoI2hhbG8pJy8+CiAgPGcgdHJhbnNmb3JtPSdyb3RhdGUoLTIyIDgwIDgwKSc+CiAgICA8cmVjdCB4PSc0OScgeT0nMjQnIHdpZHRoPSc2MicgaGVpZ2h0PSc1Nicgcng9JzI4JyBmaWxsPSd1cmwoI2JvZHkpJyBzdHJva2U9JyNmNGY4ZmYnIHN0cm9rZS1vcGFjaXR5PScwLjI2JyBzdHJva2Utd2lkdGg9JzIuNCcvPgogICAgPHJlY3QgeD0nNTUnIHk9JzMxJyB3aWR0aD0nNTAnIGhlaWdodD0nNDInIHJ4PScyMCcgZmlsbD0ndXJsKCNtZXNoKScgc3Ryb2tlPScjZDRkZWVmJyBzdHJva2Utb3BhY2l0eT0nMC4yJyBzdHJva2Utd2lkdGg9JzEuNicvPgogICAgPHBhdGggZD0nTTYwIDM5aDQwTTU4IDQ2aDQ0TTU3IDUzaDQ2TTU4IDYwaDQ0TTYwIDY3aDQwJyBzdHJva2U9JyNmNWY5ZmYnIHN0cm9rZS1vcGFjaXR5PScwLjIyJyBzdHJva2Utd2lkdGg9JzEuOCcgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+CiAgICA8cGF0aCBkPSdNNjQgODhjMCAxMSA3IDE4IDE2IDE4czE2LTcgMTYtMTgnIGZpbGw9J25vbmUnIHN0cm9rZT0nI2RjZTZmOCcgc3Ryb2tlLW9wYWNpdHk9JzAuMjMnIHN0cm9rZS13aWR0aD0nNCcgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+CiAgICA8cGF0aCBkPSdNODAgODB2MzEnIHN0cm9rZT0ndXJsKCNzdGVtKScgc3Ryb2tlLXdpZHRoPSc3JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz4KICAgIDxwYXRoIGQ9J004MCAxMTF2MTEnIHN0cm9rZT0nI2RiZTVmNycgc3Ryb2tlLW9wYWNpdHk9JzAuMjEnIHN0cm9rZS13aWR0aD0nNCcgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+CiAgICA8cmVjdCB4PSc2MicgeT0nMTIxJyB3aWR0aD0nMzYnIGhlaWdodD0nNycgcng9JzMuNScgZmlsbD0nI2RjZTZmOCcgZmlsbC1vcGFjaXR5PScwLjE4Jy8+CiAgPC9nPgo8L3N2Zz4K") 7% 84% / 196px 196px no-repeat,
+                url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgMTYwJz4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0naGFsbycgY3g9JzUwJScgY3k9JzQ0JScgcj0nNTglJz4KICAgICAgPHN0b3Agb2Zmc2V0PScwJScgc3RvcC1jb2xvcj0nI2ZmZmZmZicgc3RvcC1vcGFjaXR5PScwLjEnLz4KICAgICAgPHN0b3Agb2Zmc2V0PSc3MCUnIHN0b3AtY29sb3I9JyNmMGQ3YTcnIHN0b3Atb3BhY2l0eT0nMC4wNScvPgogICAgICA8c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNhODg3NTYnIHN0b3Atb3BhY2l0eT0nMCcvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0nYm9keScgeDE9JzAlJyB5MT0nMCUnIHgyPScxMDAlJyB5Mj0nMTAwJSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyNmZmY1ZGYnIHN0b3Atb3BhY2l0eT0nMC4yNycvPgogICAgICA8c3RvcCBvZmZzZXQ9JzU1JScgc3RvcC1jb2xvcj0nI2QxYjY4YScgc3RvcC1vcGFjaXR5PScwLjIxJy8+CiAgICAgIDxzdG9wIG9mZnNldD0nMTAwJScgc3RvcC1jb2xvcj0nIzdmNjQ0MScgc3RvcC1vcGFjaXR5PScwLjE4Jy8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdtZXNoJyB4MT0nMCUnIHkxPScwJScgeDI9JzAlJyB5Mj0nMTAwJSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyNmZmY5ZWYnIHN0b3Atb3BhY2l0eT0nMC4yMicvPgogICAgICA8c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNiZWExNzMnIHN0b3Atb3BhY2l0eT0nMC4xNCcvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0nc3RlbScgeDE9JzAlJyB5MT0nMCUnIHgyPScxMDAlJyB5Mj0nMTAwJSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyNmZmY2ZTEnIHN0b3Atb3BhY2l0eT0nMC4yMycvPgogICAgICA8c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNiMzhmNjAnIHN0b3Atb3BhY2l0eT0nMC4xNycvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGNpcmNsZSBjeD0nODAnIGN5PSc4MCcgcj0nNzInIGZpbGw9J3VybCgjaGFsbyknLz4KICA8ZyB0cmFuc2Zvcm09J3JvdGF0ZSgyNCA4MCA4MCknPgogICAgPHJlY3QgeD0nNDknIHk9JzI0JyB3aWR0aD0nNjInIGhlaWdodD0nNTYnIHJ4PScyOCcgZmlsbD0ndXJsKCNib2R5KScgc3Ryb2tlPScjZmZmN2U4JyBzdHJva2Utb3BhY2l0eT0nMC4yNCcgc3Ryb2tlLXdpZHRoPScyLjQnLz4KICAgIDxyZWN0IHg9JzU1JyB5PSczMScgd2lkdGg9JzUwJyBoZWlnaHQ9JzQyJyByeD0nMjAnIGZpbGw9J3VybCgjbWVzaCknIHN0cm9rZT0nI2Y0ZGZiZicgc3Ryb2tlLW9wYWNpdHk9JzAuMicgc3Ryb2tlLXdpZHRoPScxLjYnLz4KICAgIDxwYXRoIGQ9J002MCAzOWg0ME01OCA0Nmg0NE01NyA1M2g0Nk01OCA2MGg0NE02MCA2N2g0MCcgc3Ryb2tlPScjZmZmOGVkJyBzdHJva2Utb3BhY2l0eT0nMC4yJyBzdHJva2Utd2lkdGg9JzEuOCcgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+CiAgICA8cGF0aCBkPSdNNjQgODhjMCAxMSA3IDE4IDE2IDE4czE2LTcgMTYtMTgnIGZpbGw9J25vbmUnIHN0cm9rZT0nI2ZmZWFjZCcgc3Ryb2tlLW9wYWNpdHk9JzAuMicgc3Ryb2tlLXdpZHRoPSc0JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz4KICAgIDxwYXRoIGQ9J004MCA4MHYzMScgc3Ryb2tlPSd1cmwoI3N0ZW0pJyBzdHJva2Utd2lkdGg9JzcnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcvPgogICAgPHBhdGggZD0nTTgwIDExMXYxMScgc3Ryb2tlPScjZmZlOGM3JyBzdHJva2Utb3BhY2l0eT0nMC4xOCcgc3Ryb2tlLXdpZHRoPSc0JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz4KICAgIDxyZWN0IHg9JzYyJyB5PScxMjEnIHdpZHRoPSczNicgaGVpZ2h0PSc3JyByeD0nMy41JyBmaWxsPScjZmZlNWMwJyBmaWxsLW9wYWNpdHk9JzAuMTYnLz4KICA8L2c+Cjwvc3ZnPgo=") 93% 16% / 170px 170px no-repeat,
+                radial-gradient(circle at 8% 84%, rgba(169, 196, 255, 0.12), transparent 24%),
+                radial-gradient(circle at 92% 16%, rgba(255, 227, 170, 0.1), transparent 22%),
+                radial-gradient(circle at 93% 73%, rgba(132, 182, 255, 0.1), transparent 28%),
                 radial-gradient(circle at 12% 18%, rgba(255, 79, 216, 0.18), transparent 35%),
                 radial-gradient(circle at 84% 22%, rgba(42, 216, 255, 0.2), transparent 38%),
                 radial-gradient(circle at 60% 75%, rgba(255, 212, 71, 0.1), transparent 44%),
                 linear-gradient(140deg, var(--bg-start), var(--bg-mid) 45%, var(--bg-end));
+            background-attachment: fixed;
             position: relative;
             overflow-x: hidden;
         }
@@ -48,7 +55,6 @@
             border-radius: 999px;
             pointer-events: none;
             z-index: -1;
-            animation: glow-float 14s ease-in-out infinite;
         }
 
         body::before {
@@ -65,12 +71,6 @@
             bottom: -110px;
             left: -90px;
             background: radial-gradient(circle, rgba(42, 216, 255, 0.35), rgba(42, 216, 255, 0));
-            animation-delay: 2s;
-        }
-
-        @keyframes glow-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-16px); }
         }
 
         .topbar {
@@ -85,7 +85,7 @@
         .topbar-inner {
             max-width: 1240px;
             margin: 0 auto;
-            padding: 12px 18px;
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -94,7 +94,7 @@
         }
 
         .brand {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             line-height: 1.15;
         }
@@ -102,37 +102,93 @@
         .brand small {
             display: block;
             color: var(--muted);
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
         .nav-links {
             display: flex;
-            gap: 10px;
+            gap: 4px;
             align-items: center;
             flex-wrap: wrap;
+            padding: 0;
         }
 
         .nav-links a {
-            color: var(--text);
+            position: relative;
+            color: #d7ddea;
             text-decoration: none;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
-            padding: 7px 12px;
-            border-radius: 999px;
-            border: 1px solid transparent;
-            transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+            letter-spacing: 0.01em;
+            padding: 10px 14px 11px;
+            border-radius: 2px;
+            background: transparent;
+            transition: color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 5px;
+            height: 2px;
+            background: transparent;
+            transition: background-color 150ms ease, transform 150ms ease;
+            transform: scaleX(0.4);
+            transform-origin: center;
         }
 
         .nav-links a:hover {
-            border-color: rgba(255, 79, 216, 0.45);
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-1px);
+            color: #f2f5fb;
+            background: rgba(176, 186, 206, 0.1);
+        }
+
+        .nav-links a:hover::after {
+            background: rgba(205, 214, 230, 0.58);
+            transform: scaleX(1);
+        }
+
+        .nav-links a.active {
+            /*background: rgba(199, 207, 222, 0.14);
+            box-shadow: inset 0 0 0 1px rgba(218, 225, 237, 0.32);*/
+            color: #ffffff;
+        }
+
+        .nav-links a.active::after {
+            background: rgba(235, 241, 251, 0.92);
+            transform: scaleX(1);
         }
 
         .logout-form {
             margin: 0;
+        }
+
+        .logout-icon {
+            border: 0;
+            background: transparent;
+            color: #ff5e79;
+            padding: 2px;
+            line-height: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 150ms ease, color 150ms ease, filter 150ms ease;
+        }
+
+        .logout-icon:hover {
+            color: #ff7f96;
+            filter: drop-shadow(0 0 8px rgba(255, 94, 121, 0.42));
+            transform: translateY(-1px);
+        }
+
+        .logout-icon svg {
+            width: 28px;
+            height: 28px;
+            display: block;
         }
 
         main {
@@ -401,11 +457,21 @@
             }
 
             .topbar-inner {
-                padding: 12px 14px;
+                padding: 14px 14px;
             }
 
             .brand {
-                font-size: 16px;
+                font-size: 18px;
+            }
+
+            .nav-links a {
+                font-size: 15px;
+                padding: 8px 12px;
+            }
+
+            .logout-icon svg {
+                width: 26px;
+                height: 26px;
             }
 
             table {
@@ -424,18 +490,22 @@
             <small>Admin Experience</small>
         </div>
         <nav class="nav-links">
-            <a href="{{ route('admin.dashboard') }}">Panoramica</a>
-            <a href="{{ route('admin.events.index') }}">Eventi</a>
-            <a href="{{ route('admin.songs.index') }}">Canzoni</a>
-            <a href="{{ route('admin.venues.index') }}">Location</a>
+            <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif>Panoramica</a>
+            <a href="{{ route('admin.events.index') }}" class="{{ request()->routeIs('admin.events.*') ? 'active' : '' }}" @if(request()->routeIs('admin.events.*')) aria-current="page" @endif>Eventi</a>
+            <a href="{{ route('admin.songs.index') }}" class="{{ request()->routeIs('admin.songs.*') ? 'active' : '' }}" @if(request()->routeIs('admin.songs.*')) aria-current="page" @endif>Canzoni</a>
+            <a href="{{ route('admin.venues.index') }}" class="{{ request()->routeIs('admin.venues.*') ? 'active' : '' }}" @if(request()->routeIs('admin.venues.*')) aria-current="page" @endif>Location</a>
             @isset($eventNight)
-                <a href="{{ route('admin.queue.show', $eventNight) }}">Coda</a>
-                <a href="{{ route('admin.theme.show', $eventNight) }}">Tema/Annunci</a>
+                <a href="{{ route('admin.queue.show', $eventNight) }}" class="{{ request()->routeIs('admin.queue.*') ? 'active' : '' }}" @if(request()->routeIs('admin.queue.*')) aria-current="page" @endif>Coda</a>
+                <a href="{{ route('admin.theme.show', $eventNight) }}" class="{{ request()->routeIs('admin.theme.*') ? 'active' : '' }}" @if(request()->routeIs('admin.theme.*')) aria-current="page" @endif>Tema/Annunci</a>
             @endisset
         </nav>
         <form method="POST" action="{{ route('admin.logout') }}" class="logout-form">
             @csrf
-            <button class="button secondary" type="submit">Esci</button>
+            <button class="logout-icon" type="submit" aria-label="Esci" title="Esci">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M10.09 15.59 11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59ZM19 3H7a2 2 0 0 0-2 2v3h2V5h12v14H7v-3H5v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/>
+                </svg>
+            </button>
         </form>
     </div>
 </header>
