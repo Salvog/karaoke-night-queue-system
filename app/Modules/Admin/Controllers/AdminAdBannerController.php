@@ -22,16 +22,24 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:150'],
             'image' => ['required', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:3072'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $path = $request->file('image')->store("ad-banners/{$eventNight->venue_id}", 'public');
 
+        $logoPath = $request->hasFile('logo')
+            ? $request->file('logo')->store("ad-banners/{$eventNight->venue_id}/logos", 'public')
+            : null;
+
         AdBanner::create([
             'venue_id' => $eventNight->venue_id,
             'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
             'image_url' => Storage::disk('public')->url($path),
+            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
@@ -56,7 +64,10 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:150'],
             'image' => ['nullable', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:3072'],
+            'remove_logo' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -68,8 +79,24 @@ class AdminAdBannerController extends Controller
 
         $adBanner->fill([
             'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
             'is_active' => (bool) ($data['is_active'] ?? false),
-        ])->save();
+        ]);
+
+        if ($request->hasFile('logo')) {
+            if ($adBanner->logo_url) {
+                $this->deletePublicAsset($adBanner->logo_url);
+            }
+            $logoPath = $request->file('logo')->store("ad-banners/{$eventNight->venue_id}/logos", 'public');
+            $adBanner->logo_url = Storage::disk('public')->url($logoPath);
+        } elseif ($request->boolean('remove_logo')) {
+            if ($adBanner->logo_url) {
+                $this->deletePublicAsset($adBanner->logo_url);
+            }
+            $adBanner->logo_url = null;
+        }
+
+        $adBanner->save();
 
         $this->publishBannerUpdates($adBanner, $publisher);
 
@@ -91,6 +118,9 @@ class AdminAdBannerController extends Controller
         }
 
         $this->deletePublicAsset($adBanner->image_url);
+        if ($adBanner->logo_url) {
+            $this->deletePublicAsset($adBanner->logo_url);
+        }
         $adBanner->delete();
 
         $this->publishBannerUpdates($adBanner, $publisher);

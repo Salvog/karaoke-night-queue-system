@@ -30,6 +30,8 @@ class PublicScreenService
                 'code' => $eventNight->code,
                 'venue' => $eventNight->venue?->name,
                 'timezone' => $eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'),
+                'starts_at' => $eventNight->starts_at?->toIso8601String(),
+                'join_url' => route('public.join.show', $eventNight->code),
             ],
             'playback' => $this->buildPlaybackPayload($eventNight),
             'queue' => $this->buildQueuePayload($eventNight),
@@ -114,11 +116,16 @@ class PublicScreenService
             ] : null,
             'banner' => $eventNight->adBanner ? [
                 'title' => $eventNight->adBanner->title,
+                'subtitle' => $eventNight->adBanner->subtitle,
                 'image_url' => $eventNight->adBanner->image_url,
+                'logo_url' => $eventNight->adBanner->logo_url,
                 'is_active' => (bool) $eventNight->adBanner->is_active,
             ] : null,
             'background_image_url' => $eventNight->background_image_path
                 ? Storage::disk('public')->url($eventNight->background_image_path)
+                : null,
+            'event_logo_url' => $eventNight->event_logo_path
+                ? Storage::disk('public')->url($eventNight->event_logo_path)
                 : null,
             'overlay_texts' => $eventNight->overlay_texts ?? [],
         ];
