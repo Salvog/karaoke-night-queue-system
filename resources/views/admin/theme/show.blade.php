@@ -10,6 +10,9 @@
         $backgroundUrl = $eventNight->background_image_path
             ? Storage::disk('public')->url($eventNight->background_image_path)
             : null;
+        $eventLogoUrl = $eventNight->event_logo_path
+            ? Storage::disk('public')->url($eventNight->event_logo_path)
+            : null;
     @endphp
 
     <form method="POST" action="{{ route('admin.theme.update', $eventNight) }}" enctype="multipart/form-data">
@@ -57,6 +60,23 @@
             @endif
         </div>
 
+
+        <div style="margin-bottom: 16px;">
+            <label for="event_logo">Logo evento</label>
+            @if ($eventLogoUrl)
+                <div style="margin: 8px 0;">
+                    <img src="{{ $eventLogoUrl }}" alt="Logo evento" style="max-width: 180px; max-height: 90px; border-radius: 8px; background: #111827; padding: 8px;">
+                </div>
+            @endif
+            <input id="event_logo" type="file" name="event_logo" @disabled(! $adminUser->isAdmin())>
+            @if ($eventLogoUrl)
+                <label style="display: block; margin-top: 8px;">
+                    <input type="checkbox" name="remove_event_logo" value="1" @disabled(! $adminUser->isAdmin())>
+                    Rimuovi logo evento
+                </label>
+            @endif
+        </div>
+
         <div style="margin-bottom: 16px;">
             <label>Testi sovrapposti (max 5)</label>
             <div style="display: grid; gap: 8px; margin-top: 8px;">
@@ -88,8 +108,22 @@
                             <input type="text" name="title" value="{{ $ad->title }}" required>
                         </div>
                         <div style="margin-bottom: 8px;">
+                            <label>Sottotitolo</label>
+                            <input type="text" name="subtitle" value="{{ $ad->subtitle }}" placeholder="Es. Promo valida fino a mezzanotte">
+                        </div>
+                        <div style="margin-bottom: 8px;">
                             <label>Sostituisci immagine</label>
                             <input type="file" name="image" @disabled(! $adminUser->isAdmin())>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label>Logo sponsor</label>
+                            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
+                            @if ($ad->logo_url)
+                                <label style="display:block; margin-top:6px;">
+                                    <input type="checkbox" name="remove_logo" value="1">
+                                    Rimuovi logo sponsor
+                                </label>
+                            @endif
                         </div>
                         <div style="margin-bottom: 8px;">
                             <label>
@@ -99,6 +133,11 @@
                         </div>
                         @if ($ad->image_url)
                             <img src="{{ $ad->image_url }}" alt="{{ $ad->title }}" style="max-width: 200px; border-radius: 8px;">
+                        @endif
+                        @if ($ad->logo_url)
+                            <div style="margin-top: 8px;">
+                                <img src="{{ $ad->logo_url }}" alt="Logo {{ $ad->title }}" style="max-width: 80px; max-height: 80px; border-radius: 999px;">
+                            </div>
                         @endif
                         <div style="margin-top: 8px;">
                             <button class="button" type="submit">Aggiorna</button>
@@ -122,8 +161,16 @@
             <input type="text" name="title" required>
         </div>
         <div style="margin-bottom: 8px;">
+            <label>Sottotitolo</label>
+            <input type="text" name="subtitle" placeholder="Es. Offerta speciale sponsor">
+        </div>
+        <div style="margin-bottom: 8px;">
             <label>Immagine</label>
             <input type="file" name="image" @disabled(! $adminUser->isAdmin()) required>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label>Logo sponsor</label>
+            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
         </div>
         <div style="margin-bottom: 8px;">
             <label>

@@ -33,7 +33,9 @@ class PublicScreenTest extends TestCase
         $banner = AdBanner::create([
             'venue_id' => $venue->id,
             'title' => 'Late Night Happy Hour',
+            'subtitle' => 'Cocktail 2x1 fino alle 23:30',
             'image_url' => 'https://example.com/banner.png',
+            'logo_url' => 'https://example.com/sponsor-logo.png',
             'is_active' => true,
         ]);
 
@@ -101,6 +103,7 @@ class PublicScreenTest extends TestCase
         $response->assertSee('Skyline');
         $response->assertSee('Neon Glow');
         $response->assertSee('Late Night Happy Hour');
+        $response->assertSee('Cocktail 2x1 fino alle 23:30');
     }
 
     public function test_public_screen_state_endpoint_returns_payload(): void
@@ -152,6 +155,7 @@ class PublicScreenTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonPath('playback.song.title', 'Midnight Drive');
         $response->assertJsonPath('event.code', 'SCREEN2');
+        $response->assertJsonPath('event.join_url', url('/e/SCREEN2'));
     }
 
     public function test_public_screen_requires_live_event(): void

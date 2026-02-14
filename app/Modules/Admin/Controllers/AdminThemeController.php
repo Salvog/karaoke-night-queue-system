@@ -40,8 +40,7 @@ class AdminThemeController extends Controller
         EventNight $eventNight,
         LogAdminAction $logger,
         RealtimePublisher $publisher
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
@@ -57,12 +56,19 @@ class AdminThemeController extends Controller
                 Rule::exists('ad_banners', 'id')->where('venue_id', $eventNight->venue_id),
             ],
             'background_image' => ['nullable', 'image', 'max:5120'],
+            'event_logo' => ['nullable', 'image', 'max:3072'],
             'remove_background_image' => ['nullable', 'boolean'],
+            'remove_event_logo' => ['nullable', 'boolean'],
             'overlay_texts' => ['nullable', 'array', 'max:5'],
             'overlay_texts.*' => ['nullable', 'string', 'max:120'],
         ]);
 
-        if ($request->hasFile('background_image') || $request->boolean('remove_background_image')) {
+        if (
+            $request->hasFile('background_image')
+            || $request->boolean('remove_background_image')
+            || $request->hasFile('event_logo')
+            || $request->boolean('remove_event_logo')
+        ) {
             abort_unless($adminUser->isAdmin(), 403);
         }
 
@@ -114,6 +120,20 @@ class AdminThemeController extends Controller
                 Storage::disk('public')->delete($eventNight->background_image_path);
             }
             $updates['background_image_path'] = null;
+        }
+
+        if ($request->hasFile('event_logo')) {
+            if ($eventNight->event_logo_path) {
+                Storage::disk('public')->delete($eventNight->event_logo_path);
+            }
+
+            $path = $request->file('event_logo')->store("event-logos/{$eventNight->id}", 'public');
+            $updates['event_logo_path'] = $path;
+        } elseif ($request->boolean('remove_event_logo')) {
+            if ($eventNight->event_logo_path) {
+                Storage::disk('public')->delete($eventNight->event_logo_path);
+            }
+            $updates['event_logo_path'] = null;
         }
 
         return $updates;
