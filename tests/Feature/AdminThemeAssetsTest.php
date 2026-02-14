@@ -43,6 +43,7 @@ class AdminThemeAssetsTest extends TestCase
 
         $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventNight->id}/theme-ads", [
             'background_image' => UploadedFile::fake()->image('background.jpg'),
+            'event_logo' => UploadedFile::fake()->image('logo.png', 200, 200),
             'overlay_texts' => ['Welcome singers!', 'Tip your host'],
         ]);
 
@@ -53,6 +54,8 @@ class AdminThemeAssetsTest extends TestCase
         $this->assertNotNull($eventNight->background_image_path);
         Storage::disk('public')->assertExists($eventNight->background_image_path);
         $this->assertSame(['Welcome singers!', 'Tip your host'], $eventNight->overlay_texts);
+        $this->assertNotNull($eventNight->event_logo_path);
+        Storage::disk('public')->assertExists($eventNight->event_logo_path);
     }
 
     public function test_staff_cannot_upload_theme_assets(): void
