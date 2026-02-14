@@ -30,6 +30,7 @@ class PublicScreenService
                 'code' => $eventNight->code,
                 'venue' => $eventNight->venue?->name,
                 'timezone' => $eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'),
+                'starts_at' => $eventNight->starts_at?->toIso8601String(),
             ],
             'playback' => $this->buildPlaybackPayload($eventNight),
             'queue' => $this->buildQueuePayload($eventNight),
@@ -100,6 +101,14 @@ class PublicScreenService
                 'title' => $request->song?->title,
                 'artist' => $request->song?->artist,
             ])->all(),
+            'stats' => [
+                'queued_count' => SongRequest::where('event_night_id', $eventNight->id)
+                    ->where('status', SongRequest::STATUS_QUEUED)
+                    ->count(),
+                'played_count' => SongRequest::where('event_night_id', $eventNight->id)
+                    ->where('status', SongRequest::STATUS_PLAYED)
+                    ->count(),
+            ],
         ];
     }
 
@@ -114,11 +123,16 @@ class PublicScreenService
             ] : null,
             'banner' => $eventNight->adBanner ? [
                 'title' => $eventNight->adBanner->title,
+                'subtitle' => $eventNight->adBanner->subtitle,
                 'image_url' => $eventNight->adBanner->image_url,
+                'logo_url' => $eventNight->adBanner->logo_url,
                 'is_active' => (bool) $eventNight->adBanner->is_active,
             ] : null,
             'background_image_url' => $eventNight->background_image_path
                 ? Storage::disk('public')->url($eventNight->background_image_path)
+                : null,
+            'public_logo_url' => $eventNight->public_logo_path
+                ? Storage::disk('public')->url($eventNight->public_logo_path)
                 : null,
             'overlay_texts' => $eventNight->overlay_texts ?? [],
         ];

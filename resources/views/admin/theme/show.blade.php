@@ -10,6 +10,9 @@
         $backgroundUrl = $eventNight->background_image_path
             ? Storage::disk('public')->url($eventNight->background_image_path)
             : null;
+        $publicLogoUrl = $eventNight->public_logo_path
+            ? Storage::disk('public')->url($eventNight->public_logo_path)
+            : null;
     @endphp
 
     <form method="POST" action="{{ route('admin.theme.update', $eventNight) }}" enctype="multipart/form-data">
@@ -27,7 +30,7 @@
         </div>
 
         <div style="margin-bottom: 16px;">
-            <label for="ad_banner_id">Banner pubblicitario</label>
+            <label for="ad_banner_id">Banner pubblicitario attivo sullo schermo</label>
             <select id="ad_banner_id" name="ad_banner_id">
                 <option value="">Nessun banner</option>
                 @foreach ($ads as $ad)
@@ -52,6 +55,22 @@
                     Rimuovi immagine di sfondo
                 </label>
             @endif
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label for="public_logo">Logo evento sullo schermo pubblico</label>
+            @if ($publicLogoUrl)
+                <div style="margin: 8px 0;">
+                    <img src="{{ $publicLogoUrl }}" alt="Logo evento" style="max-width: 180px; border-radius: 8px; background: #111827; padding: 8px;">
+                </div>
+            @endif
+            <input id="public_logo" type="file" name="public_logo" @disabled(! $adminUser->isAdmin())>
+            @if ($publicLogoUrl)
+                <label style="display: block; margin-top: 8px;">
+                    <input type="checkbox" name="remove_public_logo" value="1" @disabled(! $adminUser->isAdmin())>
+                    Rimuovi logo evento
+                </label>
+            @endif
             @if (! $adminUser->isAdmin())
                 <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">Solo gli admin possono caricare risorse.</div>
             @endif
@@ -61,7 +80,7 @@
             <label>Testi sovrapposti (max 5)</label>
             <div style="display: grid; gap: 8px; margin-top: 8px;">
                 @foreach ($overlayTexts as $text)
-                    <input type="text" name="overlay_texts[]" value="{{ $text }}" placeholder="Testo sovrapposto">
+                    <input type="text" name="overlay_texts[]" value="{{ $text }}" placeholder="Es. Benvenuti! Scansiona il QR per cantare">
                 @endforeach
             </div>
         </div>
@@ -72,7 +91,7 @@
     <hr style="margin: 32px 0;">
 
     <h2>Banner pubblicitari</h2>
-    <p style="color: #6b7280; font-size: 14px;">I banner vengono mostrati nello schermo pubblico quando selezionati sopra.</p>
+    <p style="color: #6b7280; font-size: 14px;">Ogni banner supporta titolo, sottotitolo, immagine e logo sponsor.</p>
 
     @if ($ads->isEmpty())
         <p>Nessun banner ancora.</p>
@@ -88,8 +107,25 @@
                             <input type="text" name="title" value="{{ $ad->title }}" required>
                         </div>
                         <div style="margin-bottom: 8px;">
+                            <label>Sottotitolo</label>
+                            <input type="text" name="subtitle" value="{{ $ad->subtitle }}" placeholder="Messaggio sponsor (opzionale)">
+                        </div>
+                        <div style="margin-bottom: 8px;">
                             <label>Sostituisci immagine</label>
                             <input type="file" name="image" @disabled(! $adminUser->isAdmin())>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label>Logo sponsor</label>
+                            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
+                            @if ($ad->logo_url)
+                                <div style="margin-top: 8px;">
+                                    <img src="{{ $ad->logo_url }}" alt="Logo sponsor" style="max-width: 120px; border-radius: 8px; background: #111827; padding: 6px;">
+                                </div>
+                                <label style="display: block; margin-top: 8px;">
+                                    <input type="checkbox" name="remove_logo" value="1">
+                                    Rimuovi logo sponsor
+                                </label>
+                            @endif
                         </div>
                         <div style="margin-bottom: 8px;">
                             <label>
@@ -122,8 +158,16 @@
             <input type="text" name="title" required>
         </div>
         <div style="margin-bottom: 8px;">
+            <label>Sottotitolo</label>
+            <input type="text" name="subtitle" placeholder="Messaggio sponsor (opzionale)">
+        </div>
+        <div style="margin-bottom: 8px;">
             <label>Immagine</label>
             <input type="file" name="image" @disabled(! $adminUser->isAdmin()) required>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label>Logo sponsor</label>
+            <input type="file" name="logo" @disabled(! $adminUser->isAdmin())>
         </div>
         <div style="margin-bottom: 8px;">
             <label>

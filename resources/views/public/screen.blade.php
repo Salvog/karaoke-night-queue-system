@@ -6,172 +6,217 @@
     <title>Karaoke Night | Schermo</title>
     <style>
         :root {
-            --primary-color: #38bdf8;
+            --primary-color: #7c3aed;
             --secondary-color: #0f172a;
-            --panel-color: #111827;
+            --accent-color: #f59e0b;
             --text-color: #f8fafc;
+            --panel-bg: rgba(10, 15, 34, 0.75);
         }
+
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
+            min-height: 100vh;
             font-family: "Segoe UI", sans-serif;
-            background: var(--secondary-color);
             color: var(--text-color);
+            background: radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.35), transparent 35%),
+                        radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.25), transparent 40%),
+                        linear-gradient(145deg, #050816 0%, #0b1024 45%, #1a0b2f 100%);
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
         }
-        header {
-            padding: 24px 32px;
-            background: var(--panel-color);
+
+        .screen {
+            padding: 22px;
+            display: grid;
+            gap: 16px;
+            min-height: 100vh;
+            grid-template-rows: auto 1fr auto;
+            backdrop-filter: saturate(1.1);
+        }
+
+        .top-banner {
+            border: 2px solid color-mix(in srgb, var(--primary-color) 65%, white);
+            border-radius: 999px;
+            padding: 8px 18px;
+            width: fit-content;
+            margin: 0 auto;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            background: linear-gradient(90deg, rgba(124, 58, 237, 0.35), rgba(15, 23, 42, 0.6), rgba(245, 158, 11, 0.3));
+            box-shadow: 0 0 22px rgba(124, 58, 237, 0.55);
+        }
+
+        .content {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 30px rgba(2,6,23,.45);
+        }
+
+        .headline {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
-        header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-        header .event-name {
-            font-size: 16px;
-            color: var(--primary-color);
-        }
-        main {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 24px;
-            padding: 24px 32px 32px;
-        }
-        .panel {
-            background: rgba(15, 23, 42, 0.8);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-        .now-playing h2,
-        .queue h2 {
-            margin-top: 0;
-            font-size: 22px;
-        }
-        .now-playing .song-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .now-playing .song-artist {
-            font-size: 20px;
-            color: var(--primary-color);
-            margin-bottom: 16px;
-        }
-        .lyrics {
-            background: rgba(15, 23, 42, 0.7);
-            border-radius: 12px;
-            padding: 16px;
-            white-space: pre-wrap;
-            min-height: 140px;
-        }
+
+        .event-name { color: #bfdbfe; font-weight: 600; }
         .status-pill {
-            display: inline-block;
-            margin-top: 16px;
-            padding: 6px 12px;
+            padding: 7px 12px;
             border-radius: 999px;
-            background: var(--primary-color);
-            color: #0f172a;
-            font-weight: 600;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-color), #ec4899);
         }
-        .queue-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+
+        .now-grid { display: grid; grid-template-columns: 1fr 140px; gap: 12px; align-items: center; }
+        .song-title { font-size: clamp(30px, 5vw, 56px); font-weight: 800; color: #fbbf24; line-height: 1; }
+        .song-artist { font-size: clamp(18px, 2vw, 28px); color: #f1f5f9; margin-top: 6px; }
+        .singer { color: #cbd5e1; margin-top: 8px; }
+        .microphone {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #fbbf24, #7c2d12 65%);
+            box-shadow: 0 0 25px rgba(245, 158, 11, .5);
         }
-        .queue-list li {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+
+        .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+        .list li { padding-bottom: 10px; border-bottom: 1px solid rgba(148,163,184,.2); }
+        .queue-meta { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+
+        .overlay-texts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .overlay-text {
+            background: rgba(15, 23, 42, .8);
+            border: 1px solid rgba(59,130,246,.4);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
         }
-        .queue-list li:last-child {
-            border-bottom: none;
-        }
-        .queue-meta {
-            color: rgba(226, 232, 240, 0.8);
-            font-size: 14px;
-        }
-        .banner {
-            margin-top: 24px;
+
+        .cta {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(245,158,11,.28), rgba(244,63,94,.25));
+            font-weight: 700;
             text-align: center;
         }
-        .banner img {
-            max-width: 100%;
-            border-radius: 16px;
-        }
-        .banner-title {
-            margin-top: 8px;
-            color: var(--primary-color);
-        }
-        .updated-at {
-            font-size: 12px;
-            color: rgba(226, 232, 240, 0.7);
-            margin-top: 8px;
-        }
-        .overlay-texts {
-            position: fixed;
-            top: 96px;
-            left: 32px;
+
+        .brand-block {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 5;
-            max-width: 40%;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
         }
-        .overlay-text {
-            background: rgba(15, 23, 42, 0.75);
+
+        .event-logo {
+            width: 110px;
+            max-height: 64px;
+            object-fit: contain;
+            background: rgba(15,23,42,.8);
+            border-radius: 10px;
+            padding: 8px;
+            border: 1px solid rgba(148,163,184,.3);
+        }
+
+        .sponsor {
+            margin-top: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(244, 114, 182, .4);
+            background: rgba(91, 33, 182, .22);
+            padding: 10px;
+        }
+
+        .sponsor-head { display: flex; gap: 10px; align-items: center; }
+        .sponsor-logo { width: 54px; height: 54px; object-fit: contain; border-radius: 10px; background: #0f172a; padding: 6px; }
+        .sponsor-title { color: #f9a8d4; font-weight: 800; }
+        .sponsor-subtitle { color: #e2e8f0; font-size: 14px; }
+
+        .sponsor-image { margin-top: 10px; width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; }
+
+        .footer-ticker {
             border-radius: 12px;
-            padding: 8px 14px;
-            font-size: 18px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+            padding: 10px 14px;
+            background: linear-gradient(90deg, rgba(30,64,175,.55), rgba(194,65,12,.55));
+            font-weight: 700;
+            letter-spacing: .3px;
+            color: #fef3c7;
         }
-        @media (max-width: 900px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-            .overlay-texts {
-                position: static;
-                margin: 16px 32px 0;
-                max-width: none;
-            }
+
+        @media (max-width: 1000px) {
+            .content { grid-template-columns: 1fr; }
+            .now-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-<header>
-    <div>
-        <h1>In riproduzione</h1>
-        <div class="event-name" id="event-name"></div>
+<div class="screen">
+    <div class="top-banner">Playing now!</div>
+
+    <div class="content">
+        <section class="panel">
+            <div class="headline">
+                <div>
+                    <div style="opacity:.8; font-weight:700;">Ora in corso</div>
+                    <div class="event-name" id="event-name"></div>
+                </div>
+                <div class="status-pill" id="playback-status"></div>
+            </div>
+
+            <div class="now-grid">
+                <div>
+                    <div class="song-title" id="now-title">—</div>
+                    <div class="song-artist" id="now-artist"></div>
+                    <div class="singer" id="playback-updated"></div>
+                </div>
+                <div class="microphone" aria-hidden="true"></div>
+            </div>
+
+            <div class="overlay-texts" id="overlay-texts"></div>
+            <div class="cta" id="cta">Scansiona il QR e prenota la tua canzone: fai salire l'energia!</div>
+
+            <div class="brand-block">
+                <div id="theme-updated" style="font-size:13px;color:#cbd5e1;"></div>
+                <img class="event-logo" id="event-logo" alt="Logo evento" hidden>
+            </div>
+        </section>
+
+        <aside class="panel">
+            <h3 style="margin:0 0 8px;">Prossime canzoni</h3>
+            <ul class="list" id="next-list"></ul>
+
+            <h3 style="margin:16px 0 8px;">Canzoni recenti</h3>
+            <ul class="list" id="recent-list"></ul>
+
+            <div style="margin-top:10px; font-size:13px; color:#bfdbfe;" id="queue-stats"></div>
+
+            <div class="sponsor" id="banner" hidden>
+                <div class="sponsor-head">
+                    <img class="sponsor-logo" id="banner-logo" alt="Logo sponsor" hidden>
+                    <div>
+                        <div class="sponsor-title" id="banner-title"></div>
+                        <div class="sponsor-subtitle" id="banner-subtitle"></div>
+                    </div>
+                </div>
+                <img class="sponsor-image" id="banner-image" alt="Banner pubblicitario" hidden>
+            </div>
+        </aside>
     </div>
-    <div class="status-pill" id="playback-status"></div>
-</header>
-<div class="overlay-texts" id="overlay-texts"></div>
-<main>
-    <section class="panel now-playing">
-        <h2>Canzone corrente</h2>
-        <div class="song-title" id="now-title">—</div>
-        <div class="song-artist" id="now-artist"></div>
-        <div class="lyrics" id="now-lyrics">In attesa della prossima canzone...</div>
-        <div class="updated-at" id="playback-updated"></div>
-    </section>
 
-    <section class="panel queue">
-        <h2>Prossime</h2>
-        <ul class="queue-list" id="next-list"></ul>
+    <div class="footer-ticker" id="footer-ticker">Benvenuti al karaoke! Divertitevi e cantate con noi!</div>
+</div>
 
-        <h2 style="margin-top: 24px;">Riprodotte di recente</h2>
-        <ul class="queue-list" id="recent-list"></ul>
-
-        <div class="banner" id="banner" hidden>
-            <img id="banner-image" alt="Banner pubblicitario">
-            <div class="banner-title" id="banner-title"></div>
-        </div>
-        <div class="updated-at" id="theme-updated"></div>
-    </section>
-</main>
 <script>
     const initialState = @json($state);
     const realtimeEnabled = @json($realtimeEnabled);
@@ -184,18 +229,26 @@
         playbackStatus: document.getElementById('playback-status'),
         nowTitle: document.getElementById('now-title'),
         nowArtist: document.getElementById('now-artist'),
-        nowLyrics: document.getElementById('now-lyrics'),
         playbackUpdated: document.getElementById('playback-updated'),
         nextList: document.getElementById('next-list'),
         recentList: document.getElementById('recent-list'),
+        queueStats: document.getElementById('queue-stats'),
         banner: document.getElementById('banner'),
         bannerImage: document.getElementById('banner-image'),
         bannerTitle: document.getElementById('banner-title'),
+        bannerSubtitle: document.getElementById('banner-subtitle'),
+        bannerLogo: document.getElementById('banner-logo'),
         themeUpdated: document.getElementById('theme-updated'),
         overlayTexts: document.getElementById('overlay-texts'),
+        footerTicker: document.getElementById('footer-ticker'),
+        cta: document.getElementById('cta'),
+        eventLogo: document.getElementById('event-logo'),
     };
 
+    let state = initialState;
+
     const resolveTimezone = () => state?.event?.timezone || 'Europe/Rome';
+
     const formatTime = (isoValue) => {
         const date = isoValue ? new Date(isoValue) : null;
         if (!date || Number.isNaN(date.getTime())) {
@@ -212,18 +265,7 @@
         if (!song) {
             return 'Nessuna canzone in coda';
         }
-        return song.artist ? `${song.title} — ${song.artist}` : song.title;
-    };
-
-    const updatePlayback = (playback) => {
-        const song = playback.song;
-        elements.nowTitle.textContent = song?.title ?? 'Nessuna canzone in riproduzione';
-        elements.nowArtist.textContent = song?.artist ?? '';
-        elements.nowLyrics.textContent = song?.lyrics || 'Testo non disponibile.';
-        elements.playbackStatus.textContent = playback.state ? playback.state.toUpperCase() : 'IN ATTESA';
-        elements.playbackUpdated.textContent = playback.expected_end_at
-            ? `Fine prevista: ${formatTime(playback.expected_end_at)}`
-            : '';
+        return song.artist ? `${song.artist} · ${song.title}` : song.title;
     };
 
     const renderList = (container, items, emptyMessage) => {
@@ -234,6 +276,7 @@
             container.appendChild(empty);
             return;
         }
+
         items.forEach((item) => {
             const li = document.createElement('li');
             const title = document.createElement('div');
@@ -243,7 +286,7 @@
             if (item.position) {
                 meta.textContent = `Posizione ${item.position}`;
             } else if (item.played_at) {
-                meta.textContent = `Riprodotta ${formatTime(item.played_at)}`;
+                meta.textContent = `Riprodotta alle ${formatTime(item.played_at)}`;
             }
             li.appendChild(title);
             li.appendChild(meta);
@@ -251,54 +294,99 @@
         });
     };
 
+    const updatePlayback = (playback) => {
+        const song = playback.song;
+        elements.nowTitle.textContent = song?.title ?? 'Momento DJ / pausa';
+        elements.nowArtist.textContent = song?.artist ?? 'Preparati: la prossima potresti essere tu!';
+        elements.playbackStatus.textContent = playback.state ? playback.state.toUpperCase() : 'IN ATTESA';
+
+        elements.playbackUpdated.textContent = playback.expected_end_at
+            ? `Fine prevista ${formatTime(playback.expected_end_at)}`
+            : 'A breve nuova estrazione';
+    };
+
     const updateQueue = (queue) => {
-        renderList(elements.nextList, queue.next, 'Nessuna prossima canzone al momento.');
+        renderList(elements.nextList, queue.next, 'Nessuna canzone in coda al momento.');
         renderList(elements.recentList, queue.recent, 'Nessuna canzone riprodotta finora.');
+
+        const queued = queue.stats?.queued_count ?? 0;
+        const played = queue.stats?.played_count ?? 0;
+        elements.queueStats.textContent = `${queued} in coda · ${played} esibizioni completate`;
     };
 
     const updateTheme = (theme) => {
         const config = theme.theme?.config || {};
-        const primary = config.primaryColor || '#38bdf8';
+        const primary = config.primaryColor || '#7c3aed';
         const secondary = config.secondaryColor || '#0f172a';
         document.documentElement.style.setProperty('--primary-color', primary);
         document.documentElement.style.setProperty('--secondary-color', secondary);
-        document.documentElement.style.setProperty('--panel-color', '#111827');
 
         if (theme.background_image_url) {
-            document.body.style.backgroundImage = `url('${theme.background_image_url}')`;
-        } else {
-            document.body.style.backgroundImage = '';
+            document.body.style.backgroundImage = `linear-gradient(145deg, rgba(2,6,23,.75), rgba(30,41,59,.66)), url('${theme.background_image_url}')`;
         }
 
-        if (theme.banner && theme.banner.is_active && theme.banner.image_url) {
+        if (theme.public_logo_url) {
+            elements.eventLogo.hidden = false;
+            elements.eventLogo.src = theme.public_logo_url;
+        } else {
+            elements.eventLogo.hidden = true;
+            elements.eventLogo.removeAttribute('src');
+        }
+
+        if (theme.banner && theme.banner.is_active) {
             elements.banner.hidden = false;
-            elements.bannerImage.src = theme.banner.image_url;
             elements.bannerTitle.textContent = theme.banner.title ?? '';
+            elements.bannerSubtitle.textContent = theme.banner.subtitle ?? '';
+
+            if (theme.banner.logo_url) {
+                elements.bannerLogo.hidden = false;
+                elements.bannerLogo.src = theme.banner.logo_url;
+            } else {
+                elements.bannerLogo.hidden = true;
+                elements.bannerLogo.removeAttribute('src');
+            }
+
+            if (theme.banner.image_url) {
+                elements.bannerImage.hidden = false;
+                elements.bannerImage.src = theme.banner.image_url;
+            } else {
+                elements.bannerImage.hidden = true;
+                elements.bannerImage.removeAttribute('src');
+            }
         } else {
             elements.banner.hidden = true;
-            elements.bannerImage.removeAttribute('src');
-            elements.bannerTitle.textContent = '';
         }
 
         elements.overlayTexts.innerHTML = '';
-        const overlays = theme.overlay_texts || [];
-        overlays.forEach((text) => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'overlay-text';
-            wrapper.textContent = text;
-            elements.overlayTexts.appendChild(wrapper);
+        (theme.overlay_texts || []).forEach((text) => {
+            const chip = document.createElement('div');
+            chip.className = 'overlay-text';
+            chip.textContent = text;
+            elements.overlayTexts.appendChild(chip);
         });
 
-        elements.themeUpdated.textContent = theme.theme?.name ? `Tema: ${theme.theme.name}` : '';
+        elements.themeUpdated.textContent = theme.theme?.name ? `Tema: ${theme.theme.name}` : 'Tema personalizzato';
+
+        const tickerParts = [
+            'Benvenuti al karaoke!',
+            'Divertitevi e cantate con noi!',
+            theme.banner?.title ? `Sponsor: ${theme.banner.title}` : null,
+        ].filter(Boolean);
+        elements.footerTicker.textContent = tickerParts.join(' · ');
+
+        elements.cta.textContent = `Vuoi cantare? Vai su /e/${state?.event?.code ?? ''} e mettiti in coda subito!`;
     };
 
-    const renderState = (state) => {
-        if (!state) {
+    const renderState = (nextState) => {
+        if (!nextState) {
             return;
         }
+
+        state = nextState;
+
         if (state.event) {
             elements.eventName.textContent = state.event.venue
-                ? `${state.event.venue} · ${state.event.code}`
+                ? `${state.event.venue} · Evento ${state.event.code}`
                 : state.event.code;
         }
         if (state.playback) {
@@ -319,12 +407,12 @@
                 if (!response.ok) {
                     return;
                 }
-                const state = await response.json();
-                renderState(state);
+                renderState(await response.json());
             } catch (error) {
                 console.warn('Polling failed', error);
             }
         };
+
         poll();
         setInterval(poll, pollMs);
     };
@@ -338,18 +426,10 @@
         let fallbackStarted = false;
         const source = new EventSource(streamUrl);
 
-        source.addEventListener('snapshot', (event) => {
-            renderState(JSON.parse(event.data));
-        });
-        source.addEventListener('playback', (event) => {
-            updatePlayback(JSON.parse(event.data));
-        });
-        source.addEventListener('queue', (event) => {
-            updateQueue(JSON.parse(event.data));
-        });
-        source.addEventListener('theme', (event) => {
-            updateTheme(JSON.parse(event.data));
-        });
+        source.addEventListener('snapshot', (event) => renderState(JSON.parse(event.data)));
+        source.addEventListener('playback', (event) => updatePlayback(JSON.parse(event.data)));
+        source.addEventListener('queue', (event) => updateQueue(JSON.parse(event.data)));
+        source.addEventListener('theme', (event) => updateTheme(JSON.parse(event.data)));
         source.addEventListener('error', () => {
             if (fallbackStarted) {
                 return;
