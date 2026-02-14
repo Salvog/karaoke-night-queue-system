@@ -33,7 +33,9 @@ class PublicScreenTest extends TestCase
         $banner = AdBanner::create([
             'venue_id' => $venue->id,
             'title' => 'Late Night Happy Hour',
+            'subtitle' => 'Cocktail 2x1 fino a mezzanotte',
             'image_url' => 'https://example.com/banner.png',
+            'logo_url' => 'https://example.com/logo.png',
             'is_active' => true,
         ]);
 
@@ -101,6 +103,7 @@ class PublicScreenTest extends TestCase
         $response->assertSee('Skyline');
         $response->assertSee('Neon Glow');
         $response->assertSee('Late Night Happy Hour');
+        $response->assertSee('Cocktail 2x1 fino a mezzanotte');
     }
 
     public function test_public_screen_state_endpoint_returns_payload(): void

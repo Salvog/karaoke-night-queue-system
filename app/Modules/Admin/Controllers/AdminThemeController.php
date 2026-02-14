@@ -40,8 +40,7 @@ class AdminThemeController extends Controller
         EventNight $eventNight,
         LogAdminAction $logger,
         RealtimePublisher $publisher
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
@@ -58,11 +57,13 @@ class AdminThemeController extends Controller
             ],
             'background_image' => ['nullable', 'image', 'max:5120'],
             'remove_background_image' => ['nullable', 'boolean'],
+            'event_logo' => ['nullable', 'image', 'max:2048'],
+            'remove_event_logo' => ['nullable', 'boolean'],
             'overlay_texts' => ['nullable', 'array', 'max:5'],
             'overlay_texts.*' => ['nullable', 'string', 'max:120'],
         ]);
 
-        if ($request->hasFile('background_image') || $request->boolean('remove_background_image')) {
+        if ($request->hasFile('background_image') || $request->boolean('remove_background_image') || $request->hasFile('event_logo') || $request->boolean('remove_event_logo')) {
             abort_unless($adminUser->isAdmin(), 403);
         }
 
@@ -89,6 +90,7 @@ class AdminThemeController extends Controller
                 'theme_id' => $data['theme_id'] ?? null,
                 'ad_banner_id' => $data['ad_banner_id'] ?? null,
                 'has_background_image' => ! empty($eventNight->background_image_path),
+                'has_event_logo' => ! empty($eventNight->event_logo_path),
                 'overlay_texts' => $overlayTexts,
             ]
         ));
@@ -114,6 +116,20 @@ class AdminThemeController extends Controller
                 Storage::disk('public')->delete($eventNight->background_image_path);
             }
             $updates['background_image_path'] = null;
+        }
+
+        if ($request->hasFile('event_logo')) {
+            if ($eventNight->event_logo_path) {
+                Storage::disk('public')->delete($eventNight->event_logo_path);
+            }
+
+            $logoPath = $request->file('event_logo')->store("event-themes/{$eventNight->id}", 'public');
+            $updates['event_logo_path'] = $logoPath;
+        } elseif ($request->boolean('remove_event_logo')) {
+            if ($eventNight->event_logo_path) {
+                Storage::disk('public')->delete($eventNight->event_logo_path);
+            }
+            $updates['event_logo_path'] = null;
         }
 
         return $updates;
