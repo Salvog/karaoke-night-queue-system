@@ -22,20 +22,27 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:140'],
             'image' => ['required', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:3072'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $path = $request->file('image')->store("ad-banners/{$eventNight->venue_id}", 'public');
+        $logoPath = $request->hasFile('logo')
+            ? $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public')
+            : null;
 
-        AdBanner::create([
+        $banner = AdBanner::create([
             'venue_id' => $eventNight->venue_id,
             'title' => $data['title'],
+            'subtitle' => $this->normalizeOptionalText($data['subtitle'] ?? null),
             'image_url' => Storage::disk('public')->url($path),
+            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
-        $publisher->publishThemeUpdated($eventNight);
+        $this->publishBannerUpdates($banner, $publisher);
 
         return back()->with('status', 'Banner creato.');
     }
@@ -56,7 +63,10 @@ class AdminAdBannerController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:100'],
+            'subtitle' => ['nullable', 'string', 'max:140'],
             'image' => ['nullable', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:3072'],
+            'remove_logo' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -66,8 +76,18 @@ class AdminAdBannerController extends Controller
             $adBanner->image_url = Storage::disk('public')->url($path);
         }
 
+        if ($request->hasFile('logo')) {
+            $this->deletePublicAsset($adBanner->logo_url);
+            $logoPath = $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public');
+            $adBanner->logo_url = Storage::disk('public')->url($logoPath);
+        } elseif ($request->boolean('remove_logo')) {
+            $this->deletePublicAsset($adBanner->logo_url);
+            $adBanner->logo_url = null;
+        }
+
         $adBanner->fill([
             'title' => $data['title'],
+            'subtitle' => $this->normalizeOptionalText($data['subtitle'] ?? null),
             'is_active' => (bool) ($data['is_active'] ?? false),
         ])->save();
 
@@ -91,6 +111,7 @@ class AdminAdBannerController extends Controller
         }
 
         $this->deletePublicAsset($adBanner->image_url);
+        $this->deletePublicAsset($adBanner->logo_url);
         $adBanner->delete();
 
         $this->publishBannerUpdates($adBanner, $publisher);
@@ -98,8 +119,12 @@ class AdminAdBannerController extends Controller
         return back()->with('status', 'Banner eliminato.');
     }
 
-    private function deletePublicAsset(string $url): void
+    private function deletePublicAsset(?string $url): void
     {
+        if (! $url) {
+            return;
+        }
+
         $prefix = Storage::disk('public')->url('');
         $path = Str::startsWith($url, $prefix) ? Str::after($url, $prefix) : null;
 
@@ -110,8 +135,18 @@ class AdminAdBannerController extends Controller
 
     private function publishBannerUpdates(AdBanner $adBanner, RealtimePublisher $publisher): void
     {
-        EventNight::where('ad_banner_id', $adBanner->id)->get()->each(
+        EventNight::where('venue_id', $adBanner->venue_id)
+            ->where('status', EventNight::STATUS_ACTIVE)
+            ->get()
+            ->each(
             fn (EventNight $eventNight) => $publisher->publishThemeUpdated($eventNight)
         );
+    }
+
+    private function normalizeOptionalText(?string $value): ?string
+    {
+        $trimmed = $value !== null ? trim($value) : null;
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

@@ -43,6 +43,7 @@ class AdminThemeAssetsTest extends TestCase
 
         $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventNight->id}/theme-ads", [
             'background_image' => UploadedFile::fake()->image('background.jpg'),
+            'event_logo' => UploadedFile::fake()->image('logo.png'),
             'overlay_texts' => ['Welcome singers!', 'Tip your host'],
         ]);
 
@@ -51,7 +52,9 @@ class AdminThemeAssetsTest extends TestCase
         $eventNight->refresh();
 
         $this->assertNotNull($eventNight->background_image_path);
+        $this->assertNotNull($eventNight->brand_logo_path);
         Storage::disk('public')->assertExists($eventNight->background_image_path);
+        Storage::disk('public')->assertExists($eventNight->brand_logo_path);
         $this->assertSame(['Welcome singers!', 'Tip your host'], $eventNight->overlay_texts);
     }
 

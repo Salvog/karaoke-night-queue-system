@@ -40,6 +40,7 @@ class EventNight extends Model
         'join_pin',
         'status',
         'background_image_path',
+        'brand_logo_path',
         'overlay_texts',
     ];
 

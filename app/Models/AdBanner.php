@@ -13,7 +13,9 @@ class AdBanner extends Model
     protected $fillable = [
         'venue_id',
         'title',
+        'subtitle',
         'image_url',
+        'logo_url',
         'is_active',
     ];
 

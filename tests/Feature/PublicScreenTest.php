@@ -33,7 +33,9 @@ class PublicScreenTest extends TestCase
         $banner = AdBanner::create([
             'venue_id' => $venue->id,
             'title' => 'Late Night Happy Hour',
+            'subtitle' => 'Promo drink fino a mezzanotte',
             'image_url' => 'https://example.com/banner.png',
+            'logo_url' => 'https://example.com/banner-logo.png',
             'is_active' => true,
         ]);
 
@@ -46,6 +48,7 @@ class PublicScreenTest extends TestCase
             'request_cooldown_seconds' => 0,
             'status' => EventNight::STATUS_ACTIVE,
             'starts_at' => now(),
+            'brand_logo_path' => 'event-branding/screen1-logo.png',
             'overlay_texts' => ['Welcome singers!'],
         ]);
 
@@ -53,6 +56,7 @@ class PublicScreenTest extends TestCase
             'event_night_id' => $eventNight->id,
             'device_cookie_id' => 'device-999',
             'join_token_hash' => hash('sha256', 'token-999'),
+            'display_name' => 'Marco',
         ]);
 
         $song = Song::create([
@@ -101,6 +105,8 @@ class PublicScreenTest extends TestCase
         $response->assertSee('Skyline');
         $response->assertSee('Neon Glow');
         $response->assertSee('Late Night Happy Hour');
+        $response->assertSee('Promo drink fino a mezzanotte');
+        $response->assertSee('Marco');
     }
 
     public function test_public_screen_state_endpoint_returns_payload(): void
@@ -123,6 +129,7 @@ class PublicScreenTest extends TestCase
             'event_night_id' => $eventNight->id,
             'device_cookie_id' => 'device-1000',
             'join_token_hash' => hash('sha256', 'token-1000'),
+            'display_name' => 'Elena',
         ]);
 
         $song = Song::create([
@@ -151,7 +158,10 @@ class PublicScreenTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('playback.song.title', 'Midnight Drive');
+        $response->assertJsonPath('playback.song.requested_by', 'Elena');
         $response->assertJsonPath('event.code', 'SCREEN2');
+        $response->assertJsonPath('event.join_url', route('public.join.show', $eventNight->code));
+        $response->assertJsonPath('queue.total_pending', 0);
     }
 
     public function test_public_screen_requires_live_event(): void
