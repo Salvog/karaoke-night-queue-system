@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PublicScreenController extends Controller
@@ -106,7 +105,7 @@ class PublicScreenController extends Controller
         }, 200, $headers);
     }
 
-    public function media(string $path): BinaryFileResponse
+    public function media(string $path): StreamedResponse
     {
         $normalizedPath = trim($path, '/');
 
@@ -116,7 +115,7 @@ class PublicScreenController extends Controller
         );
         abort_unless(Storage::disk('public')->exists($normalizedPath), 404);
 
-        return response()->file(Storage::disk('public')->path($normalizedPath));
+        return Storage::disk('public')->response($normalizedPath);
     }
 
     private function sendEvent(string $event, array $data): void

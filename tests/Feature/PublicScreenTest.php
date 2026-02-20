@@ -269,6 +269,40 @@ class PublicScreenTest extends TestCase
         $this->assertStringContainsString('data: {', $content);
     }
 
+    public function test_public_media_endpoint_streams_existing_file_from_public_disk(): void
+    {
+        Storage::fake('public');
+
+        $path = 'ad-banners/1/test.jpg';
+        Storage::disk('public')->put($path, 'fake-image-content');
+
+        $response = $this->get('/media/' . $path);
+
+        $response->assertStatus(200);
+        $response->assertStreamed();
+        $this->assertSame('fake-image-content', $response->streamedContent());
+    }
+
+    public function test_public_media_endpoint_returns_404_for_missing_file(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->get('/media/ad-banners/1/missing.jpg');
+
+        $response->assertStatus(404);
+    }
+
+    public function test_public_media_endpoint_blocks_path_traversal(): void
+    {
+        Storage::fake('public');
+
+        $responseWithDots = $this->get('/media/..%2F.env');
+        $responseWithBackslashes = $this->get('/media/..%5C.env');
+
+        $responseWithDots->assertStatus(404);
+        $responseWithBackslashes->assertStatus(404);
+    }
+
     public function test_public_screen_requires_live_event(): void
     {
         $venue = Venue::create([
