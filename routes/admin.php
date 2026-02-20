@@ -44,6 +44,7 @@ Route::middleware(['admin.auth', 'admin.role'])->group(function () {
     Route::post('/events/{eventNight}/queue/start', [AdminQueueController::class, 'start'])->name('admin.queue.start');
     Route::post('/events/{eventNight}/queue/resume', [AdminQueueController::class, 'resume'])->name('admin.queue.resume');
     Route::post('/events/{eventNight}/queue/add', [AdminQueueController::class, 'add'])->name('admin.queue.add');
+    Route::post('/events/{eventNight}/queue/reorder', [AdminQueueController::class, 'reorder'])->name('admin.queue.reorder');
 
     Route::get('/events/{eventNight}/theme-ads', [AdminThemeController::class, 'show'])->name('admin.theme.show');
     Route::post('/events/{eventNight}/theme-ads', [AdminThemeController::class, 'update'])->name('admin.theme.update');

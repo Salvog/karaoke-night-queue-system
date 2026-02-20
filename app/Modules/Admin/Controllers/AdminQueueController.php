@@ -10,6 +10,7 @@ use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
 use App\Modules\Queue\Services\QueueEngine;
 use App\Modules\Queue\Services\QueueManualService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -206,5 +207,38 @@ class AdminQueueController extends Controller
         ));
 
         return back()->with('status', 'Partecipante aggiunto alla coda.');
+    }
+
+    public function reorder(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueManualService $queueManualService): RedirectResponse|JsonResponse
+    {
+        $adminUser = $request->user('admin');
+        Gate::forUser($adminUser)->authorize('manage-event-nights');
+
+        $data = $request->validate([
+            'ordered_song_request_ids' => ['required', 'array'],
+            'ordered_song_request_ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        $orderedIds = array_map(static fn (mixed $id): int => (int) $id, $data['ordered_song_request_ids']);
+        $queueManualService->reorderQueuedRequests($eventNight, $orderedIds);
+
+        $logger->execute(new AdminActionData(
+            userId: $adminUser->id,
+            action: 'queue.reorder',
+            subjectType: EventNight::class,
+            subjectId: (string) $eventNight->id,
+            metadata: [
+                'event_night_id' => $eventNight->id,
+                'ordered_song_request_ids' => $orderedIds,
+            ]
+        ));
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Ordine della coda aggiornato.',
+            ]);
+        }
+
+        return back()->with('status', 'Ordine della coda aggiornato.');
     }
 }
