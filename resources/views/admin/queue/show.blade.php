@@ -28,6 +28,7 @@
         $adminPollMs = max(1000, (int) config('public_screen.poll_seconds', 1) * 1000);
         $skipRoute = route('admin.queue.skip', $eventNight);
         $cancelRoute = route('admin.queue.cancel', $eventNight);
+        $breakSeconds = max(0, (int) $eventNight->break_seconds);
     @endphp
 
     <style>
@@ -336,6 +337,65 @@
             box-shadow: 0 12px 22px rgba(5, 16, 37, 0.28);
         }
 
+        .playback-timer-card {
+            flex: 1 1 260px;
+            min-height: 76px;
+            min-width: 220px;
+            padding: 9px 13px;
+            border-radius: 14px;
+            border: 1px solid rgba(42, 216, 255, 0.48);
+            background: linear-gradient(150deg, rgba(16, 42, 75, 0.78), rgba(13, 26, 50, 0.8));
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 10px 18px rgba(5, 16, 37, 0.28);
+            display: grid;
+            gap: 2px;
+            align-content: center;
+        }
+
+        .playback-timer-card[data-mode="paused"] {
+            border-color: rgba(255, 212, 71, 0.58);
+            background: linear-gradient(150deg, rgba(63, 48, 18, 0.74), rgba(35, 30, 16, 0.78));
+        }
+
+        .playback-timer-card[data-mode="intermission"] {
+            border-color: rgba(255, 149, 98, 0.58);
+            background: linear-gradient(150deg, rgba(74, 36, 17, 0.74), rgba(44, 25, 16, 0.8));
+        }
+
+        .playback-timer-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(224, 246, 255, 0.84);
+        }
+
+        .playback-timer-countdown {
+            font-size: 1.52rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #f4fbff;
+            letter-spacing: 0.03em;
+        }
+
+        .playback-timer-hint {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(226, 241, 255, 0.84);
+            line-height: 1.2;
+        }
+
+        .playback-timer-next {
+            font-size: 0.74rem;
+            color: rgba(218, 246, 255, 0.75);
+            line-height: 1.2;
+            min-height: 1.2em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .queue-manual-form {
             display: grid;
             gap: 10px 12px;
@@ -599,6 +659,15 @@
                 padding: 0 16px;
             }
 
+            .playback-timer-card {
+                min-height: 68px;
+                flex-basis: 100%;
+            }
+
+            .playback-timer-countdown {
+                font-size: 1.38rem;
+            }
+
             .queue-manual-form {
                 grid-template-columns: 1fr;
             }
@@ -717,6 +786,13 @@
                             <span>Prossima canzone</span>
                         </button>
                     </form>
+
+                    <div class="playback-timer-card" data-playback-timer-card data-mode="{{ $isPaused ? 'paused' : ($isPlaying ? 'playing' : 'idle') }}">
+                        <div class="playback-timer-label" data-playback-timer-label>Tempo al prossimo brano</div>
+                        <div class="playback-timer-countdown" data-playback-timer-countdown>--:--</div>
+                        <div class="playback-timer-hint" data-playback-timer-hint>In attesa del prossimo aggiornamento...</div>
+                        <div class="playback-timer-next" data-playback-timer-next></div>
+                    </div>
                 </div>
             </section>
 
@@ -870,6 +946,9 @@
             const pollMs = @json($adminPollMs);
             const skipRoute = @json($skipRoute);
             const cancelRoute = @json($cancelRoute);
+            const breakSeconds = @json($breakSeconds);
+            const initialPlaybackState = @json($playbackStatus);
+            const initialExpectedEndAt = @json($expectedEndAt?->toIso8601String());
             const csrfToken = @json(csrf_token());
             const playToggleMarkup = `
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -902,6 +981,24 @@
                 return formatTime(parsed);
             };
 
+            const formatDuration = (seconds) => {
+                const numeric = Number(seconds);
+                if (!Number.isFinite(numeric)) {
+                    return '--:--';
+                }
+
+                const safe = Math.max(0, Math.floor(numeric));
+                const hours = Math.floor(safe / 3600);
+                const minutes = Math.floor((safe % 3600) / 60);
+                const remaining = safe % 60;
+
+                if (hours > 0) {
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
+                }
+
+                return `${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
+            };
+
             const queueTableBody = document.querySelector('[data-queue-upcoming-body]');
             const historyTableBody = document.querySelector('[data-queue-history-body]');
             const reorderForm = document.getElementById('queue-reorder-form');
@@ -914,6 +1011,11 @@
             const togglePlaybackForm = document.querySelector('[data-toggle-playback-form]');
             const togglePlaybackButton = document.querySelector('[data-toggle-playback-button]');
             const queueTotalElement = document.querySelector('[data-queue-total]');
+            const playbackTimerCardElement = document.querySelector('[data-playback-timer-card]');
+            const playbackTimerLabelElement = document.querySelector('[data-playback-timer-label]');
+            const playbackTimerCountdownElement = document.querySelector('[data-playback-timer-countdown]');
+            const playbackTimerHintElement = document.querySelector('[data-playback-timer-hint]');
+            const playbackTimerNextElement = document.querySelector('[data-playback-timer-next]');
 
             if (!queueTableBody || !historyTableBody || !reorderForm || !reorderInputs) {
                 return;
@@ -934,6 +1036,23 @@
             let draggedRow = null;
             let dragArmedRow = null;
             let pendingSnapshot = null;
+            const playbackTimerState = {
+                state: (initialPlaybackState || 'idle').toLowerCase(),
+                remainingSeconds: null,
+                breakSeconds: Math.max(0, Number(breakSeconds) || 0),
+                updatedAtMs: Date.now(),
+                nextSongLabel: '',
+            };
+
+            if (playbackTimerState.state === 'playing' && initialExpectedEndAt) {
+                const expectedDate = new Date(initialExpectedEndAt);
+                if (!Number.isNaN(expectedDate.getTime())) {
+                    playbackTimerState.remainingSeconds = Math.max(
+                        0,
+                        Math.floor((expectedDate.getTime() - Date.now()) / 1000)
+                    );
+                }
+            }
 
             const shouldDeferSnapshot = () => saveInFlight || draggedRow !== null || dragArmedRow !== null;
 
@@ -1173,6 +1292,112 @@
                 });
             };
 
+            const resolveNextQueuedSongLabel = (upcomingRows) => {
+                if (!Array.isArray(upcomingRows)) {
+                    return '';
+                }
+
+                const nextQueued = upcomingRows.find((item) => (
+                    String(item?.status || '').toLowerCase() === 'queued'
+                ));
+
+                if (!nextQueued) {
+                    return '';
+                }
+
+                const title = nextQueued.song_title || 'Prossimo brano';
+                const singer = nextQueued.participant_name || '';
+                return singer ? `${title} • ${singer}` : title;
+            };
+
+            const resolvePlaybackTimerRemaining = () => {
+                if (!Number.isFinite(playbackTimerState.remainingSeconds)) {
+                    return null;
+                }
+
+                const baseRemaining = Math.max(0, Math.floor(playbackTimerState.remainingSeconds));
+                if (playbackTimerState.state !== 'playing') {
+                    return baseRemaining;
+                }
+
+                const elapsedSeconds = Math.max(
+                    0,
+                    Math.floor((Date.now() - playbackTimerState.updatedAtMs) / 1000)
+                );
+
+                return Math.max(0, baseRemaining - elapsedSeconds);
+            };
+
+            const renderPlaybackTimer = () => {
+                if (
+                    !playbackTimerCardElement
+                    || !playbackTimerLabelElement
+                    || !playbackTimerCountdownElement
+                    || !playbackTimerHintElement
+                ) {
+                    return;
+                }
+
+                const state = playbackTimerState.state || 'idle';
+                const remainingSeconds = resolvePlaybackTimerRemaining();
+                const hasRemaining = Number.isFinite(remainingSeconds);
+                const inIntermission = (
+                    state === 'playing'
+                    && hasRemaining
+                    && playbackTimerState.breakSeconds > 0
+                    && remainingSeconds <= playbackTimerState.breakSeconds
+                );
+
+                let label = 'Tempo al prossimo brano';
+                let countdown = '--:--';
+                let hint = 'Avvia una canzone per iniziare il countdown.';
+                let mode = state;
+
+                if (state === 'playing' && hasRemaining) {
+                    countdown = formatDuration(remainingSeconds);
+
+                    if (inIntermission) {
+                        mode = 'intermission';
+                        label = 'Stacco in corso';
+                        hint = `Prossima canzone tra ${countdown}`;
+                    } else if (playbackTimerState.breakSeconds > 0) {
+                        const secondsToBreak = Math.max(0, remainingSeconds - playbackTimerState.breakSeconds);
+                        hint = `Stacco tra ${formatDuration(secondsToBreak)} · cambio brano tra ${countdown}`;
+                    } else {
+                        hint = `Cambio brano tra ${countdown}`;
+                    }
+                } else if (state === 'paused') {
+                    countdown = hasRemaining ? formatDuration(remainingSeconds) : '--:--';
+                    label = inIntermission ? 'Stacco in pausa' : 'Brano in pausa';
+                    hint = 'Timer congelato: riprendi la riproduzione per continuare.';
+                } else if (state === 'idle') {
+                    label = 'Pronto';
+                    hint = 'Nessuna canzone in riproduzione.';
+                }
+
+                playbackTimerCardElement.dataset.mode = mode;
+                playbackTimerLabelElement.textContent = label;
+                playbackTimerCountdownElement.textContent = countdown;
+                playbackTimerHintElement.textContent = hint;
+
+                if (playbackTimerNextElement) {
+                    playbackTimerNextElement.textContent = playbackTimerState.nextSongLabel
+                        ? `In arrivo: ${playbackTimerState.nextSongLabel}`
+                        : '';
+                }
+            };
+
+            const updatePlaybackTimerState = (playback, upcomingRows = []) => {
+                playbackTimerState.state = String(playback?.state || 'idle').toLowerCase();
+                const remaining = Number(playback?.progress?.remaining_seconds);
+                playbackTimerState.remainingSeconds = Number.isFinite(remaining)
+                    ? Math.max(0, Math.floor(remaining))
+                    : null;
+                playbackTimerState.updatedAtMs = Date.now();
+                playbackTimerState.nextSongLabel = resolveNextQueuedSongLabel(upcomingRows);
+                renderPlaybackTimer();
+            };
+
             const updateTogglePlayback = (playback) => {
                 if (!togglePlaybackForm || !togglePlaybackButton || !playback) {
                     return;
@@ -1220,10 +1445,10 @@
                     return;
                 }
 
-                updatePlayback(snapshot.playback || null);
-
                 const queueSnapshot = snapshot.queue || {};
                 const upcoming = Array.isArray(queueSnapshot.upcoming) ? queueSnapshot.upcoming : [];
+                updatePlayback(snapshot.playback || null);
+                updatePlaybackTimerState(snapshot.playback || null, upcoming);
                 renderQueueRows(upcoming);
 
                 if (queueTotalElement) {
@@ -1501,6 +1726,8 @@
             });
 
             refreshReorderButtonsState();
+            renderPlaybackTimer();
+            setInterval(renderPlaybackTimer, 1000);
             pollState();
             setInterval(pollState, pollMs);
         })();

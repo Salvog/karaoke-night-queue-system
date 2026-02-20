@@ -505,6 +505,69 @@ class PublicScreenTest extends TestCase
         }
     }
 
+    public function test_public_screen_state_progress_is_frozen_when_playback_is_paused(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'PAUSEP1',
+                'break_seconds' => 20,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-pause-1',
+                'join_token_hash' => hash('sha256', 'token-pause-1'),
+                'display_name' => 'Paolo',
+            ]);
+
+            $song = Song::create([
+                'title' => 'Freeze',
+                'artist' => 'Band',
+                'duration_seconds' => 200,
+            ]);
+
+            $request = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $song->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $request->id,
+                'state' => PlaybackState::STATE_PAUSED,
+                'started_at' => now()->subSeconds(120),
+                'expected_end_at' => now()->addSeconds(60),
+                'paused_at' => now()->subSeconds(30),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.state', PlaybackState::STATE_PAUSED);
+            $response->assertJsonPath('playback.progress.duration_seconds', 180);
+            $response->assertJsonPath('playback.progress.elapsed_seconds', 90);
+            $response->assertJsonPath('playback.progress.remaining_seconds', 90);
+            $response->assertJsonPath('playback.progress.percent', 50);
+            $response->assertJsonPath('playback.intermission.is_active', false);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_public_screen_state_normalizes_local_absolute_banner_urls_to_media_route(): void
     {
         Storage::fake('public');

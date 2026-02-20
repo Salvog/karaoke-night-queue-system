@@ -204,9 +204,17 @@ class PublicScreenService
         }
 
         $duration = $expectedTs - $startedTs;
-        $now = now()->getTimestamp();
-        $elapsed = max(0, min($duration, $now - $startedTs));
-        $remaining = max(0, $expectedTs - $now);
+        $progressTs = now()->getTimestamp();
+
+        if ($playbackState?->state === PlaybackState::STATE_PAUSED) {
+            $pausedTs = $playbackState->paused_at?->getTimestamp()
+                ?? $playbackState->updated_at?->getTimestamp()
+                ?? $progressTs;
+            $progressTs = max($startedTs, min($expectedTs, $pausedTs));
+        }
+
+        $elapsed = max(0, min($duration, $progressTs - $startedTs));
+        $remaining = max(0, $expectedTs - $progressTs);
         $percent = (int) round(($elapsed / $duration) * 100);
 
         return [

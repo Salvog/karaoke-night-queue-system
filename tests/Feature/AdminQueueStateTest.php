@@ -60,6 +60,38 @@ class AdminQueueStateTest extends TestCase
         }
     }
 
+    public function test_admin_queue_state_endpoint_returns_frozen_progress_when_paused(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 20:00:00'));
+
+        try {
+            $admin = $this->createAdminUser();
+            $eventNight = $this->createEventNight();
+            [$first] = $this->seedTwoSongsQueue($eventNight);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $first->id,
+                'state' => PlaybackState::STATE_PAUSED,
+                'started_at' => now()->subSeconds(120),
+                'expected_end_at' => now()->addSeconds(60),
+                'paused_at' => now()->subSeconds(30),
+            ]);
+
+            $response = $this->actingAs($admin, 'admin')
+                ->getJson("/admin/events/{$eventNight->id}/queue/state");
+
+            $response->assertOk();
+            $response->assertJsonPath('playback.state', PlaybackState::STATE_PAUSED);
+            $response->assertJsonPath('playback.progress.duration_seconds', 180);
+            $response->assertJsonPath('playback.progress.elapsed_seconds', 90);
+            $response->assertJsonPath('playback.progress.remaining_seconds', 90);
+            $response->assertJsonPath('playback.progress.percent', 50);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     private function createAdminUser(): AdminUser
     {
         return AdminUser::create([

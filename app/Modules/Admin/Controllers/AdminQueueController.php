@@ -322,10 +322,61 @@ class AdminQueueController extends Controller
             'state' => $state,
             'status_label' => $labels[$state] ?? ucfirst($state),
             'current_song_title' => $playbackState?->currentRequest?->song?->title ?? '—',
+            'started_at' => $playbackState?->started_at?->toIso8601String(),
             'expected_end_at' => $playbackState?->expected_end_at?->toIso8601String(),
+            'paused_at' => $playbackState?->paused_at?->toIso8601String(),
+            'progress' => $this->buildPlaybackProgress($playbackState),
             'toggle_action' => $toggleAction,
             'toggle_mode' => $toggleMode,
             'toggle_title' => $toggleTitle,
+        ];
+    }
+
+    private function buildPlaybackProgress(?PlaybackState $playbackState): array
+    {
+        $startedAt = $playbackState?->started_at;
+        $expectedEndAt = $playbackState?->expected_end_at;
+
+        if (! $startedAt || ! $expectedEndAt) {
+            return [
+                'elapsed_seconds' => null,
+                'remaining_seconds' => null,
+                'duration_seconds' => null,
+                'percent' => 0,
+            ];
+        }
+
+        $startedTs = $startedAt->getTimestamp();
+        $expectedTs = $expectedEndAt->getTimestamp();
+
+        if ($expectedTs <= $startedTs) {
+            return [
+                'elapsed_seconds' => null,
+                'remaining_seconds' => null,
+                'duration_seconds' => null,
+                'percent' => 0,
+            ];
+        }
+
+        $duration = $expectedTs - $startedTs;
+        $progressTs = now()->getTimestamp();
+
+        if ($playbackState?->state === PlaybackState::STATE_PAUSED) {
+            $pausedTs = $playbackState->paused_at?->getTimestamp()
+                ?? $playbackState->updated_at?->getTimestamp()
+                ?? $progressTs;
+            $progressTs = max($startedTs, min($expectedTs, $pausedTs));
+        }
+
+        $elapsed = max(0, min($duration, $progressTs - $startedTs));
+        $remaining = max(0, $expectedTs - $progressTs);
+        $percent = (int) round(($elapsed / $duration) * 100);
+
+        return [
+            'elapsed_seconds' => $elapsed,
+            'remaining_seconds' => $remaining,
+            'duration_seconds' => $duration,
+            'percent' => $percent,
         ];
     }
 
