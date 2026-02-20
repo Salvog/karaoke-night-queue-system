@@ -8,6 +8,7 @@ use App\Models\PlaybackState;
 use App\Models\SongRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PublicScreenService
 {
@@ -143,23 +144,25 @@ class PublicScreenService
             'banner' => $eventNight->adBanner ? [
                 'title' => $eventNight->adBanner->title,
                 'subtitle' => $eventNight->adBanner->subtitle,
-                'image_url' => $eventNight->adBanner->image_url,
-                'logo_url' => $eventNight->adBanner->logo_url,
+                'image_url' => $this->resolveMediaUrl($eventNight->adBanner->image_url),
+                'logo_url' => $this->resolveMediaUrl($eventNight->adBanner->logo_url),
                 'is_active' => (bool) $eventNight->adBanner->is_active,
             ] : null,
             'sponsor_banners' => $sponsorBanners->map(fn (AdBanner $banner) => [
                 'id' => $banner->id,
                 'title' => $banner->title,
                 'subtitle' => $banner->subtitle,
-                'image_url' => $banner->image_url,
-                'logo_url' => $banner->logo_url,
+                'image_url' => $this->resolveMediaUrl($banner->image_url),
+                'logo_url' => $this->resolveMediaUrl($banner->logo_url),
                 'is_active' => (bool) $banner->is_active,
             ])->all(),
+            'manager_name' => (string) config('public_screen.global_brand.name', config('app.name', 'Karaoke Night')),
+            'manager_logo_url' => $this->resolveMediaUrl((string) config('public_screen.global_brand.logo', '')),
             'background_image_url' => $eventNight->background_image_path
-                ? Storage::disk('public')->url($eventNight->background_image_path)
+                ? $this->resolvePublicDiskPath($eventNight->background_image_path)
                 : null,
             'brand_logo_url' => $eventNight->brand_logo_path
-                ? Storage::disk('public')->url($eventNight->brand_logo_path)
+                ? $this->resolvePublicDiskPath($eventNight->brand_logo_path)
                 : null,
             'overlay_texts' => $eventNight->overlay_texts ?? [],
         ];
@@ -214,5 +217,92 @@ class PublicScreenService
             'duration_seconds' => $duration,
             'percent' => $percent,
         ];
+    }
+
+    private function resolveMediaUrl(?string $url): ?string
+    {
+        $value = is_string($url) ? trim($url) : '';
+        if ($value === '') {
+            return null;
+        }
+
+        $value = $this->normalizeAppAbsoluteUrl($value);
+
+        if (Str::startsWith($value, ['http://', 'https://', '//', 'data:', 'blob:'])) {
+            return $value;
+        }
+
+        $storagePrefix = '/storage/';
+        if (Str::startsWith($value, $storagePrefix)) {
+            $path = ltrim(Str::after($value, $storagePrefix), '/');
+
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                return $this->resolvePublicDiskPath($path);
+            }
+        }
+
+        $relative = ltrim($value, '/');
+        if ($relative !== '' && Storage::disk('public')->exists($relative)) {
+            return $this->resolvePublicDiskPath($relative);
+        }
+
+        return Str::startsWith($value, '/') ? $value : '/' . $value;
+    }
+
+    private function resolvePublicDiskPath(string $path): string
+    {
+        $normalized = ltrim($path, '/');
+        return route('public.screen.media', ['path' => $normalized], false);
+    }
+
+    private function normalizeAppAbsoluteUrl(string $value): string
+    {
+        if (! Str::startsWith($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        $parsed = parse_url($value);
+        if (! is_array($parsed)) {
+            return $value;
+        }
+
+        $path = (string) ($parsed['path'] ?? '/');
+        if (! Str::startsWith($path, ['/storage/', '/media/'])) {
+            return $value;
+        }
+
+        $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : null;
+        if ($host === null || $host === '') {
+            return $value;
+        }
+
+        $isLoopback = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+        $appHost = $this->appUrlHost();
+
+        if (! $isLoopback && ($appHost === null || $host !== $appHost)) {
+            return $value;
+        }
+
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+
+        return ($path !== '' ? $path : '/') . $query . $fragment;
+    }
+
+    private function appUrlHost(): ?string
+    {
+        $configured = (string) config('app.url', '');
+        if ($configured === '') {
+            return null;
+        }
+
+        $parsed = parse_url($configured);
+        if (! is_array($parsed)) {
+            return null;
+        }
+
+        $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : null;
+
+        return $host !== '' ? $host : null;
     }
 }

@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(RealtimePublisher::class, function ($app) {
-            if (! config('public_screen.realtime.enabled', true)) {
+            if (! $this->isPublicScreenRealtimeEnabled()) {
                 return new NullRealtimePublisher();
             }
 
@@ -50,5 +50,18 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(EventNight::class, EventNightPolicy::class);
         Gate::define('access-admin', fn (AdminUser $user) => in_array($user->role, AdminUser::ROLES, true));
         Gate::define('manage-event-nights', fn (AdminUser $user) => in_array($user->role, AdminUser::ROLES, true));
+    }
+
+    private function isPublicScreenRealtimeEnabled(): bool
+    {
+        if (! (bool) config('public_screen.realtime.enabled', true)) {
+            return false;
+        }
+
+        if ((bool) config('public_screen.realtime.disable_on_cli_server', true) && PHP_SAPI === 'cli-server') {
+            return false;
+        }
+
+        return true;
     }
 }

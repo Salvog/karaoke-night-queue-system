@@ -12,11 +12,22 @@
             --accent-cyan: #49dcff;
             --accent-gold: #ffc659;
             --accent-pink: #ff4f9a;
-            --surface: rgba(10, 16, 34, 0.78);
-            --surface-strong: rgba(9, 14, 30, 0.92);
+            --surface: rgba(10, 16, 34, 0.8);
+            --surface-strong: rgba(9, 14, 30, 0.9);
             --text: #f8fbff;
             --muted: rgba(225, 236, 255, 0.78);
             --event-bg-image: none;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --join-qr-display-size: 240px;
+            --manager-logo-min-height: 135px;
+            --manager-logo-height-factor: 0.96;
+            --status-font-size: clamp(1.8rem, 3.2vw, 3.1rem);
+            --status-letter-spacing: 0.1em;
+            --status-min-width: clamp(210px, 28vw, 460px);
+            --status-zoom-scale: 1.08;
+            --status-anim-duration: 1.6s;
         }
 
         * {
@@ -72,58 +83,43 @@
         }
 
         .screen-shell {
-            max-width: 1500px;
+            max-width: 1540px;
             margin: 0 auto;
-            padding: 16px clamp(12px, 1.7vw, 24px) 18px;
-        }
-
-        .play-now-marquee {
-            margin: 0 auto 14px;
-            width: min(740px, 100%);
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(252, 248, 255, 0.38);
-            border-radius: 999px;
-            background: linear-gradient(90deg, rgba(55, 93, 255, 0.35), rgba(255, 79, 154, 0.34));
-            box-shadow:
-                0 0 0 1px rgba(255, 255, 255, 0.18) inset,
-                0 0 20px rgba(113, 172, 255, 0.32);
-            padding: 8px 12px;
-            text-transform: uppercase;
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            letter-spacing: 0.08em;
-            font-size: clamp(1.6rem, 2.8vw, 2.6rem);
+            padding: 14px clamp(10px, 1.8vw, 24px) 16px;
         }
 
         .topline {
-            display: flex;
-            gap: 14px;
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 12px;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
             margin-bottom: 14px;
         }
 
         .event-brand {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
-            padding: 10px 14px;
+            min-height: 66px;
+            padding: 8px 11px;
             background: var(--surface);
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 12px 24px rgba(4, 9, 22, 0.34);
             backdrop-filter: blur(6px);
-            min-width: 280px;
+            max-width: min(40vw, 320px);
+            min-width: 0;
         }
 
         .event-brand-logo {
-            width: 58px;
-            height: 58px;
-            border-radius: 12px;
+            width: 56px;
+            height: 56px;
             object-fit: contain;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            flex-shrink: 0;
         }
 
         .event-brand-logo[hidden] {
@@ -133,339 +129,56 @@
         .event-brand-meta {
             display: grid;
             gap: 2px;
+            min-width: 0;
         }
 
         .event-brand-meta strong {
-            font-size: 1.05rem;
+            font-size: 1.06rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .event-brand-meta span {
             color: var(--muted);
-            font-size: 0.88rem;
-        }
-
-        .join-cta {
-            text-decoration: none;
-            color: #191126;
-            font-weight: 800;
-            border-radius: 999px;
-            padding: 11px 20px;
-            background: linear-gradient(110deg, var(--accent-gold), #ffe4a7 58%, #ffad57);
-            border: 1px solid rgba(255, 220, 164, 0.55);
-            box-shadow: 0 8px 24px rgba(255, 185, 87, 0.32);
-            transition: transform 180ms ease, filter 180ms ease;
+            font-size: 0.86rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .join-cta:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.03);
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 2.1fr 1fr;
-            gap: 14px;
-        }
-
-        .panel {
-            background: var(--surface);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 18px;
-            box-shadow: 0 14px 30px rgba(5, 10, 22, 0.42);
-            backdrop-filter: blur(8px);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .panel::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%);
-        }
-
-        .panel-header {
-            padding: 13px 16px 0;
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            font-size: 1.38rem;
-            letter-spacing: 0.04em;
+        .play-now-marquee {
+            min-height: auto;
+            justify-self: end;
+            display: inline-flex;
+            justify-content: flex-end;
+            min-width: var(--status-min-width);
+            padding: 2px 0;
             text-transform: uppercase;
-            color: #d7ecff;
-        }
-
-        .now-panel {
-            min-height: 330px;
-        }
-
-        .now-grid {
-            padding: 10px 16px 16px;
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 14px;
-            align-items: stretch;
-        }
-
-        .now-artist {
-            color: #cae7ff;
-            font-weight: 700;
-            font-size: clamp(1.2rem, 1.95vw, 1.9rem);
-        }
-
-        .now-title {
-            margin: 2px 0 8px;
             font-family: 'Bebas Neue', 'Impact', sans-serif;
-            font-size: clamp(2rem, 4.7vw, 4.1rem);
-            line-height: 0.95;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            color: var(--accent-gold);
-            text-shadow: 0 0 16px rgba(255, 198, 89, 0.42);
+            letter-spacing: var(--status-letter-spacing);
+            font-size: var(--status-font-size);
+            text-align: right;
+            color: #dff2ff;
+            text-shadow: 0 0 12px rgba(73, 220, 255, 0.45), 0 0 24px rgba(255, 79, 154, 0.25);
+            transform-origin: right center;
+            animation: statusZoom var(--status-anim-duration) ease-in-out infinite;
+            line-height: 0.92;
         }
 
-        .now-singer {
-            font-size: 1.08rem;
-            color: #ebf4ff;
-            margin-bottom: 8px;
-        }
-
-        .playback-meta {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-        }
-
-        .status-pill {
-            border-radius: 999px;
-            padding: 5px 12px;
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            background: rgba(73, 220, 255, 0.2);
-            border: 1px solid rgba(73, 220, 255, 0.5);
-            color: #d9f7ff;
-        }
-
-        .end-at {
-            color: var(--muted);
-            font-size: 0.88rem;
-        }
-
-        .progress-track {
-            height: 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            margin-top: 5px;
-        }
-
-        .progress-fill {
-            width: 0;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, var(--accent-cyan), #7be6ff 44%, var(--accent-gold));
-            box-shadow: 0 0 18px rgba(73, 220, 255, 0.5);
-            transition: width 420ms ease;
-        }
-
-        .progress-meta {
-            margin-top: 6px;
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            color: var(--muted);
-            font-size: 0.86rem;
-        }
-
-        .featured-banner {
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: var(--surface-strong);
-            padding: 12px;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 10px;
-            min-height: 240px;
-        }
-
-        .featured-banner[hidden] {
-            display: none;
-        }
-
-        .featured-label {
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #b7daff;
-            font-size: 1.1rem;
-        }
-
-        .featured-content {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .featured-title {
-            font-size: 1.2rem;
-            font-weight: 800;
-        }
-
-        .featured-subtitle {
-            color: var(--muted);
-            font-size: 0.92rem;
-        }
-
-        .featured-visual {
-            width: 100%;
-            max-height: 120px;
-            object-fit: contain;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            padding: 8px;
-        }
-
-        .next-panel {
-            min-height: 330px;
-            display: grid;
-            grid-template-rows: auto auto auto 1fr;
-        }
-
-        .next-highlight {
-            margin: 10px 14px 6px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            padding: 12px;
-            background: linear-gradient(165deg, rgba(255, 79, 154, 0.24), rgba(8, 16, 34, 0.35));
-        }
-
-        .next-artist {
-            color: #ffe2f2;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .next-title {
-            margin: 2px 0 4px;
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            font-size: clamp(1.6rem, 2.2vw, 2.5rem);
-            line-height: 0.95;
-            text-transform: uppercase;
-            color: #ffd3a3;
-        }
-
-        .next-singer {
-            color: #fcebf7;
-            font-size: 0.95rem;
-        }
-
-        .queue-title {
-            margin: 6px 14px 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: #d6edff;
-            font-size: 1.18rem;
-        }
-
-        .queue-list,
-        .recent-list {
-            list-style: none;
-            margin: 0;
-            padding: 0 12px 12px;
-            display: grid;
-            gap: 8px;
-        }
-
-        .song-row {
-            border-radius: 12px;
-            padding: 8px 10px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.04);
-            display: grid;
-            gap: 2px;
-        }
-
-        .song-row-main {
-            font-weight: 700;
-            font-size: 0.95rem;
-        }
-
-        .song-row-meta {
-            color: var(--muted);
-            font-size: 0.78rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-        }
-
-        .bottom-layout {
-            margin-top: 14px;
-            display: grid;
-            grid-template-columns: 1.15fr 1fr;
-            gap: 14px;
-        }
-
-        .recent-panel,
-        .join-panel {
-            min-height: 220px;
-        }
-
-        .join-content {
-            padding: 10px 16px 16px;
-            display: grid;
-            gap: 10px;
-        }
-
-        .join-copy {
-            color: #eaf6ff;
-            font-size: 0.97rem;
-        }
-
-        .join-code {
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            letter-spacing: 0.08em;
-            font-size: 1.8rem;
-            padding: 8px 10px;
-            border-radius: 12px;
-            border: 1px dashed rgba(255, 255, 255, 0.38);
-            background: rgba(255, 255, 255, 0.05);
-            justify-self: start;
-        }
-
-        .join-url {
-            color: var(--muted);
-            font-size: 0.88rem;
-            word-break: break-all;
-        }
-
-        .join-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .join-chip {
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-size: 0.77rem;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(255, 255, 255, 0.08);
-            color: #e5f4ff;
+        @keyframes statusZoom {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(var(--status-zoom-scale));
+            }
         }
 
         .ticker-wrap {
-            margin-top: 14px;
-            border-radius: 999px;
+            margin-bottom: 16px;
+            border-radius: var(--radius-sm);
             border: 1px solid rgba(255, 196, 89, 0.4);
             background: linear-gradient(90deg, rgba(255, 150, 74, 0.24), rgba(255, 79, 154, 0.2));
             overflow: hidden;
@@ -475,10 +188,10 @@
         .ticker-track {
             display: inline-flex;
             align-items: center;
-            gap: 38px;
+            gap: 34px;
             white-space: nowrap;
             min-width: 100%;
-            padding: 9px 0;
+            padding: 8px 0;
             animation: tickerMove 28s linear infinite;
             font-weight: 700;
             color: #fff6e1;
@@ -488,7 +201,7 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            font-size: clamp(0.85rem, 1.4vw, 1.2rem);
+            font-size: clamp(0.82rem, 1.35vw, 1.15rem);
         }
 
         .ticker-item::before {
@@ -502,87 +215,498 @@
             to { transform: translateX(-50%); }
         }
 
-        .venue-strip {
-            margin-top: 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(73, 220, 255, 0.4);
-            background: linear-gradient(120deg, rgba(11, 45, 80, 0.65), rgba(13, 32, 62, 0.65));
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .left-stack {
+            display: grid;
+            gap: 16px;
+            align-content: start;
+            min-width: 0;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 14px 28px rgba(5, 10, 22, 0.36);
+            backdrop-filter: blur(7px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel-header {
             padding: 10px 14px;
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            font-size: 1.34rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #d7ecff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            line-height: 1;
+        }
+
+        .now-grid {
+            padding: 12px 14px 14px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(200px, 0.8fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .now-main {
+            min-width: 0;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .now-artist {
+            color: #cae7ff;
+            font-weight: 700;
+            font-size: clamp(1.16rem, 1.9vw, 1.8rem);
+            line-height: 1.1;
+        }
+
+        .now-title {
+            margin: 2px 0 8px;
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            font-size: clamp(2.1rem, 4.65vw, 4rem);
+            line-height: 0.94;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            text-shadow: 0 0 15px rgba(255, 198, 89, 0.38);
+        }
+
+        .now-singer {
+            font-size: 1.05rem;
+            color: #ebf4ff;
+            margin-bottom: 0;
+        }
+
+        .now-bottom {
+            margin-top: auto;
+            display: grid;
+            gap: 8px;
+        }
+
+        .playback-meta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 0;
+        }
+
+        .status-pill {
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 0.98rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(73, 220, 255, 0.2);
+            border: 1px solid rgba(73, 220, 255, 0.48);
+            color: #d9f7ff;
+            line-height: 1;
+        }
+
+        .end-at {
+            color: var(--muted);
+            font-size: 1.02rem;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            margin-top: 4px;
+        }
+
+        .progress-fill {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent-cyan), #7be6ff 44%, var(--accent-gold));
+            box-shadow: 0 0 14px rgba(73, 220, 255, 0.5);
+            transition: width 420ms ease;
+        }
+
+        .progress-meta {
+            margin-top: 0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .venue-name {
-            margin: 0;
-            font-family: 'Bebas Neue', 'Impact', sans-serif;
-            font-size: clamp(1.5rem, 2.5vw, 2.3rem);
-            letter-spacing: 0.04em;
-            color: #88ddff;
-        }
-
-        .venue-sub {
             color: var(--muted);
-            font-size: 0.88rem;
+            font-size: 1.06rem;
+            font-weight: 700;
         }
 
-        .sponsor-strip {
-            margin-top: 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: var(--surface-strong);
-            padding: 10px;
+        .manager-brand {
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 8px;
+            align-content: start;
+            padding: 2px 0 0 14px;
+            min-width: 0;
+            height: 100%;
         }
 
-        .sponsor-head {
-            margin: 0 0 8px;
+        .manager-brand-label {
             font-family: 'Bebas Neue', 'Impact', sans-serif;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            font-size: 1.3rem;
-            color: #f0f7ff;
+            color: #b7daff;
+            font-size: 1.08rem;
+            line-height: 1;
+        }
+
+        .manager-brand-logo {
+            width: 100%;
+            height: calc(100% * var(--manager-logo-height-factor));
+            min-height: var(--manager-logo-min-height);
+            object-fit: contain;
+            object-position: center;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+        }
+
+        .manager-brand-logo[hidden] {
+            display: none;
+        }
+
+        .join-panel {
+            min-height: 230px;
+        }
+
+        .join-content {
+            padding: 12px 14px 14px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(220px, 1fr) minmax(210px, 0.85fr);
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .join-main {
+            display: grid;
+            gap: 10px;
+            min-width: 0;
+            align-content: start;
+        }
+
+        .join-copy {
+            color: #eaf6ff;
+            font-size: 0.97rem;
+            line-height: 1.35;
+        }
+
+        .join-code {
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.08em;
+            font-size: 1.8rem;
+            padding: 7px 10px;
+            border-radius: var(--radius-md);
+            border: 1px dashed rgba(255, 255, 255, 0.38);
+            background: rgba(255, 255, 255, 0.05);
+            justify-self: start;
+            line-height: 1;
+        }
+
+        .join-url {
+            color: var(--muted);
+            font-size: 0.86rem;
+            word-break: break-all;
+        }
+
+        .join-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .join-chip {
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.76rem;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e5f4ff;
+            line-height: 1;
+        }
+
+        .join-banner-card {
+            grid-column: 2;
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 2px 0 0 14px;
+            display: grid;
+            align-content: center;
+            min-width: 0;
+        }
+
+        .join-banner-card[hidden] {
+            display: none;
+        }
+
+        .join-banner-visual {
+            width: 100%;
+            min-height: 126px;
+            max-height: 180px;
+            object-fit: contain;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
+            display: block;
+        }
+
+        .join-banner-visual[hidden] {
+            display: none;
+        }
+
+        .join-qr-card {
+            grid-column: 3;
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 2px 0 0 14px;
+            display: grid;
+            gap: 8px;
+            align-content: start;
+            min-width: 0;
+            justify-self: end;
+            text-align: right;
+        }
+
+        .join-qr-label {
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #d7ecff;
+            font-size: 1.05rem;
+            line-height: 1;
+        }
+
+        .join-qr-image {
+            width: min(100%, var(--join-qr-display-size));
+            aspect-ratio: 1;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: #fff;
+            padding: 6px;
+            margin-left: auto;
+        }
+
+        .join-qr-caption {
+            font-size: 0.74rem;
+            color: var(--muted);
+            line-height: 1.25;
+            word-break: break-all;
+        }
+
+        .next-panel {
+            min-height: 100%;
+        }
+
+        .next-highlight {
+            margin: 10px 12px 6px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            background: linear-gradient(165deg, rgba(255, 79, 154, 0.2), rgba(8, 16, 34, 0.45));
+        }
+
+        .next-artist {
+            color: #ffe2f2;
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .next-title {
+            margin: 1px 0 3px;
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            font-size: clamp(1.9rem, 2.9vw, 3rem);
+            line-height: 0.92;
+            text-transform: uppercase;
+            color: #ffd3a3;
+        }
+
+        .next-singer {
+            color: #fcebf7;
+            font-size: 1rem;
+        }
+
+        .queue-title {
+            margin: 4px 12px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #d6edff;
+            font-size: 1.28rem;
+            line-height: 1;
+        }
+
+        .recent-title {
+            margin: 0 12px 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #d6edff;
+            font-size: 1.28rem;
+            line-height: 1;
+        }
+
+        .queue-list,
+        .recent-list {
+            list-style: none;
+            margin: 0;
+            padding: 0 11px 8px;
+            display: grid;
+            gap: 0;
+            align-content: start;
+        }
+
+        .queue-list {
+            padding-bottom: 0;
+        }
+
+        .song-row {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1.45fr);
+            align-items: center;
+            min-height: 58px;
+            border: 1px solid rgba(84, 126, 182, 0.35);
+            border-top: 0;
+            background: rgba(12, 23, 52, 0.76);
+        }
+
+        .song-row:first-child {
+            border-top: 1px solid rgba(84, 126, 182, 0.35);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .song-row:last-child {
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .song-row:nth-child(even) {
+            background: rgba(16, 30, 63, 0.84);
+        }
+
+        .song-row-num,
+        .song-row-singer,
+        .song-row-song {
+            padding: 11px 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+
+        .song-row-num {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #d7e5ff;
+            border-right: 1px solid rgba(84, 126, 182, 0.3);
+        }
+
+        .song-row-singer {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #f1f6ff;
+        }
+
+        .song-row-song {
+            font-size: 1.08rem;
+            font-weight: 700;
+            color: #eaf1ff;
+        }
+
+        .song-row.song-row-empty {
+            grid-template-columns: 1fr;
+        }
+
+        .song-row-empty-text {
+            grid-column: 1 / -1;
+            padding: 12px 11px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #dce8ff;
+        }
+
+        .sponsor-strip {
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: var(--surface-strong);
+            box-shadow: 0 12px 24px rgba(5, 10, 22, 0.3);
+            padding-top: 3px;
+        }
+
+        .sponsor-strip .panel-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 10px 8px;
         }
 
         .sponsor-row {
+            padding: 12px 14px 14px;
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 9px;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 14px 16px;
         }
 
         .sponsor-card {
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            background: rgba(255, 255, 255, 0.04);
-            padding: 8px;
+            border-radius: 0;
+            border: 0;
+            background: transparent;
+            padding: 0;
             display: grid;
             grid-template-columns: auto 1fr;
             align-items: center;
-            gap: 10px;
-            min-height: 78px;
+            gap: 12px;
+            min-height: 84px;
         }
 
         .sponsor-logo {
-            width: 56px;
-            height: 56px;
-            border-radius: 10px;
+            width: 76px;
+            height: 76px;
             object-fit: contain;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
         }
 
         .sponsor-title {
             font-weight: 800;
-            font-size: 0.9rem;
+            font-size: 1.08rem;
             color: #f7fbff;
             line-height: 1.15;
         }
 
         .sponsor-subtitle {
             color: var(--muted);
-            font-size: 0.77rem;
+            font-size: 0.9rem;
             margin-top: 2px;
             line-height: 1.2;
         }
@@ -591,33 +715,66 @@
             margin-top: 10px;
             text-align: right;
             color: rgba(214, 230, 250, 0.7);
-            font-size: 0.78rem;
+            font-size: 0.76rem;
+        }
+
+        @media (max-width: 1280px) {
+            .topline {
+                grid-template-columns: 1fr auto;
+            }
         }
 
         @media (max-width: 1120px) {
-            .layout,
-            .bottom-layout {
+            .layout {
                 grid-template-columns: 1fr;
             }
 
-            .now-grid {
+            .topline {
                 grid-template-columns: 1fr;
             }
 
-            .sponsor-row {
+            .event-brand {
+                max-width: min(100%, 320px);
+            }
+
+            .play-now-marquee {
+                justify-self: end;
+                min-width: 0;
+            }
+
+            .now-grid,
+            .join-content {
                 grid-template-columns: 1fr;
+            }
+
+            .join-banner-card,
+            .join-qr-card {
+                grid-column: auto;
+                border-left: 0;
+                border-top: 1px solid rgba(255, 255, 255, 0.18);
+                padding: 10px 0 0;
+                margin-top: 4px;
+            }
+
+            .manager-brand {
+                border-left: 0;
+                border-top: 1px solid rgba(255, 255, 255, 0.18);
+                padding: 10px 0 0;
+                margin-top: 4px;
+            }
+
+            .next-panel {
+                min-height: 0;
             }
 
             .screen-shell {
-                padding: 14px 10px 14px;
+                padding: 12px 10px 14px;
             }
         }
     </style>
 </head>
 <body>
     <div class="screen-shell">
-        <div class="play-now-marquee">Playing now!</div>
-
         <div class="topline">
             <div class="event-brand">
                 <img id="brand-logo" class="event-brand-logo" alt="Logo evento" hidden>
@@ -627,44 +784,75 @@
                 </div>
             </div>
 
-            <a class="join-cta" id="join-cta" href="{{ route('public.join.show', $eventNight->code) }}">Canta anche tu: entra in coda</a>
+            <div class="play-now-marquee" id="playback-status-master">WAITING</div>
         </div>
 
+        <section class="ticker-wrap">
+            <div class="ticker-track" id="ticker-track"></div>
+        </section>
+
         <div class="layout">
-            <section class="panel now-panel">
-                <div class="panel-header">Ora in corso</div>
-                <div class="now-grid">
-                    <div>
-                        <div class="now-artist" id="now-artist">—</div>
-                        <div class="now-title" id="now-title">In attesa</div>
-                        <div class="now-singer">Cantata da: <strong id="now-singer">—</strong></div>
+            <div class="left-stack">
+                <section class="panel now-panel">
+                    <div class="panel-header">Ora in corso</div>
+                    <div class="now-grid">
+                        <div class="now-main">
+                            <div class="now-artist" id="now-artist">—</div>
+                            <div class="now-title" id="now-title">In attesa</div>
+                            <div class="now-bottom">
+                                <div class="now-singer">Cantata da: <strong id="now-singer">—</strong></div>
 
-                        <div class="playback-meta">
-                            <span class="status-pill" id="playback-status">WAITING</span>
-                            <span class="end-at" id="expected-end"></span>
-                        </div>
+                                <div class="playback-meta">
+                                    <span class="status-pill" id="playback-status">WAITING</span>
+                                    <span class="end-at" id="expected-end"></span>
+                                </div>
 
-                        <div class="progress-track">
-                            <div class="progress-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="progress-meta">
-                            <span id="progress-elapsed">00:00</span>
-                            <span id="progress-remaining">Restante 00:00</span>
-                        </div>
-                    </div>
-
-                    <aside class="featured-banner" id="featured-banner" hidden>
-                        <div class="featured-label">Sponsor in evidenza</div>
-                        <div class="featured-content">
-                            <div>
-                                <div class="featured-title" id="featured-title">—</div>
-                                <div class="featured-subtitle" id="featured-subtitle"></div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" id="progress-fill"></div>
+                                </div>
+                                <div class="progress-meta">
+                                    <span id="progress-elapsed">00:00</span>
+                                    <span id="progress-remaining">Restante 00:00</span>
+                                </div>
                             </div>
-                            <img id="featured-visual" class="featured-visual" alt="Sponsor">
                         </div>
-                    </aside>
-                </div>
-            </section>
+
+                        <aside class="manager-brand">
+                            <div class="manager-brand-label">Regia karaoke</div>
+                            <img id="manager-logo" class="manager-brand-logo" alt="Logo organizzazione" src="{{ config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg' }}">
+                        </aside>
+                    </div>
+                </section>
+
+                <section class="panel join-panel">
+                    <div class="panel-header">Partecipa alla serata! Puoi Prenotare dal telefono</div>
+                    <div class="join-content">
+                        <div class="join-main">
+                            <div class="join-copy">Apri la pagina pubblica, scegli la canzone e sali sul palco quando arriva il tuo turno.</div>
+                            <div class="join-code" id="join-code">{{ $eventNight->code }}</div>
+                            <div class="join-url" id="join-url"></div>
+                            <div class="join-meta">
+                                <span class="join-chip" id="join-pin-chip"></span>
+                                <span class="join-chip" id="join-cooldown-chip"></span>
+                                <span class="join-chip" id="event-time-chip"></span>
+                            </div>
+                        </div>
+
+                        <aside class="join-banner-card" id="join-banner-card" hidden>
+                            <img id="join-banner-visual" class="join-banner-visual" alt="Banner principale sponsor" hidden>
+                        </aside>
+
+                        <aside class="join-qr-card">
+                            <img id="join-qr-image" class="join-qr-image" alt="QR code prenotazione">
+                        </aside>
+                    </div>
+                </section>
+
+                <section class="sponsor-strip">
+                    <div class="panel-header">Sponsor</div>
+                    <div class="sponsor-row" id="sponsor-row"></div>
+                </section>
+            </div>
 
             <aside class="panel next-panel">
                 <div class="panel-header">Prossima canzone</div>
@@ -673,54 +861,18 @@
                     <div class="next-title" id="next-title">—</div>
                     <div class="next-singer" id="next-singer"></div>
                 </div>
-
+                <br>
                 <div class="queue-title">
                     <span>In coda</span>
                     <span id="queue-total">0</span>
                 </div>
 
                 <ul class="queue-list" id="next-list"></ul>
+                <br>
+                <div class="recent-title">Canzoni recenti</div>
+                <ul class="recent-list" id="recent-list"></ul>
             </aside>
         </div>
-
-        <div class="bottom-layout">
-            <section class="panel recent-panel">
-                <div class="panel-header">Canzoni recenti</div>
-                <ul class="recent-list" id="recent-list"></ul>
-            </section>
-
-            <section class="panel join-panel">
-                <div class="panel-header">Partecipa alla serata</div>
-                <div class="join-content">
-                    <div class="join-copy">Apri la pagina pubblica, scegli la canzone e sali sul palco quando arriva il tuo turno.</div>
-                    <div class="join-code" id="join-code">{{ $eventNight->code }}</div>
-                    <div class="join-url" id="join-url"></div>
-                    <div class="join-meta">
-                        <span class="join-chip" id="join-pin-chip"></span>
-                        <span class="join-chip" id="join-cooldown-chip"></span>
-                        <span class="join-chip" id="event-time-chip"></span>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <section class="ticker-wrap">
-            <div class="ticker-track" id="ticker-track"></div>
-        </section>
-
-        <section class="venue-strip">
-            <div>
-                <h2 class="venue-name" id="venue-name">{{ $eventNight->venue?->name ?? 'Karaoke Night' }}</h2>
-                <div class="venue-sub" id="theme-name"></div>
-            </div>
-
-            <div class="venue-sub" id="event-datetime"></div>
-        </section>
-
-        <section class="sponsor-strip">
-            <h3 class="sponsor-head">Sponsor</h3>
-            <div class="sponsor-row" id="sponsor-row"></div>
-        </section>
 
         <div class="updated-at" id="updated-at"></div>
     </div>
@@ -729,27 +881,57 @@
         const initialState = @json($state);
         const realtimeEnabled = @json($realtimeEnabled);
         const pollMs = @json($pollSeconds * 1000);
+        const realtimeMaxConsecutiveErrors = @json($realtimeMaxConsecutiveErrors);
+        const realtimeConnectTimeoutMs = @json($realtimeConnectTimeoutSeconds * 1000);
         const stateUrl = @json(route('public.screen.state', $eventNight->code));
         const streamUrl = @json(route('public.screen.stream', $eventNight->code));
         const fallbackJoinUrl = @json(route('public.join.show', $eventNight->code));
+        const fallbackManagerLogo = @json(config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg');
+        const qrServiceUrl = @json(config('public_screen.join_qr.service_url', 'https://api.qrserver.com/v1/create-qr-code/'));
+        const qrSizeConfig = @json((int) config('public_screen.join_qr.size', 240));
+        const normalizedQrSize = Number.isFinite(qrSizeConfig)
+            ? Math.max(140, Math.min(560, Math.floor(qrSizeConfig)))
+            : 240;
+        const statusVariants = {
+            soft: {
+                fontSize: 'clamp(1.55rem, 2.5vw, 2.45rem)',
+                letterSpacing: '0.075em',
+                minWidth: 'clamp(190px, 23vw, 360px)',
+                zoomScale: '1.04',
+                duration: '2.35s',
+            },
+            medium: {
+                fontSize: 'clamp(1.8rem, 3vw, 2.9rem)',
+                letterSpacing: '0.1em',
+                minWidth: 'clamp(210px, 27vw, 420px)',
+                zoomScale: '1.08',
+                duration: '1.7s',
+            },
+            stage: {
+                fontSize: 'clamp(2.3rem, 4.4vw, 4rem)',
+                letterSpacing: '0.13em',
+                minWidth: 'clamp(280px, 36vw, 620px)',
+                zoomScale: '1.12',
+                duration: '1.35s',
+            },
+        };
+        // Cambia rapidamente look dello stato: 'soft' | 'medium' | 'stage'
+        const activeStatusVariant = 'stage';
 
         const elements = {
             brandLogo: document.getElementById('brand-logo'),
             eventVenue: document.getElementById('event-venue'),
             eventCode: document.getElementById('event-code'),
-            joinCta: document.getElementById('join-cta'),
             nowArtist: document.getElementById('now-artist'),
             nowTitle: document.getElementById('now-title'),
             nowSinger: document.getElementById('now-singer'),
             playbackStatus: document.getElementById('playback-status'),
+            playbackStatusMaster: document.getElementById('playback-status-master'),
             expectedEnd: document.getElementById('expected-end'),
             progressFill: document.getElementById('progress-fill'),
             progressElapsed: document.getElementById('progress-elapsed'),
             progressRemaining: document.getElementById('progress-remaining'),
-            featuredBanner: document.getElementById('featured-banner'),
-            featuredTitle: document.getElementById('featured-title'),
-            featuredSubtitle: document.getElementById('featured-subtitle'),
-            featuredVisual: document.getElementById('featured-visual'),
+            managerLogo: document.getElementById('manager-logo'),
             nextArtist: document.getElementById('next-artist'),
             nextTitle: document.getElementById('next-title'),
             nextSinger: document.getElementById('next-singer'),
@@ -761,10 +943,11 @@
             joinPinChip: document.getElementById('join-pin-chip'),
             joinCooldownChip: document.getElementById('join-cooldown-chip'),
             eventTimeChip: document.getElementById('event-time-chip'),
+            joinBannerCard: document.getElementById('join-banner-card'),
+            joinBannerVisual: document.getElementById('join-banner-visual'),
+            joinQrImage: document.getElementById('join-qr-image'),
+            joinQrCaption: document.getElementById('join-qr-caption'),
             tickerTrack: document.getElementById('ticker-track'),
-            venueName: document.getElementById('venue-name'),
-            themeName: document.getElementById('theme-name'),
-            eventDatetime: document.getElementById('event-datetime'),
             sponsorRow: document.getElementById('sponsor-row'),
             updatedAt: document.getElementById('updated-at'),
         };
@@ -776,8 +959,23 @@
             theme: initialState?.theme || null,
             updatedAt: initialState?.updated_at || null,
         };
+        let pollIntervalId = null;
+        let pollingStarted = false;
+        let source = null;
+        let realtimeEverConnected = false;
+        let consecutiveSseErrors = 0;
+        let fallbackActivated = false;
+        let firstEventTimeoutId = null;
 
         const resolveTimezone = () => appState?.event?.timezone || 'Europe/Rome';
+        const applyStatusVariant = (variantName) => {
+            const variant = statusVariants[variantName] || statusVariants.medium;
+            document.documentElement.style.setProperty('--status-font-size', variant.fontSize);
+            document.documentElement.style.setProperty('--status-letter-spacing', variant.letterSpacing);
+            document.documentElement.style.setProperty('--status-min-width', variant.minWidth);
+            document.documentElement.style.setProperty('--status-zoom-scale', variant.zoomScale);
+            document.documentElement.style.setProperty('--status-anim-duration', variant.duration);
+        };
 
         const formatTime = (isoValue) => {
             const date = isoValue ? new Date(isoValue) : null;
@@ -855,6 +1053,30 @@
             }
         };
 
+        const buildQrCodeUrl = (targetUrl) => {
+            const safeUrl = targetUrl || fallbackJoinUrl;
+            const base = (typeof qrServiceUrl === 'string' && qrServiceUrl.trim() !== '')
+                ? qrServiceUrl.trim()
+                : 'https://api.qrserver.com/v1/create-qr-code/';
+            const separator = base.includes('?') ? '&' : '?';
+
+            return `${base}${separator}size=${normalizedQrSize}x${normalizedQrSize}&format=svg&margin=0&data=${encodeURIComponent(safeUrl)}`;
+        };
+
+        const updateJoinQr = (joinUrl) => {
+            if (!elements.joinQrImage) {
+                return;
+            }
+
+            const safeUrl = joinUrl || fallbackJoinUrl;
+            elements.joinQrImage.src = buildQrCodeUrl(safeUrl);
+            elements.joinQrImage.alt = `QR code per ${toDisplayUrl(safeUrl)}`;
+
+            if (elements.joinQrCaption) {
+                elements.joinQrCaption.textContent = toDisplayUrl(safeUrl);
+            }
+        };
+
         const statusLabel = (state) => {
             const value = (state || '').toLowerCase();
             if (value === 'playing') {
@@ -869,41 +1091,45 @@
             return 'In attesa';
         };
 
-        const renderRowList = (container, rows, emptyMessage, metaBuilder) => {
+        const renderRowList = (container, rows, emptyMessage, options = {}) => {
+            const {
+                numberBuilder = (_item, index) => index + 1,
+                singerBuilder = (item) => item?.requested_by || '—',
+                songBuilder = (item) => item?.title || songLine(item),
+            } = options;
+
             container.innerHTML = '';
 
             if (!rows || rows.length === 0) {
                 const li = document.createElement('li');
-                li.className = 'song-row';
-                const main = document.createElement('div');
-                main.className = 'song-row-main';
-                main.textContent = emptyMessage;
-                li.appendChild(main);
+                li.className = 'song-row song-row-empty';
+                const text = document.createElement('span');
+                text.className = 'song-row-empty-text';
+                text.textContent = emptyMessage;
+                li.appendChild(text);
                 container.appendChild(li);
                 return;
             }
 
-            rows.forEach((item) => {
+            rows.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.className = 'song-row';
 
-                const main = document.createElement('div');
-                main.className = 'song-row-main';
-                main.textContent = songLine(item);
-
-                const meta = document.createElement('div');
-                meta.className = 'song-row-meta';
+                const number = document.createElement('span');
+                number.className = 'song-row-num';
+                number.textContent = `${numberBuilder(item, index)}`;
 
                 const singer = document.createElement('span');
-                singer.textContent = item.requested_by ? `Voce: ${item.requested_by}` : 'Voce: —';
+                singer.className = 'song-row-singer';
+                singer.textContent = singerBuilder(item, index);
 
-                const extra = document.createElement('span');
-                extra.textContent = metaBuilder(item);
+                const song = document.createElement('span');
+                song.className = 'song-row-song';
+                song.textContent = songBuilder(item, index);
 
-                meta.appendChild(singer);
-                meta.appendChild(extra);
-                li.appendChild(main);
-                li.appendChild(meta);
+                li.appendChild(number);
+                li.appendChild(singer);
+                li.appendChild(song);
                 container.appendChild(li);
             });
         };
@@ -922,17 +1148,15 @@
                 : 'Orario non definito';
 
             elements.eventVenue.textContent = venue;
-            elements.venueName.textContent = venue;
             elements.eventCode.textContent = `Codice evento: ${event.code || ''}`;
             elements.joinCode.textContent = event.code || '---';
             elements.joinUrl.textContent = `Partecipa su ${toDisplayUrl(joinUrl)}`;
-            elements.joinCta.href = joinUrl;
             elements.joinPinChip.textContent = event.join_pin_required ? 'Accesso con PIN' : 'Accesso libero';
             elements.joinCooldownChip.textContent = cooldownMinutes > 0
                 ? `Nuova richiesta ogni ${cooldownMinutes} min`
                 : 'Richieste senza attesa';
             elements.eventTimeChip.textContent = timeRange;
-            elements.eventDatetime.textContent = timeRange;
+            updateJoinQr(joinUrl);
         };
 
         const updatePlayback = (playback) => {
@@ -948,6 +1172,7 @@
             elements.nowTitle.textContent = song?.title || 'In attesa della prossima canzone';
             elements.nowSinger.textContent = song?.requested_by || 'Cantante in arrivo';
             elements.playbackStatus.textContent = statusLabel(playback.state);
+            elements.playbackStatusMaster.textContent = statusLabel(playback.state);
             elements.expectedEnd.textContent = playback.expected_end_at
                 ? `Fine prevista ${formatTime(playback.expected_end_at)}`
                 : '';
@@ -977,14 +1202,22 @@
                 elements.nextList,
                 listAfterHighlight,
                 'Nessuna altra canzone in coda.',
-                (item) => item.position ? `Pos. ${item.position}` : ''
+                {
+                    numberBuilder: (item, index) => item.position ?? (index + 1),
+                    singerBuilder: (item) => item?.requested_by || '—',
+                    songBuilder: (item) => item?.title || songLine(item),
+                }
             );
 
             renderRowList(
                 elements.recentList,
                 recent,
                 'Nessuna canzone riprodotta finora.',
-                (item) => item.played_at ? formatTime(item.played_at) : ''
+                {
+                    numberBuilder: (_item, index) => index + 1,
+                    singerBuilder: (item) => item?.requested_by || '—',
+                    songBuilder: (item) => item?.title || songLine(item),
+                }
             );
         };
 
@@ -994,7 +1227,7 @@
                 : [];
 
             if (safeMessages.length === 0) {
-                safeMessages.push(`Benvenuti al Karaoke Night! Inserisci ${eventCode || ''} su /e/ per partecipare.`);
+                safeMessages.push(`Benvenuti al Karaoke Night! Inserisci il codice evento ${eventCode || ''} per prenotare.`);
             }
 
             const sequence = [...safeMessages, ...safeMessages];
@@ -1009,7 +1242,7 @@
         };
 
         const renderSponsors = (sponsors, fallbackBanner) => {
-            let cards = Array.isArray(sponsors) ? sponsors.slice(0, 3) : [];
+            let cards = Array.isArray(sponsors) ? sponsors.slice(0, 6) : [];
 
             if (cards.length === 0 && fallbackBanner && fallbackBanner.is_active) {
                 cards = [fallbackBanner];
@@ -1070,12 +1303,36 @@
             });
         };
 
-        const updateTheme = (themePayload) => {
-            if (!themePayload) {
+        const renderJoinMainBanner = (banner) => {
+            if (!elements.joinBannerCard) {
                 return;
             }
 
-            const config = themePayload.theme?.config || {};
+            if (!banner || !banner.is_active) {
+                elements.joinBannerCard.hidden = true;
+                if (elements.joinBannerVisual) {
+                    elements.joinBannerVisual.hidden = true;
+                    elements.joinBannerVisual.removeAttribute('src');
+                }
+                return;
+            }
+
+            elements.joinBannerCard.hidden = false;
+            const visual = banner.image_url || banner.logo_url;
+            if (elements.joinBannerVisual) {
+                if (visual) {
+                    elements.joinBannerVisual.hidden = false;
+                    elements.joinBannerVisual.src = visual;
+                } else {
+                    elements.joinBannerVisual.hidden = true;
+                    elements.joinBannerVisual.removeAttribute('src');
+                }
+            }
+        };
+
+        const updateTheme = (themePayload) => {
+            const payload = themePayload || {};
+            const config = payload.theme?.config || {};
             const primary = config.primaryColor || '#49dcff';
             const secondary = config.secondaryColor || '#0f1c3e';
             const highlight = config.highlightColor || '#ffc659';
@@ -1084,48 +1341,32 @@
             document.documentElement.style.setProperty('--accent-pink', secondary);
             document.documentElement.style.setProperty('--accent-gold', highlight);
 
-            if (themePayload.background_image_url) {
-                document.documentElement.style.setProperty('--event-bg-image', `url('${themePayload.background_image_url}')`);
+            if (payload.background_image_url) {
+                document.documentElement.style.setProperty('--event-bg-image', `url('${payload.background_image_url}')`);
             } else {
                 document.documentElement.style.setProperty('--event-bg-image', 'none');
             }
 
-            if (themePayload.brand_logo_url) {
+            if (payload.brand_logo_url) {
                 elements.brandLogo.hidden = false;
-                elements.brandLogo.src = themePayload.brand_logo_url;
+                elements.brandLogo.src = payload.brand_logo_url;
             } else {
                 elements.brandLogo.hidden = true;
                 elements.brandLogo.removeAttribute('src');
             }
 
-            const banner = themePayload.banner;
-            if (banner && banner.is_active) {
-                elements.featuredBanner.hidden = false;
-                elements.featuredTitle.textContent = banner.title || 'Sponsor';
-                elements.featuredSubtitle.textContent = banner.subtitle || '';
-
-                const visual = banner.logo_url || banner.image_url;
-                if (visual) {
-                    elements.featuredVisual.src = visual;
-                    elements.featuredVisual.hidden = false;
-                } else {
-                    elements.featuredVisual.hidden = true;
-                    elements.featuredVisual.removeAttribute('src');
-                }
+            const managerLogo = payload.manager_logo_url || fallbackManagerLogo;
+            if (managerLogo) {
+                elements.managerLogo.hidden = false;
+                elements.managerLogo.src = managerLogo;
             } else {
-                elements.featuredBanner.hidden = true;
-                elements.featuredVisual.hidden = true;
-                elements.featuredVisual.removeAttribute('src');
-                elements.featuredTitle.textContent = '—';
-                elements.featuredSubtitle.textContent = '';
+                elements.managerLogo.hidden = true;
+                elements.managerLogo.removeAttribute('src');
             }
 
-            elements.themeName.textContent = themePayload.theme?.name
-                ? `Tema attivo: ${themePayload.theme.name}`
-                : 'Tema base serata';
-
-            renderTicker(themePayload.overlay_texts, appState?.event?.code);
-            renderSponsors(themePayload.sponsor_banners, banner);
+            renderJoinMainBanner(payload.banner);
+            renderTicker(payload.overlay_texts, appState?.event?.code);
+            renderSponsors(payload.sponsor_banners, payload.banner);
         };
 
         const renderUpdatedAt = (iso) => {
@@ -1157,6 +1398,11 @@
         };
 
         const startPolling = () => {
+            if (pollingStarted) {
+                return;
+            }
+
+            pollingStarted = true;
             const poll = async () => {
                 try {
                     const response = await fetch(stateUrl, { cache: 'no-store' });
@@ -1172,7 +1418,51 @@
             };
 
             poll();
-            setInterval(poll, pollMs);
+            pollIntervalId = setInterval(poll, pollMs);
+        };
+
+        const resetConnectTimeout = () => {
+            if (firstEventTimeoutId !== null) {
+                clearTimeout(firstEventTimeoutId);
+            }
+
+            firstEventTimeoutId = setTimeout(() => {
+                if (fallbackActivated || realtimeEverConnected) {
+                    return;
+                }
+
+                consecutiveSseErrors += 1;
+                maybeActivateFallback();
+            }, realtimeConnectTimeoutMs);
+        };
+
+        const clearConnectTimeout = () => {
+            if (firstEventTimeoutId === null) {
+                return;
+            }
+
+            clearTimeout(firstEventTimeoutId);
+            firstEventTimeoutId = null;
+        };
+
+        const maybeActivateFallback = () => {
+            if (fallbackActivated) {
+                return;
+            }
+
+            if (consecutiveSseErrors < realtimeMaxConsecutiveErrors) {
+                return;
+            }
+
+            fallbackActivated = true;
+            clearConnectTimeout();
+
+            if (source) {
+                source.close();
+                source = null;
+            }
+
+            startPolling();
         };
 
         const startRealtime = () => {
@@ -1181,40 +1471,63 @@
                 return;
             }
 
-            let fallbackStarted = false;
-            const source = new EventSource(streamUrl);
+            if (source || fallbackActivated) {
+                return;
+            }
+
+            source = new EventSource(streamUrl);
+            resetConnectTimeout();
+
+            source.onopen = () => {
+                realtimeEverConnected = true;
+                consecutiveSseErrors = 0;
+                clearConnectTimeout();
+            };
 
             source.addEventListener('snapshot', (event) => {
                 const payload = JSON.parse(event.data);
+                realtimeEverConnected = true;
+                consecutiveSseErrors = 0;
+                clearConnectTimeout();
                 renderState(payload);
             });
 
             source.addEventListener('playback', (event) => {
+                realtimeEverConnected = true;
+                consecutiveSseErrors = 0;
+                clearConnectTimeout();
                 appState.playback = JSON.parse(event.data);
                 updatePlayback(appState.playback);
             });
 
             source.addEventListener('queue', (event) => {
+                realtimeEverConnected = true;
+                consecutiveSseErrors = 0;
+                clearConnectTimeout();
                 appState.queue = JSON.parse(event.data);
                 updateQueue(appState.queue);
             });
 
             source.addEventListener('theme', (event) => {
+                realtimeEverConnected = true;
+                consecutiveSseErrors = 0;
+                clearConnectTimeout();
                 appState.theme = JSON.parse(event.data);
                 updateTheme(appState.theme);
             });
 
             source.addEventListener('error', () => {
-                if (fallbackStarted) {
+                if (fallbackActivated) {
                     return;
                 }
 
-                fallbackStarted = true;
-                source.close();
-                startPolling();
+                consecutiveSseErrors += 1;
+                maybeActivateFallback();
             });
         };
 
+        document.documentElement.style.setProperty('--join-qr-display-size', `${normalizedQrSize}px`);
+        applyStatusVariant(activeStatusVariant);
         renderState(initialState);
         startRealtime();
     </script>

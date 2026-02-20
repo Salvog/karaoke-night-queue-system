@@ -4,12 +4,6 @@
     @php
         $overlayTexts = old('overlay_texts', $eventNight->overlay_texts ?? []);
         $overlayTexts = array_pad($overlayTexts, 5, '');
-        $backgroundUrl = $eventNight->background_image_path
-            ? Storage::disk('public')->url($eventNight->background_image_path)
-            : null;
-        $brandLogoUrl = $eventNight->brand_logo_path
-            ? Storage::disk('public')->url($eventNight->brand_logo_path)
-            : null;
     @endphp
 
     <h1>Tema e annunci per l'evento #{{ $eventNight->id }}</h1>

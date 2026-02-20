@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,13 +26,25 @@ class AdminThemeController extends Controller
 
         $eventNight->load('venue');
         $themes = Theme::where('venue_id', $eventNight->venue_id)->orderBy('name')->get();
-        $ads = AdBanner::where('venue_id', $eventNight->venue_id)->orderBy('title')->get();
+        $ads = AdBanner::where('venue_id', $eventNight->venue_id)
+            ->orderBy('title')
+            ->get()
+            ->each(function (AdBanner $ad): void {
+                $ad->image_url = $this->resolveMediaUrl($ad->image_url);
+                $ad->logo_url = $this->resolveMediaUrl($ad->logo_url);
+            });
 
         return view('admin.theme.show', [
             'eventNight' => $eventNight,
             'themes' => $themes,
             'ads' => $ads,
             'adminUser' => $adminUser,
+            'backgroundUrl' => $eventNight->background_image_path
+                ? $this->resolvePublicDiskPath($eventNight->background_image_path)
+                : null,
+            'brandLogoUrl' => $eventNight->brand_logo_path
+                ? $this->resolvePublicDiskPath($eventNight->brand_logo_path)
+                : null,
         ]);
     }
 
@@ -140,5 +153,93 @@ class AdminThemeController extends Controller
         }
 
         return $updates;
+    }
+
+    private function resolveMediaUrl(?string $url): ?string
+    {
+        $value = $this->normalizeLocalAbsoluteUrl(is_string($url) ? trim($url) : '');
+        if ($value === '') {
+            return null;
+        }
+
+        if (Str::startsWith($value, ['http://', 'https://', '//', 'data:', 'blob:'])) {
+            return $value;
+        }
+
+        if (Str::startsWith($value, '/storage/')) {
+            $path = ltrim(Str::after($value, '/storage/'), '/');
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                return $this->resolvePublicDiskPath($path);
+            }
+        }
+
+        if (Str::startsWith($value, '/media/')) {
+            $path = ltrim(Str::after($value, '/media/'), '/');
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                return $this->resolvePublicDiskPath($path);
+            }
+        }
+
+        $path = ltrim($value, '/');
+        if ($path !== '' && Storage::disk('public')->exists($path)) {
+            return $this->resolvePublicDiskPath($path);
+        }
+
+        return Str::startsWith($value, '/') ? $value : '/' . $value;
+    }
+
+    private function resolvePublicDiskPath(string $path): string
+    {
+        return route('public.screen.media', ['path' => ltrim($path, '/')], false);
+    }
+
+    private function normalizeLocalAbsoluteUrl(string $value): string
+    {
+        if ($value === '' || ! Str::startsWith($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        $parsed = parse_url($value);
+        if (! is_array($parsed)) {
+            return $value;
+        }
+
+        $path = (string) ($parsed['path'] ?? '/');
+        if (! Str::startsWith($path, ['/storage/', '/media/'])) {
+            return $value;
+        }
+
+        $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : '';
+        if ($host === '') {
+            return $value;
+        }
+
+        $appHost = $this->appUrlHost();
+        $isLoopback = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+        if (! $isLoopback && ($appHost === null || $host !== $appHost)) {
+            return $value;
+        }
+
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+
+        return $path . $query . $fragment;
+    }
+
+    private function appUrlHost(): ?string
+    {
+        $configured = (string) config('app.url', '');
+        if ($configured === '') {
+            return null;
+        }
+
+        $parsed = parse_url($configured);
+        if (! is_array($parsed)) {
+            return null;
+        }
+
+        $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : '';
+
+        return $host !== '' ? $host : null;
     }
 }

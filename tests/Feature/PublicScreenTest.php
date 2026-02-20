@@ -11,6 +11,7 @@ use App\Models\SongRequest;
 use App\Models\Theme;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PublicScreenTest extends TestCase
@@ -162,6 +163,110 @@ class PublicScreenTest extends TestCase
         $response->assertJsonPath('event.code', 'SCREEN2');
         $response->assertJsonPath('event.join_url', route('public.join.show', $eventNight->code));
         $response->assertJsonPath('queue.total_pending', 0);
+    }
+
+    public function test_public_screen_state_normalizes_local_absolute_banner_urls_to_media_route(): void
+    {
+        Storage::fake('public');
+
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $path = "ad-banners/{$venue->id}/sponsor.jpg";
+        Storage::disk('public')->put($path, 'fake-image');
+
+        $banner = AdBanner::create([
+            'venue_id' => $venue->id,
+            'title' => 'Sponsor locale',
+            'subtitle' => 'Promo',
+            'image_url' => "http://localhost:8000/storage/{$path}",
+            'logo_url' => "http://127.0.0.1:8000/storage/{$path}",
+            'is_active' => true,
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'ad_banner_id' => $banner->id,
+            'code' => 'SCREEN5',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('theme.banner.image_url', "/media/{$path}");
+        $response->assertJsonPath('theme.banner.logo_url', "/media/{$path}");
+        $response->assertJsonPath('theme.sponsor_banners.0.image_url', "/media/{$path}");
+        $response->assertJsonPath('theme.sponsor_banners.0.logo_url', "/media/{$path}");
+    }
+
+    public function test_public_screen_serializes_realtime_configuration_in_view(): void
+    {
+        config([
+            'public_screen.realtime.max_consecutive_errors' => 7,
+            'public_screen.realtime.connect_timeout_seconds' => 12,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN4',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->get("/screen/{$eventNight->code}");
+
+        $response->assertStatus(200);
+        $response->assertSee('const realtimeMaxConsecutiveErrors = 7;', false);
+        $response->assertSee('const realtimeConnectTimeoutMs = 12000;', false);
+    }
+
+    public function test_public_screen_stream_endpoint_returns_sse_snapshot(): void
+    {
+        config([
+            'public_screen.realtime.stream_seconds' => 0,
+            'public_screen.realtime.sleep_seconds' => 0,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'STREAM1',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->get("/screen/{$eventNight->code}/stream");
+
+        $response->assertStatus(200);
+        $response->assertStreamed();
+        $this->assertStringStartsWith(
+            'text/event-stream',
+            (string) $response->baseResponse->headers->get('Content-Type')
+        );
+
+        $content = $response->streamedContent();
+
+        $this->assertStringContainsString("event: snapshot\n", $content);
+        $this->assertStringContainsString('data: {', $content);
     }
 
     public function test_public_screen_requires_live_event(): void

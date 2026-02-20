@@ -141,7 +141,7 @@ class AdminEventCrudTest extends TestCase
             $response = $this->actingAs($admin, 'admin')->get('/admin/events');
 
             $response->assertOk();
-            $response->assertSee('Eventi in corso');
+            $response->assertSee('Evento In Corso');
             $response->assertSee('Eventi futuri');
             $response->assertSee('Eventi passati');
             $response->assertSee('LIVE01');

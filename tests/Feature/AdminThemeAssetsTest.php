@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AdBanner;
 use App\Models\AdminUser;
 use App\Models\EventNight;
 use App\Models\Venue;
@@ -90,6 +91,101 @@ class AdminThemeAssetsTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function test_admin_theme_page_renders_media_urls_with_same_origin_paths(): void
+    {
+        Storage::fake('public');
+
+        $admin = AdminUser::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => 'password',
+            'role' => AdminUser::ROLE_ADMIN,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Hall',
+            'timezone' => 'UTC',
+        ]);
+
+        $backgroundPath = "event-themes/{$venue->id}/background.jpg";
+        $logoPath = "event-branding/{$venue->id}/logo.png";
+        $bannerImagePath = "ad-banners/{$venue->id}/sponsor.jpg";
+        $bannerLogoPath = "ad-banners/{$venue->id}/sponsor-logo.png";
+        Storage::disk('public')->put($backgroundPath, 'bg');
+        Storage::disk('public')->put($logoPath, 'logo');
+        Storage::disk('public')->put($bannerImagePath, 'banner');
+        Storage::disk('public')->put($bannerLogoPath, 'banner-logo');
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME3',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+            'background_image_path' => $backgroundPath,
+            'brand_logo_path' => $logoPath,
+        ]);
+
+        AdBanner::create([
+            'venue_id' => $venue->id,
+            'title' => 'Sponsor',
+            'subtitle' => 'Promo',
+            'image_url' => "http://localhost:8000/storage/{$bannerImagePath}",
+            'logo_url' => "http://127.0.0.1:8000/storage/{$bannerLogoPath}",
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->get("/admin/events/{$eventNight->id}/theme-ads");
+
+        $response->assertOk();
+        $response->assertSee('src="/media/' . $backgroundPath . '"', false);
+        $response->assertSee('src="/media/' . $logoPath . '"', false);
+        $response->assertSee('src="/media/' . $bannerImagePath . '"', false);
+        $response->assertSee('src="/media/' . $bannerLogoPath . '"', false);
+    }
+
+    public function test_admin_banner_upload_saves_relative_media_urls(): void
+    {
+        $this->skipIfGdMissing();
+        Storage::fake('public');
+
+        $admin = AdminUser::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => 'password',
+            'role' => AdminUser::ROLE_ADMIN,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Hall',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME4',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventNight->id}/ad-banners", [
+            'title' => 'Sponsor locale',
+            'subtitle' => 'Promo',
+            'image' => UploadedFile::fake()->image('banner.jpg'),
+            'logo' => UploadedFile::fake()->image('logo.png'),
+            'is_active' => '1',
+        ]);
+
+        $response->assertStatus(302);
+
+        $banner = AdBanner::query()->firstOrFail();
+        $this->assertStringStartsWith('/media/ad-banners/' . $venue->id . '/', $banner->image_url);
+        $this->assertStringStartsWith('/media/ad-banners/' . $venue->id . '/', (string) $banner->logo_url);
     }
 
     private function skipIfGdMissing(): void

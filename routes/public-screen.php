@@ -11,3 +11,7 @@ Route::get('/screen/{eventCode}/state', [PublicScreenController::class, 'state']
 
 Route::get('/screen/{eventCode}/stream', [PublicScreenController::class, 'stream'])
     ->name('public.screen.stream');
+
+Route::get('/media/{path}', [PublicScreenController::class, 'media'])
+    ->where('path', '.*')
+    ->name('public.screen.media');
