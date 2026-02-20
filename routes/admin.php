@@ -37,6 +37,7 @@ Route::middleware(['admin.auth', 'admin.role'])->group(function () {
     Route::delete('/venues/{venue}', [AdminVenuesController::class, 'destroy'])->name('admin.venues.destroy');
 
     Route::get('/events/{eventNight}/queue', [AdminQueueController::class, 'show'])->name('admin.queue.show');
+    Route::get('/events/{eventNight}/queue/state', [AdminQueueController::class, 'state'])->name('admin.queue.state');
     Route::post('/events/{eventNight}/queue/skip', [AdminQueueController::class, 'skip'])->name('admin.queue.skip');
     Route::post('/events/{eventNight}/queue/cancel', [AdminQueueController::class, 'cancel'])->name('admin.queue.cancel');
     Route::post('/events/{eventNight}/queue/stop', [AdminQueueController::class, 'stop'])->name('admin.queue.stop');

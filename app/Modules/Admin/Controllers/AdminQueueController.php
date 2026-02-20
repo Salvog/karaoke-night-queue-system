@@ -8,6 +8,7 @@ use App\Models\Song;
 use App\Models\SongRequest;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
+use App\Modules\Queue\Services\QueueAutoAdvanceService;
 use App\Modules\Queue\Services\QueueEngine;
 use App\Modules\Queue\Services\QueueManualService;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +41,13 @@ class AdminQueueController extends Controller
             'history' => $history,
             'songs' => $songs,
         ]);
+    }
+
+    public function state(Request $request, EventNight $eventNight, QueueAutoAdvanceService $queueAutoAdvanceService): JsonResponse
+    {
+        Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
+
+        return response()->json($queueAutoAdvanceService->getState($eventNight));
     }
 
     public function skip(Request $request, EventNight $eventNight, LogAdminAction $logger, QueueEngine $queueEngine): RedirectResponse

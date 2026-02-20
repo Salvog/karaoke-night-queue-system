@@ -653,26 +653,28 @@
                         <h2 class="queue-copy-title--playback">Controllo riproduzione</h2>
                         <p>Due controlli principali: avvio/pausa e passaggio alla prossima canzone.</p>
                     </div>
-                    <span class="queue-count">{{ $playbackStatusLabel }}</span>
+                    <span class="queue-count" data-playback-status-badge>{{ $playbackStatusLabel }}</span>
                 </header>
 
                 <div class="queue-meta-grid">
                     <div>
                         <div class="label">Stato flusso</div>
-                        <div class="value">{{ $playbackStatusLabel }}</div>
+                        <div class="value" data-playback-status-text>{{ $playbackStatusLabel }}</div>
                     </div>
                     <div>
                         <div class="label">Canzone corrente</div>
-                        <div class="value">{{ $playbackState?->currentRequest?->song?->title ?? '—' }}</div>
+                        <div class="value" data-playback-current-song>{{ $playbackState?->currentRequest?->song?->title ?? '—' }}</div>
                     </div>
                     <div>
                         <div class="label">Fine prevista</div>
-                        <div class="value">
-                            @if ($expectedEndAt)
-                                <span data-expected-end="{{ $expectedEndAt->toIso8601String() }}">{{ $expectedEndAt->format('H:i:s') }}</span>
-                            @else
-                                —
-                            @endif
+                        <div class="value" data-playback-expected-end>
+                            <span data-expected-end="{{ $expectedEndAt?->toIso8601String() ?? '' }}">{{ $expectedEndAt?->format('H:i:s') ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="label">Conteggi coda</div>
+                        <div class="value" data-queue-counts-summary>
+                            Corrente {{ $playbackState?->currentRequest ? 1 : 0 }} · Prossime {{ $queue->where('status', \\App\\Models\\SongRequest::STATUS_QUEUED)->count() }} · Storico {{ $history->count() }}
                         </div>
                     </div>
                 </div>
@@ -752,8 +754,9 @@
                         <p>Riordina velocemente con i pulsanti o trascinando le righe. La canzone in riproduzione resta bloccata.</p>
                     </div>
                     <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                        <span class="queue-save-status" data-queue-state-badge data-state="idle" aria-live="polite">In attesa sync</span>
                         <span class="queue-save-status" data-queue-save-status data-state="idle" aria-live="polite">Pronto</span>
-                        <span class="queue-count">{{ $queue->count() }}</span>
+                        <span class="queue-count" data-queue-next-count>{{ $queue->where('status', \\App\\Models\\SongRequest::STATUS_QUEUED)->count() }}</span>
                     </div>
                 </header>
                 <form id="queue-reorder-form" method="POST" action="{{ route('admin.queue.reorder', $eventNight) }}" class="sr-only">
@@ -860,6 +863,8 @@
     <script>
         (function () {
             const eventTimezone = @json($eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'));
+            const queueStateUrl = @json(route('admin.queue.state', $eventNight));
+            const playbackStatusLabels = @json($playbackStatusLabels);
             const formatTime = (date) => {
                 try {
                     return date.toLocaleTimeString('it-IT', { timeZone: eventTimezone });
@@ -881,6 +886,13 @@
             const reorderForm = document.getElementById('queue-reorder-form');
             const reorderInputs = document.getElementById('queue-reorder-inputs');
             const saveStatusElement = document.querySelector('[data-queue-save-status]');
+            const playbackStatusBadge = document.querySelector('[data-playback-status-badge]');
+            const playbackStatusText = document.querySelector('[data-playback-status-text]');
+            const playbackCurrentSong = document.querySelector('[data-playback-current-song]');
+            const playbackExpectedEnd = document.querySelector('[data-playback-expected-end] [data-expected-end]');
+            const queueCountsSummary = document.querySelector('[data-queue-counts-summary]');
+            const queueNextCount = document.querySelector('[data-queue-next-count]');
+            const queueStateBadge = document.querySelector('[data-queue-state-badge]');
 
             if (!queueTableBody || !reorderForm || !reorderInputs) {
                 return;
@@ -918,6 +930,94 @@
                 statusTimer = window.setTimeout(() => {
                     setSaveStatus('Pronto', 'idle');
                 }, 1100);
+            };
+
+            const formatIsoTime = (isoString) => {
+                if (!isoString) {
+                    return '—';
+                }
+
+                const parsed = new Date(isoString);
+                if (Number.isNaN(parsed.getTime())) {
+                    return '—';
+                }
+
+                return formatTime(parsed);
+            };
+
+            const setQueueStateBadge = (message, state = 'idle') => {
+                if (!queueStateBadge) {
+                    return;
+                }
+
+                queueStateBadge.textContent = message;
+                queueStateBadge.dataset.state = state;
+            };
+
+            const updateStateNodes = (payload) => {
+                const playbackState = payload?.playback?.state || null;
+                const playbackLabel = playbackStatusLabels[playbackState] || playbackState || '—';
+                const currentTitle = payload?.playback?.current?.title || '—';
+                const nextCount = payload?.counts?.next ?? null;
+                const historyCount = payload?.counts?.history ?? null;
+                const currentCount = payload?.counts?.current ?? 0;
+
+                if (playbackStatusBadge) {
+                    playbackStatusBadge.textContent = playbackLabel;
+                }
+
+                if (playbackStatusText) {
+                    playbackStatusText.textContent = playbackLabel;
+                }
+
+                if (playbackCurrentSong) {
+                    playbackCurrentSong.textContent = currentTitle;
+                }
+
+                if (playbackExpectedEnd) {
+                    playbackExpectedEnd.dataset.expectedEnd = payload?.timestamps?.expected_end_at || '';
+                    playbackExpectedEnd.textContent = formatIsoTime(payload?.timestamps?.expected_end_at || null);
+                }
+
+                if (queueNextCount && nextCount !== null) {
+                    queueNextCount.textContent = String(nextCount);
+                }
+
+                if (queueCountsSummary) {
+                    queueCountsSummary.textContent = `Corrente ${currentCount} · Prossime ${nextCount ?? '—'} · Storico ${historyCount ?? '—'}`;
+                }
+
+                setQueueStateBadge(`Aggiornato ${formatIsoTime(payload?.timestamps?.server_now || null)}`, 'saved');
+            };
+
+            let pollInFlight = false;
+
+            const pollQueueState = async () => {
+                if (pollInFlight || !window.fetch) {
+                    return;
+                }
+
+                pollInFlight = true;
+
+                try {
+                    const response = await window.fetch(queueStateUrl, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = await response.json();
+                    updateStateNodes(payload);
+                } catch (error) {
+                    // fallback silenzioso: non bloccare la UI in caso di errori rete temporanei
+                } finally {
+                    pollInFlight = false;
+                }
             };
 
             const refreshReorderButtonsState = () => {
@@ -1159,6 +1259,8 @@
             });
 
             refreshReorderButtonsState();
+            pollQueueState();
+            window.setInterval(pollQueueState, 4000);
         })();
     </script>
 @endsection
