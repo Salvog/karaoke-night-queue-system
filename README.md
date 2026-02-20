@@ -46,6 +46,11 @@ Key settings to review in `.env`:
 - `SESSION_DRIVER`: Defaults to database-backed sessions.
 - `CACHE_DRIVER`: Use a shared cache (e.g., Redis or Memcached) for multi-instance deployments; avoid `array` or local `file` drivers if you need cross-instance realtime state.
 - `PUBLIC_SCREEN_REALTIME_ENABLED`: Toggle SSE updates for public screens.
+- `PUBLIC_SCREEN_REALTIME_DISABLE_ON_CLI_SERVER`: Disable SSE automatically when using PHP built-in server.
+- `PUBLIC_SCREEN_GLOBAL_BRAND_NAME`: Global manager/organization label shown on the public screen.
+- `PUBLIC_SCREEN_GLOBAL_BRAND_LOGO`: Global manager/organization logo URL/path shown on the public screen.
+- `PUBLIC_SCREEN_QR_SERVICE_URL`: QR generation endpoint used for the join QR (default: `https://api.qrserver.com/v1/create-qr-code/`).
+- `PUBLIC_SCREEN_QR_SIZE`: Size (px) used for generated join QR images.
 - `PUBLIC_JOIN_RATE_LIMIT_IP`, `PUBLIC_JOIN_RATE_LIMIT_PARTICIPANT`, `PUBLIC_JOIN_RATE_LIMIT_DECAY`: Public join rate limits.
 
 ## UI screenshots
@@ -115,9 +120,11 @@ composer run pint
 - ETA lookup (`GET /e/{eventCode}/eta`) returns JSON with estimated wait time before a new request starts.
 
 ## Public screen
-- Screen (`GET /screen/{eventCode}`) shows now playing, next/recent queue, and theme/banner overlays.
-- Real-time updates stream via SSE (`GET /screen/{eventCode}/stream`) when enabled; clients fall back to polling every 5 seconds.
-- Configure counts and realtime settings in `config/public_screen.php` (set `PUBLIC_SCREEN_REALTIME_ENABLED=false` to disable SSE).
+- Screen (`GET /screen/{eventCode}`) shows now playing, compact next/recent queue lists, join details, join QR code, global manager branding, ticker, and sponsor cards.
+- Real-time updates stream via SSE (`GET /screen/{eventCode}/stream`) when enabled; clients fall back to polling based on `config/public_screen.php` (`poll_seconds`).
+- The top-left logo remains event-specific (`brand_logo_path`), while the right-side “regia karaoke” block uses global branding (`public_screen.global_brand.*`).
+- Join QR is generated from `event.join_url` through the configured QR service (`public_screen.join_qr.*`).
+- Configure queue counts/realtime and screen branding in `config/public_screen.php` (set `PUBLIC_SCREEN_REALTIME_ENABLED=false` to disable SSE).
 
 ## Queue automation
 Use the queue engine command to auto-advance playback (schedule it with cron or Laravel scheduler):
