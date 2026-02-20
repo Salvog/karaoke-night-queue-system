@@ -177,6 +177,36 @@
             letter-spacing: 0.02em;
         }
 
+        .queue-save-status {
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: rgba(236, 241, 255, 0.82);
+            padding: 6px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .queue-save-status[data-state="saving"] {
+            border-color: rgba(42, 216, 255, 0.46);
+            background: rgba(42, 216, 255, 0.14);
+            color: #ddf9ff;
+        }
+
+        .queue-save-status[data-state="saved"] {
+            border-color: rgba(93, 233, 171, 0.45);
+            background: rgba(93, 233, 171, 0.14);
+            color: #dfffee;
+        }
+
+        .queue-save-status[data-state="error"] {
+            border-color: rgba(255, 98, 134, 0.46);
+            background: rgba(255, 98, 134, 0.16);
+            color: #ffdce5;
+        }
+
         .queue-section--overview .queue-count {
             border-color: rgba(255, 212, 71, 0.5);
             background: rgba(255, 212, 71, 0.14);
@@ -402,7 +432,7 @@
 
         .queue-table--upcoming th:nth-child(5),
         .queue-table--upcoming td:nth-child(5) {
-            width: 196px;
+            width: 278px;
         }
 
         .queue-table--upcoming td:last-child {
@@ -424,6 +454,77 @@
             align-items: center;
             gap: 7px;
             flex-wrap: wrap;
+        }
+
+        .queue-row--movable {
+            cursor: grab;
+        }
+
+        .queue-row--movable:active {
+            cursor: grabbing;
+        }
+
+        .queue-row--dragging {
+            opacity: 0.5;
+        }
+
+        .queue-row--drag-over {
+            outline: 1px dashed rgba(42, 216, 255, 0.72);
+            outline-offset: -2px;
+        }
+
+        .queue-reorder-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border: 1px dashed rgba(42, 216, 255, 0.42);
+            border-radius: 10px;
+            background: rgba(42, 216, 255, 0.08);
+        }
+
+        .queue-order-button {
+            width: 27px;
+            height: 27px;
+            border-radius: 8px;
+            border: 1px solid rgba(42, 216, 255, 0.52);
+            background: rgba(42, 216, 255, 0.16);
+            color: #dff9ff;
+            cursor: pointer;
+            font-weight: 700;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .queue-order-button:hover {
+            background: rgba(42, 216, 255, 0.28);
+        }
+
+        .queue-order-button[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .queue-drag-handle {
+            font-size: 0.82rem;
+            letter-spacing: -0.12em;
+            color: rgba(219, 249, 255, 0.9);
+            cursor: grab;
+            user-select: none;
+            padding-right: 2px;
+        }
+
+        .queue-lock-note {
+            display: inline-block;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 212, 71, 0.48);
+            background: rgba(255, 212, 71, 0.16);
+            color: #ffeebc;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 4px 8px;
         }
 
         .queue-action-button {
@@ -648,10 +749,17 @@
                 <header class="queue-section-head">
                     <div class="queue-copy">
                         <h2>Prossimi</h2>
-                        <p>Ordine corrente delle esibizioni in coda.</p>
+                        <p>Riordina velocemente con i pulsanti o trascinando le righe. La canzone in riproduzione resta bloccata.</p>
                     </div>
-                    <span class="queue-count">{{ $queue->count() }}</span>
+                    <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                        <span class="queue-save-status" data-queue-save-status data-state="idle" aria-live="polite">Pronto</span>
+                        <span class="queue-count">{{ $queue->count() }}</span>
+                    </div>
                 </header>
+                <form id="queue-reorder-form" method="POST" action="{{ route('admin.queue.reorder', $eventNight) }}" class="sr-only">
+                    @csrf
+                    <div id="queue-reorder-inputs"></div>
+                </form>
                 <div class="queue-table-wrap">
                     <table class="queue-table queue-table--upcoming">
                         <thead>
@@ -663,15 +771,32 @@
                                 <th>Azioni</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody data-queue-upcoming-body>
                         @forelse ($queue as $request)
-                            <tr>
+                            @php($isQueued = $request->status === \App\Models\SongRequest::STATUS_QUEUED)
+                            @php($isPlayingRequest = $request->status === \App\Models\SongRequest::STATUS_PLAYING)
+                            <tr
+                                data-queue-row
+                                data-song-request-id="{{ $request->id }}"
+                                data-movable="{{ $isQueued ? '1' : '0' }}"
+                                class="{{ $isQueued ? 'queue-row--movable' : '' }}"
+                                @if ($isQueued) draggable="true" @endif
+                            >
                                 <td>{{ $request->position ?? '—' }}</td>
                                 <td>{{ $request->participant?->display_name ?? 'Ospite' }}</td>
                                 <td>{{ $request->song?->title ?? 'Sconosciuta' }}</td>
                                 <td><span class="pill">{{ $request->status }}</span></td>
                                 <td>
                                     <div class="queue-table-actions">
+                                        @if ($isQueued)
+                                            <div class="queue-reorder-controls" aria-label="Riordina coda">
+                                                <button class="queue-order-button" type="button" data-direction="up" aria-label="Sposta su" title="Sposta su">↑</button>
+                                                <button class="queue-order-button" type="button" data-direction="down" aria-label="Sposta giù" title="Sposta giù">↓</button>
+                                                <span class="queue-drag-handle" data-drag-handle aria-hidden="true" title="Trascina per riordinare">⋮⋮</span>
+                                            </div>
+                                        @elseif ($isPlayingRequest)
+                                            <span class="queue-lock-note">In riproduzione</span>
+                                        @endif
                                         <form method="POST" action="{{ route('admin.queue.skip', $eventNight) }}">
                                             @csrf
                                             <input type="hidden" name="song_request_id" value="{{ $request->id }}">
@@ -751,6 +876,289 @@
                     element.textContent = formatTime(parsed);
                 }
             });
+
+            const queueTableBody = document.querySelector('[data-queue-upcoming-body]');
+            const reorderForm = document.getElementById('queue-reorder-form');
+            const reorderInputs = document.getElementById('queue-reorder-inputs');
+            const saveStatusElement = document.querySelector('[data-queue-save-status]');
+
+            if (!queueTableBody || !reorderForm || !reorderInputs) {
+                return;
+            }
+
+            const getMovableRows = () => Array.from(
+                queueTableBody.querySelectorAll('[data-queue-row][data-movable="1"]')
+            );
+
+            const serializeOrder = () => getMovableRows()
+                .map((row) => row.dataset.songRequestId || '')
+                .filter((value) => value !== '');
+
+            let persistedOrderKey = serializeOrder().join(',');
+            let saveInFlight = false;
+            let pendingOrderedIds = null;
+            let statusTimer = null;
+
+            const setSaveStatus = (message, state = 'idle') => {
+                if (!saveStatusElement) {
+                    return;
+                }
+
+                saveStatusElement.textContent = message;
+                saveStatusElement.dataset.state = state;
+            };
+
+            const setSavedStatusWithReset = () => {
+                setSaveStatus('Salvato', 'saved');
+
+                if (statusTimer) {
+                    window.clearTimeout(statusTimer);
+                }
+
+                statusTimer = window.setTimeout(() => {
+                    setSaveStatus('Pronto', 'idle');
+                }, 1100);
+            };
+
+            const refreshReorderButtonsState = () => {
+                const rows = getMovableRows();
+
+                rows.forEach((row, index) => {
+                    const upButton = row.querySelector('[data-direction="up"]');
+                    const downButton = row.querySelector('[data-direction="down"]');
+
+                    if (upButton) {
+                        upButton.disabled = index === 0;
+                    }
+
+                    if (downButton) {
+                        downButton.disabled = index === rows.length - 1;
+                    }
+                });
+            };
+
+            const persistOrder = async (orderedIds) => {
+                const nextOrderKey = orderedIds.join(',');
+                if (nextOrderKey === persistedOrderKey) {
+                    return;
+                }
+
+                if (saveInFlight) {
+                    pendingOrderedIds = orderedIds;
+                    return;
+                }
+
+                const csrfToken = reorderForm.querySelector('input[name="_token"]')?.value || '';
+                if (!window.fetch || csrfToken === '') {
+                    reorderInputs.replaceChildren();
+
+                    orderedIds.forEach((songRequestId) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'ordered_song_request_ids[]';
+                        input.value = songRequestId;
+                        reorderInputs.appendChild(input);
+                    });
+
+                    reorderForm.submit();
+                    return;
+                }
+
+                saveInFlight = true;
+                setSaveStatus('Salvataggio…', 'saving');
+
+                const payload = new URLSearchParams();
+                payload.append('_token', csrfToken);
+                orderedIds.forEach((songRequestId) => {
+                    payload.append('ordered_song_request_ids[]', songRequestId);
+                });
+
+                try {
+                    const response = await window.fetch(reorderForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: payload.toString(),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('save-failed');
+                    }
+
+                    persistedOrderKey = nextOrderKey;
+                    setSavedStatusWithReset();
+                } catch (error) {
+                    setSaveStatus('Errore salvataggio', 'error');
+                } finally {
+                    saveInFlight = false;
+
+                    if (pendingOrderedIds) {
+                        const pending = pendingOrderedIds;
+                        pendingOrderedIds = null;
+                        persistOrder(pending);
+                    }
+                }
+            };
+
+            const submitOrder = () => {
+                const orderedIds = serializeOrder();
+
+                if (orderedIds.length === 0) {
+                    return;
+                }
+
+                persistOrder(orderedIds);
+            };
+
+            const moveRow = (row, direction) => {
+                if (!row || row.dataset.movable !== '1') {
+                    return;
+                }
+
+                const movableRows = getMovableRows();
+                const index = movableRows.indexOf(row);
+                if (index < 0) {
+                    return;
+                }
+
+                const targetIndex = direction === 'up' ? index - 1 : index + 1;
+                if (targetIndex < 0 || targetIndex >= movableRows.length) {
+                    return;
+                }
+
+                const targetRow = movableRows[targetIndex];
+                if (direction === 'up') {
+                    queueTableBody.insertBefore(row, targetRow);
+                } else {
+                    queueTableBody.insertBefore(targetRow, row);
+                }
+
+                refreshReorderButtonsState();
+                submitOrder();
+            };
+
+            queueTableBody.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const button = target.closest('.queue-order-button');
+                if (!button) {
+                    return;
+                }
+
+                const row = button.closest('[data-queue-row]');
+                const direction = button.getAttribute('data-direction') === 'up' ? 'up' : 'down';
+                moveRow(row, direction);
+            });
+
+            let draggedRow = null;
+            let dragArmedRow = null;
+
+            queueTableBody.addEventListener('pointerdown', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    dragArmedRow = null;
+                    return;
+                }
+
+                const handle = target.closest('[data-drag-handle]');
+                dragArmedRow = handle ? handle.closest('[data-queue-row][data-movable="1"]') : null;
+            });
+
+            const clearDragState = () => {
+                if (draggedRow) {
+                    draggedRow.classList.remove('queue-row--dragging');
+                }
+
+                queueTableBody.querySelectorAll('.queue-row--drag-over').forEach((row) => {
+                    row.classList.remove('queue-row--drag-over');
+                });
+
+                draggedRow = null;
+            };
+
+            queueTableBody.addEventListener('dragstart', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const row = target.closest('[data-queue-row][data-movable="1"]');
+                if (!row || dragArmedRow !== row) {
+                    event.preventDefault();
+                    return;
+                }
+
+                draggedRow = row;
+                draggedRow.classList.add('queue-row--dragging');
+
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', row.dataset.songRequestId || '');
+                }
+            });
+
+            queueTableBody.addEventListener('dragover', (event) => {
+                if (!draggedRow) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const targetRow = target.closest('[data-queue-row][data-movable="1"]');
+                if (!targetRow || targetRow === draggedRow) {
+                    return;
+                }
+
+                queueTableBody.querySelectorAll('.queue-row--drag-over').forEach((row) => {
+                    if (row !== targetRow) {
+                        row.classList.remove('queue-row--drag-over');
+                    }
+                });
+
+                targetRow.classList.add('queue-row--drag-over');
+
+                const targetRect = targetRow.getBoundingClientRect();
+                const shouldInsertAfter = event.clientY > targetRect.top + (targetRect.height / 2);
+
+                if (shouldInsertAfter) {
+                    if (targetRow.nextSibling !== draggedRow) {
+                        queueTableBody.insertBefore(draggedRow, targetRow.nextSibling);
+                    }
+                } else if (targetRow !== draggedRow.nextSibling) {
+                    queueTableBody.insertBefore(draggedRow, targetRow);
+                }
+
+                refreshReorderButtonsState();
+            });
+
+            queueTableBody.addEventListener('drop', (event) => {
+                if (!draggedRow) {
+                    return;
+                }
+
+                event.preventDefault();
+                clearDragState();
+                submitOrder();
+            });
+
+            queueTableBody.addEventListener('dragend', () => {
+                clearDragState();
+                dragArmedRow = null;
+                submitOrder();
+            });
+
+            refreshReorderButtonsState();
         })();
     </script>
 @endsection
