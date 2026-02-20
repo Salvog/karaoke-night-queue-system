@@ -8,6 +8,7 @@ use App\Models\Song;
 use App\Models\SongRequest;
 use App\Modules\Auth\Actions\LogAdminAction;
 use App\Modules\Auth\DTOs\AdminActionData;
+use App\Modules\Queue\Services\QueueAutoAdvanceService;
 use App\Modules\Queue\Services\QueueEngine;
 use App\Modules\Queue\Services\QueueManualService;
 use Illuminate\Http\JsonResponse;
@@ -18,9 +19,11 @@ use Illuminate\View\View;
 
 class AdminQueueController extends Controller
 {
-    public function show(Request $request, EventNight $eventNight): View
+    public function show(Request $request, EventNight $eventNight, QueueAutoAdvanceService $queueAutoAdvanceService): View
     {
         Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
+
+        $queueAutoAdvanceService->advanceForEventIfNeeded($eventNight);
 
         $eventNight->load(['venue', 'playbackState.currentRequest.song', 'songRequests.song', 'songRequests.participant']);
 

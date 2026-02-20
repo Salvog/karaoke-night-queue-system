@@ -303,6 +303,75 @@ class PublicScreenTest extends TestCase
         $responseWithBackslashes->assertStatus(404);
     }
 
+
+    public function test_public_screen_state_auto_advances_when_current_song_is_expired(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN6',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-2000',
+            'join_token_hash' => hash('sha256', 'token-2000'),
+            'display_name' => 'Giulia',
+        ]);
+
+        $songA = Song::create([
+            'title' => 'Neon Rain',
+            'artist' => 'The Lights',
+            'duration_seconds' => 180,
+        ]);
+
+        $songB = Song::create([
+            'title' => 'Golden Hour',
+            'artist' => 'Sunset Duo',
+            'duration_seconds' => 210,
+        ]);
+
+        $first = SongRequest::create([
+            'event_night_id' => $eventNight->id,
+            'participant_id' => $participant->id,
+            'song_id' => $songA->id,
+            'status' => SongRequest::STATUS_PLAYING,
+            'position' => 1,
+        ]);
+
+        $second = SongRequest::create([
+            'event_night_id' => $eventNight->id,
+            'participant_id' => $participant->id,
+            'song_id' => $songB->id,
+            'status' => SongRequest::STATUS_QUEUED,
+            'position' => 2,
+        ]);
+
+        PlaybackState::create([
+            'event_night_id' => $eventNight->id,
+            'current_request_id' => $first->id,
+            'state' => PlaybackState::STATE_PLAYING,
+            'started_at' => now()->subMinutes(4),
+            'expected_end_at' => now()->subSecond(),
+        ]);
+
+        $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('playback.song.title', 'Golden Hour');
+
+        $this->assertSame(SongRequest::STATUS_PLAYED, $first->fresh()->status);
+        $this->assertSame(SongRequest::STATUS_PLAYING, $second->fresh()->status);
+    }
+
     public function test_public_screen_requires_live_event(): void
     {
         $venue = Venue::create([

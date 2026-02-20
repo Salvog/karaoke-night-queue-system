@@ -3,6 +3,7 @@
 namespace App\Modules\PublicScreen\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Queue\Services\QueueAutoAdvanceService;
 use App\Modules\PublicScreen\Realtime\SseStateStore;
 use App\Modules\PublicScreen\Services\PublicScreenService;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,8 @@ class PublicScreenController extends Controller
 {
     public function __construct(
         private readonly PublicScreenService $service,
-        private readonly SseStateStore $store
+        private readonly SseStateStore $store,
+        private readonly QueueAutoAdvanceService $queueAutoAdvanceService
     ) {
     }
 
@@ -26,6 +28,7 @@ class PublicScreenController extends Controller
         ])->validate();
 
         $eventNight = $this->service->findLiveEvent($validated['eventCode']);
+        $this->queueAutoAdvanceService->advanceForEventIfNeeded($eventNight);
         $state = $this->service->buildState($eventNight);
 
         return response()->view('public.screen', [
@@ -45,6 +48,7 @@ class PublicScreenController extends Controller
         ])->validate();
 
         $eventNight = $this->service->findLiveEvent($validated['eventCode']);
+        $this->queueAutoAdvanceService->advanceForEventIfNeeded($eventNight);
 
         return response()->json($this->service->buildState($eventNight));
     }
