@@ -23,6 +23,11 @@
         $eventStatusLabel = \App\Models\EventNight::STATUS_LABELS[$eventNight->status] ?? $eventNight->status;
         $expectedEndAt = $playbackState?->expected_end_at;
         $cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60);
+        $togglePlaybackMode = $isPlaying ? 'pause' : 'play';
+        $adminStateUrl = route('admin.queue.state', $eventNight);
+        $adminPollMs = max(1000, (int) config('public_screen.poll_seconds', 1) * 1000);
+        $skipRoute = route('admin.queue.skip', $eventNight);
+        $cancelRoute = route('admin.queue.cancel', $eventNight);
     @endphp
 
     <style>
@@ -653,38 +658,39 @@
                         <h2 class="queue-copy-title--playback">Controllo riproduzione</h2>
                         <p>Due controlli principali: avvio/pausa e passaggio alla prossima canzone.</p>
                     </div>
-                    <span class="queue-count">{{ $playbackStatusLabel }}</span>
+                    <span class="queue-count" data-playback-status-badge>{{ $playbackStatusLabel }}</span>
                 </header>
 
                 <div class="queue-meta-grid">
                     <div>
                         <div class="label">Stato flusso</div>
-                        <div class="value">{{ $playbackStatusLabel }}</div>
+                        <div class="value" data-playback-status-value>{{ $playbackStatusLabel }}</div>
                     </div>
                     <div>
                         <div class="label">Canzone corrente</div>
-                        <div class="value">{{ $playbackState?->currentRequest?->song?->title ?? '—' }}</div>
+                        <div class="value" data-playback-song-title>{{ $playbackState?->currentRequest?->song?->title ?? '—' }}</div>
                     </div>
                     <div>
                         <div class="label">Fine prevista</div>
                         <div class="value">
-                            @if ($expectedEndAt)
-                                <span data-expected-end="{{ $expectedEndAt->toIso8601String() }}">{{ $expectedEndAt->format('H:i:s') }}</span>
-                            @else
-                                —
-                            @endif
+                            <span
+                                data-playback-expected-end
+                                @if ($expectedEndAt) data-expected-end="{{ $expectedEndAt->toIso8601String() }}" @endif
+                            >{{ $expectedEndAt ? $expectedEndAt->format('H:i:s') : '—' }}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="playback-controls">
-                    <form class="playback-control-form" method="POST" action="{{ $togglePlaybackRoute }}">
+                    <form class="playback-control-form" method="POST" action="{{ $togglePlaybackRoute }}" data-toggle-playback-form>
                         @csrf
                         <button
                             class="playback-control-button playback-control-button--toggle {{ $isPlaying ? 'playback-control-button--pause' : 'playback-control-button--play' }}"
                             type="submit"
                             aria-label="{{ $togglePlaybackTitle }}"
                             title="{{ $togglePlaybackTitle }}"
+                            data-toggle-playback-button
+                            data-toggle-mode="{{ $togglePlaybackMode }}"
                         >
                             @if ($isPlaying)
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -753,7 +759,7 @@
                     </div>
                     <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
                         <span class="queue-save-status" data-queue-save-status data-state="idle" aria-live="polite">Pronto</span>
-                        <span class="queue-count">{{ $queue->count() }}</span>
+                        <span class="queue-count" data-queue-total>{{ $queue->count() }}</span>
                     </div>
                 </header>
                 <form id="queue-reorder-form" method="POST" action="{{ route('admin.queue.reorder', $eventNight) }}" class="sr-only">
@@ -837,7 +843,7 @@
                                 <th>Stato</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody data-queue-history-body>
                         @forelse ($history as $request)
                             <tr>
                                 <td>{{ ($request->played_at ?? $request->updated_at)?->format('H:i') ?? '—' }}</td>
@@ -860,6 +866,25 @@
     <script>
         (function () {
             const eventTimezone = @json($eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome'));
+            const stateUrl = @json($adminStateUrl);
+            const pollMs = @json($adminPollMs);
+            const skipRoute = @json($skipRoute);
+            const cancelRoute = @json($cancelRoute);
+            const csrfToken = @json(csrf_token());
+            const playToggleMarkup = `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <polygon points="8,6 18,12 8,18"></polygon>
+                </svg>
+                <span class="sr-only">Play</span>
+            `;
+            const pauseToggleMarkup = `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 6v12"></path>
+                    <path d="M16 6v12"></path>
+                </svg>
+                <span class="sr-only">Pausa</span>
+            `;
+
             const formatTime = (date) => {
                 try {
                     return date.toLocaleTimeString('it-IT', { timeZone: eventTimezone });
@@ -868,21 +893,29 @@
                 }
             };
 
-            document.querySelectorAll('[data-expected-end]').forEach((element) => {
-                const isoValue = element.dataset.expectedEnd;
+            const formatExpectedEnd = (isoValue) => {
                 const parsed = isoValue ? new Date(isoValue) : null;
-
-                if (parsed && !Number.isNaN(parsed.getTime())) {
-                    element.textContent = formatTime(parsed);
+                if (!parsed || Number.isNaN(parsed.getTime())) {
+                    return '—';
                 }
-            });
+
+                return formatTime(parsed);
+            };
 
             const queueTableBody = document.querySelector('[data-queue-upcoming-body]');
+            const historyTableBody = document.querySelector('[data-queue-history-body]');
             const reorderForm = document.getElementById('queue-reorder-form');
             const reorderInputs = document.getElementById('queue-reorder-inputs');
             const saveStatusElement = document.querySelector('[data-queue-save-status]');
+            const playbackStatusBadgeElement = document.querySelector('[data-playback-status-badge]');
+            const playbackStatusValueElement = document.querySelector('[data-playback-status-value]');
+            const playbackSongTitleElement = document.querySelector('[data-playback-song-title]');
+            const playbackExpectedEndElement = document.querySelector('[data-playback-expected-end]');
+            const togglePlaybackForm = document.querySelector('[data-toggle-playback-form]');
+            const togglePlaybackButton = document.querySelector('[data-toggle-playback-button]');
+            const queueTotalElement = document.querySelector('[data-queue-total]');
 
-            if (!queueTableBody || !reorderForm || !reorderInputs) {
+            if (!queueTableBody || !historyTableBody || !reorderForm || !reorderInputs) {
                 return;
             }
 
@@ -898,6 +931,11 @@
             let saveInFlight = false;
             let pendingOrderedIds = null;
             let statusTimer = null;
+            let draggedRow = null;
+            let dragArmedRow = null;
+            let pendingSnapshot = null;
+
+            const shouldDeferSnapshot = () => saveInFlight || draggedRow !== null;
 
             const setSaveStatus = (message, state = 'idle') => {
                 if (!saveStatusElement) {
@@ -920,6 +958,16 @@
                 }, 1100);
             };
 
+            const flushPendingSnapshot = () => {
+                if (!pendingSnapshot || shouldDeferSnapshot()) {
+                    return;
+                }
+
+                const snapshot = pendingSnapshot;
+                pendingSnapshot = null;
+                applySnapshot(snapshot);
+            };
+
             const refreshReorderButtonsState = () => {
                 const rows = getMovableRows();
 
@@ -937,6 +985,265 @@
                 });
             };
 
+            const createHiddenInput = (name, value) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = `${value}`;
+                return input;
+            };
+
+            const createActionForm = (actionUrl, songRequestId, buttonText, buttonClass) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = actionUrl;
+                form.appendChild(createHiddenInput('_token', csrfToken));
+                form.appendChild(createHiddenInput('song_request_id', songRequestId));
+
+                const button = document.createElement('button');
+                button.className = buttonClass;
+                button.type = 'submit';
+                button.textContent = buttonText;
+                form.appendChild(button);
+
+                return form;
+            };
+
+            const createQueueRow = (item) => {
+                const row = document.createElement('tr');
+                const movable = item?.is_movable === true;
+                const playing = item?.is_playing === true;
+                row.dataset.queueRow = '';
+                row.dataset.songRequestId = `${item?.id ?? ''}`;
+                row.dataset.movable = movable ? '1' : '0';
+
+                if (movable) {
+                    row.classList.add('queue-row--movable');
+                    row.setAttribute('draggable', 'true');
+                }
+
+                const position = document.createElement('td');
+                position.textContent = item?.position ?? '—';
+                row.appendChild(position);
+
+                const participant = document.createElement('td');
+                participant.textContent = item?.participant_name || 'Ospite';
+                row.appendChild(participant);
+
+                const title = document.createElement('td');
+                title.textContent = item?.song_title || 'Sconosciuta';
+                row.appendChild(title);
+
+                const statusCell = document.createElement('td');
+                const statusPill = document.createElement('span');
+                statusPill.className = 'pill';
+                statusPill.textContent = item?.status || 'queued';
+                statusCell.appendChild(statusPill);
+                row.appendChild(statusCell);
+
+                const actionsCell = document.createElement('td');
+                const actions = document.createElement('div');
+                actions.className = 'queue-table-actions';
+
+                if (movable) {
+                    const reorderControls = document.createElement('div');
+                    reorderControls.className = 'queue-reorder-controls';
+                    reorderControls.setAttribute('aria-label', 'Riordina coda');
+
+                    const upButton = document.createElement('button');
+                    upButton.className = 'queue-order-button';
+                    upButton.type = 'button';
+                    upButton.dataset.direction = 'up';
+                    upButton.setAttribute('aria-label', 'Sposta su');
+                    upButton.title = 'Sposta su';
+                    upButton.textContent = '↑';
+                    reorderControls.appendChild(upButton);
+
+                    const downButton = document.createElement('button');
+                    downButton.className = 'queue-order-button';
+                    downButton.type = 'button';
+                    downButton.dataset.direction = 'down';
+                    downButton.setAttribute('aria-label', 'Sposta giù');
+                    downButton.title = 'Sposta giù';
+                    downButton.textContent = '↓';
+                    reorderControls.appendChild(downButton);
+
+                    const dragHandle = document.createElement('span');
+                    dragHandle.className = 'queue-drag-handle';
+                    dragHandle.dataset.dragHandle = '';
+                    dragHandle.setAttribute('aria-hidden', 'true');
+                    dragHandle.title = 'Trascina per riordinare';
+                    dragHandle.textContent = '⋮⋮';
+                    reorderControls.appendChild(dragHandle);
+
+                    actions.appendChild(reorderControls);
+                } else if (playing) {
+                    const lock = document.createElement('span');
+                    lock.className = 'queue-lock-note';
+                    lock.textContent = 'In riproduzione';
+                    actions.appendChild(lock);
+                }
+
+                actions.appendChild(
+                    createActionForm(
+                        skipRoute,
+                        item?.id ?? '',
+                        'Salta',
+                        'queue-action-button queue-action-button--skip'
+                    )
+                );
+                actions.appendChild(
+                    createActionForm(
+                        cancelRoute,
+                        item?.id ?? '',
+                        'Annulla',
+                        'queue-action-button queue-action-button--cancel'
+                    )
+                );
+
+                actionsCell.appendChild(actions);
+                row.appendChild(actionsCell);
+
+                return row;
+            };
+
+            const createHistoryRow = (item) => {
+                const row = document.createElement('tr');
+
+                const time = document.createElement('td');
+                time.textContent = item?.display_time || '—';
+                row.appendChild(time);
+
+                const participant = document.createElement('td');
+                participant.textContent = item?.participant_name || 'Ospite';
+                row.appendChild(participant);
+
+                const title = document.createElement('td');
+                title.textContent = item?.song_title || 'Sconosciuta';
+                row.appendChild(title);
+
+                const statusCell = document.createElement('td');
+                const statusPill = document.createElement('span');
+                statusPill.className = 'pill';
+                statusPill.textContent = item?.status || 'played';
+                statusCell.appendChild(statusPill);
+                row.appendChild(statusCell);
+
+                return row;
+            };
+
+            const renderQueueRows = (rows) => {
+                queueTableBody.replaceChildren();
+
+                if (!rows || rows.length === 0) {
+                    const empty = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 5;
+                    cell.textContent = 'Nessuna canzone in coda.';
+                    empty.appendChild(cell);
+                    queueTableBody.appendChild(empty);
+                    persistedOrderKey = '';
+                    refreshReorderButtonsState();
+                    return;
+                }
+
+                rows.forEach((item) => {
+                    queueTableBody.appendChild(createQueueRow(item));
+                });
+
+                persistedOrderKey = serializeOrder().join(',');
+                refreshReorderButtonsState();
+            };
+
+            const renderHistoryRows = (rows) => {
+                historyTableBody.replaceChildren();
+
+                if (!rows || rows.length === 0) {
+                    const empty = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 4;
+                    cell.textContent = 'Nessuna canzone completata.';
+                    empty.appendChild(cell);
+                    historyTableBody.appendChild(empty);
+                    return;
+                }
+
+                rows.forEach((item) => {
+                    historyTableBody.appendChild(createHistoryRow(item));
+                });
+            };
+
+            const updateTogglePlayback = (playback) => {
+                if (!togglePlaybackForm || !togglePlaybackButton || !playback) {
+                    return;
+                }
+
+                const mode = playback.toggle_mode === 'pause' ? 'pause' : 'play';
+                togglePlaybackForm.action = playback.toggle_action || togglePlaybackForm.action;
+                togglePlaybackButton.dataset.toggleMode = mode;
+                togglePlaybackButton.classList.toggle('playback-control-button--pause', mode === 'pause');
+                togglePlaybackButton.classList.toggle('playback-control-button--play', mode === 'play');
+
+                const title = playback.toggle_title || (mode === 'pause' ? 'Metti in pausa la serata' : 'Avvia la serata');
+                togglePlaybackButton.setAttribute('aria-label', title);
+                togglePlaybackButton.title = title;
+                togglePlaybackButton.innerHTML = mode === 'pause' ? pauseToggleMarkup : playToggleMarkup;
+            };
+
+            const updatePlayback = (playback) => {
+                if (!playback) {
+                    return;
+                }
+
+                if (playbackStatusBadgeElement) {
+                    playbackStatusBadgeElement.textContent = playback.status_label || 'In attesa';
+                }
+
+                if (playbackStatusValueElement) {
+                    playbackStatusValueElement.textContent = playback.status_label || 'In attesa';
+                }
+
+                if (playbackSongTitleElement) {
+                    playbackSongTitleElement.textContent = playback.current_song_title || '—';
+                }
+
+                if (playbackExpectedEndElement) {
+                    playbackExpectedEndElement.dataset.expectedEnd = playback.expected_end_at || '';
+                    playbackExpectedEndElement.textContent = formatExpectedEnd(playback.expected_end_at);
+                }
+
+                updateTogglePlayback(playback);
+            };
+
+            const applySnapshot = (snapshot) => {
+                if (!snapshot || typeof snapshot !== 'object') {
+                    return;
+                }
+
+                updatePlayback(snapshot.playback || null);
+
+                const queueSnapshot = snapshot.queue || {};
+                const upcoming = Array.isArray(queueSnapshot.upcoming) ? queueSnapshot.upcoming : [];
+                renderQueueRows(upcoming);
+
+                if (queueTotalElement) {
+                    const total = Number(queueSnapshot.total);
+                    queueTotalElement.textContent = Number.isFinite(total) ? `${total}` : `${upcoming.length}`;
+                }
+
+                const history = Array.isArray(snapshot.history) ? snapshot.history : [];
+                renderHistoryRows(history);
+            };
+
+            const handleSnapshot = (snapshot) => {
+                if (shouldDeferSnapshot()) {
+                    pendingSnapshot = snapshot;
+                    return;
+                }
+
+                applySnapshot(snapshot);
+            };
+
             const persistOrder = async (orderedIds) => {
                 const nextOrderKey = orderedIds.join(',');
                 if (nextOrderKey === persistedOrderKey) {
@@ -948,7 +1255,6 @@
                     return;
                 }
 
-                const csrfToken = reorderForm.querySelector('input[name="_token"]')?.value || '';
                 if (!window.fetch || csrfToken === '') {
                     reorderInputs.replaceChildren();
 
@@ -994,6 +1300,7 @@
                     setSaveStatus('Errore salvataggio', 'error');
                 } finally {
                     saveInFlight = false;
+                    flushPendingSnapshot();
 
                     if (pendingOrderedIds) {
                         const pending = pendingOrderedIds;
@@ -1056,9 +1363,6 @@
                 moveRow(row, direction);
             });
 
-            let draggedRow = null;
-            let dragArmedRow = null;
-
             queueTableBody.addEventListener('pointerdown', (event) => {
                 const target = event.target;
                 if (!(target instanceof Element)) {
@@ -1068,6 +1372,13 @@
 
                 const handle = target.closest('[data-drag-handle]');
                 dragArmedRow = handle ? handle.closest('[data-queue-row][data-movable="1"]') : null;
+            });
+
+            queueTableBody.addEventListener('pointerup', () => {
+                if (!draggedRow) {
+                    dragArmedRow = null;
+                    flushPendingSnapshot();
+                }
             });
 
             const clearDragState = () => {
@@ -1080,6 +1391,7 @@
                 });
 
                 draggedRow = null;
+                flushPendingSnapshot();
             };
 
             queueTableBody.addEventListener('dragstart', (event) => {
@@ -1158,7 +1470,39 @@
                 submitOrder();
             });
 
+            const pollState = async () => {
+                if (!window.fetch || stateUrl === '') {
+                    return;
+                }
+
+                try {
+                    const response = await window.fetch(stateUrl, {
+                        cache: 'no-store',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = await response.json();
+                    handleSnapshot(payload);
+                } catch (error) {
+                    // Keep current state visible even when transient network errors happen.
+                }
+            };
+
+            document.querySelectorAll('[data-expected-end]').forEach((element) => {
+                const isoValue = element.dataset.expectedEnd;
+                element.textContent = formatExpectedEnd(isoValue);
+            });
+
             refreshReorderButtonsState();
+            pollState();
+            setInterval(pollState, pollMs);
         })();
     </script>
 @endsection

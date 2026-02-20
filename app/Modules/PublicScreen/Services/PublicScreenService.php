@@ -54,6 +54,7 @@ class PublicScreenService
         ])->first();
 
         $progress = $this->buildPlaybackProgress($playbackState);
+        $intermission = $this->buildIntermissionPayload($eventNight, $playbackState, $progress);
 
         if (! $playbackState || ! $playbackState->currentRequest || ! $playbackState->currentRequest->song) {
             return [
@@ -62,6 +63,7 @@ class PublicScreenService
                 'expected_end_at' => $playbackState?->expected_end_at?->toIso8601String(),
                 'song' => null,
                 'progress' => $progress,
+                'intermission' => $intermission,
             ];
         }
 
@@ -78,6 +80,7 @@ class PublicScreenService
                 'requested_by' => $this->resolveSingerName($playbackState->currentRequest),
             ],
             'progress' => $progress,
+            'intermission' => $intermission,
         ];
     }
 
@@ -216,6 +219,70 @@ class PublicScreenService
             'remaining_seconds' => $remaining,
             'duration_seconds' => $duration,
             'percent' => $percent,
+        ];
+    }
+
+    private function buildIntermissionPayload(
+        EventNight $eventNight,
+        ?PlaybackState $playbackState,
+        array $progress
+    ): array {
+        $breakSeconds = max(0, (int) $eventNight->break_seconds);
+
+        if (
+            ! $playbackState
+            || $playbackState->state !== PlaybackState::STATE_PLAYING
+            || $breakSeconds <= 0
+        ) {
+            return $this->emptyIntermissionPayload();
+        }
+
+        $remainingRaw = $progress['remaining_seconds'] ?? null;
+        $remainingSeconds = is_numeric($remainingRaw) ? max(0, (int) $remainingRaw) : null;
+
+        if (
+            $remainingSeconds === null
+            || $remainingSeconds > $breakSeconds
+            || ! $playbackState->expected_end_at
+        ) {
+            return $this->emptyIntermissionPayload();
+        }
+
+        $nextRequest = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('status', SongRequest::STATUS_QUEUED)
+            ->orderByRaw('position is null')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->with(['song', 'participant'])
+            ->first();
+
+        $nextSong = null;
+
+        if ($nextRequest && $nextRequest->song) {
+            $nextSong = [
+                'title' => $nextRequest->song->title,
+                'artist' => $nextRequest->song->artist,
+                'requested_by' => $this->resolveSingerName($nextRequest),
+            ];
+        }
+
+        return [
+            'is_active' => true,
+            'remaining_seconds' => $remainingSeconds,
+            'total_seconds' => $breakSeconds,
+            'ends_at' => $playbackState->expected_end_at?->toIso8601String(),
+            'next_song' => $nextSong,
+        ];
+    }
+
+    private function emptyIntermissionPayload(): array
+    {
+        return [
+            'is_active' => false,
+            'remaining_seconds' => null,
+            'total_seconds' => null,
+            'ends_at' => null,
+            'next_song' => null,
         ];
     }
 

@@ -98,6 +98,7 @@ composer run pint
 - Public area routes: `routes/public.php` (mounted under `/public`, includes the public landing at `/public`).
 - Public join flow: `routes/public-join.php` (landing at `/e/{eventCode}` plus activate/request POST endpoints).
 - Public screen: `routes/public-screen.php` (screen at `/screen/{eventCode}`, SSE stream at `/screen/{eventCode}/stream`).
+- Admin queue live snapshot: `GET /admin/events/{eventNight}/queue/state` (auth required).
 - Health endpoint: `GET /health` returns `{ "status": "ok" }`.
 
 ## Admin event management
@@ -122,31 +123,21 @@ composer run pint
 ## Public screen
 - Screen (`GET /screen/{eventCode}`) shows now playing, compact next/recent queue lists, join details, join QR code, global manager branding, ticker, and sponsor cards.
 - Real-time updates stream via SSE (`GET /screen/{eventCode}/stream`) when enabled; clients fall back to polling based on `config/public_screen.php` (`poll_seconds`).
+- During the configured break window, playback exposes `playback.intermission.*` and the public UI shows a visible “stacco tecnico” countdown before the next song.
+- Public screen requests (`/screen/{eventCode}`, `/screen/{eventCode}/state`, `/screen/{eventCode}/stream`) also trigger queue auto-advance checks.
 - The top-left logo remains event-specific (`brand_logo_path`), while the right-side “regia karaoke” block uses global branding (`public_screen.global_brand.*`).
 - Join QR is generated from `event.join_url` through the configured QR service (`public_screen.join_qr.*`).
 - Configure queue counts/realtime and screen branding in `config/public_screen.php` (set `PUBLIC_SCREEN_REALTIME_ENABLED=false` to disable SSE).
 
 ## Queue automation
-Use the queue engine command to auto-advance playback (schedule it with cron or Laravel scheduler):
+Playback advancement is request-driven (no scheduler required for normal operation):
+- Public screen endpoints run auto-advance checks before returning state.
+- Admin queue management uses `GET /admin/events/{eventNight}/queue/state` polling to keep playback/queue/history updated live.
+- As long as at least one screen/admin client is active, the queue progresses automatically.
+
+Optional fallback command (manual/maintenance/no active clients):
 ```bash
 php artisan queue:advance
 ```
 
-### Scheduler runtime
-The scheduler must run continuously so `queue:advance` executes every five seconds (configured in `app/Console/Kernel.php`).
-
-**Traditional hosts (cron):**
-```bash
-* * * * * php /path/to/artisan schedule:run >> /var/log/laravel-scheduler.log 2>&1
-```
-
-**Containerized hosts (long-running worker):**
-```bash
-php artisan schedule:work
-```
-
-You can also supervise `php artisan queue:advance` directly with an equivalent cadence if you prefer.
-
-**Runtime verification:**
-- Check your application logs for entries indicating the scheduler is running and `queue:advance` is being executed.
-- Confirm active events advance by verifying `QueueEngine::advanceIfNeeded` is called for active event nights.
+Optional scheduler wiring is still available in `app/Console/Kernel.php` if you want proactive background advancement even without connected clients.

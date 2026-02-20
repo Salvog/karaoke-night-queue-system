@@ -10,6 +10,7 @@ use App\Models\Song;
 use App\Models\SongRequest;
 use App\Models\Theme;
 use App\Models\Venue;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -165,6 +166,210 @@ class PublicScreenTest extends TestCase
         $response->assertJsonPath('queue.total_pending', 0);
     }
 
+    public function test_public_screen_state_endpoint_auto_advances_when_expected_end_is_reached(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'AUTOADV1',
+                'break_seconds' => 10,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-auto-1',
+                'join_token_hash' => hash('sha256', 'token-auto-1'),
+                'display_name' => 'Sara',
+            ]);
+
+            $songA = Song::create([
+                'title' => 'Song A',
+                'artist' => 'Artist A',
+                'duration_seconds' => 180,
+            ]);
+
+            $songB = Song::create([
+                'title' => 'Song B',
+                'artist' => 'Artist B',
+                'duration_seconds' => 200,
+            ]);
+
+            $first = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $songA->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            $second = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $songB->id,
+                'status' => SongRequest::STATUS_QUEUED,
+                'position' => 2,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $first->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(190),
+                'expected_end_at' => now()->subSecond(),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.song.title', 'Song B');
+            $this->assertSame(SongRequest::STATUS_PLAYED, $first->fresh()->status);
+            $this->assertSame(SongRequest::STATUS_PLAYING, $second->fresh()->status);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_public_screen_state_payload_includes_active_intermission_when_remaining_time_is_within_break(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'INTERM1',
+                'break_seconds' => 15,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-inter-1',
+                'join_token_hash' => hash('sha256', 'token-inter-1'),
+                'display_name' => 'Giulia',
+            ]);
+
+            $currentSong = Song::create([
+                'title' => 'Current',
+                'artist' => 'Band',
+                'duration_seconds' => 200,
+            ]);
+
+            $nextSong = Song::create([
+                'title' => 'Next Up',
+                'artist' => 'Band',
+                'duration_seconds' => 180,
+            ]);
+
+            $currentRequest = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $currentSong->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $nextSong->id,
+                'status' => SongRequest::STATUS_QUEUED,
+                'position' => 2,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $currentRequest->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(205),
+                'expected_end_at' => now()->addSeconds(10),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.intermission.is_active', true);
+            $response->assertJsonPath('playback.intermission.remaining_seconds', 10);
+            $response->assertJsonPath('playback.intermission.total_seconds', 15);
+            $response->assertJsonPath('playback.intermission.next_song.title', 'Next Up');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_public_screen_state_payload_marks_intermission_inactive_when_break_is_zero(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'INTERM0',
+                'break_seconds' => 0,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-inter-0',
+                'join_token_hash' => hash('sha256', 'token-inter-0'),
+            ]);
+
+            $song = Song::create([
+                'title' => 'No Break Song',
+                'artist' => 'Band',
+                'duration_seconds' => 200,
+            ]);
+
+            $request = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $song->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $request->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(10),
+                'expected_end_at' => now()->addSeconds(5),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.intermission.is_active', false);
+            $response->assertJsonPath('playback.intermission.next_song', null);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_public_screen_state_normalizes_local_absolute_banner_urls_to_media_route(): void
     {
         Storage::fake('public');
@@ -269,6 +474,83 @@ class PublicScreenTest extends TestCase
         $this->assertStringContainsString('data: {', $content);
     }
 
+    public function test_public_screen_stream_snapshot_is_generated_after_auto_advance(): void
+    {
+        config([
+            'public_screen.realtime.stream_seconds' => 0,
+            'public_screen.realtime.sleep_seconds' => 0,
+        ]);
+
+        Carbon::setTestNow(Carbon::parse('2024-01-01 22:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'STREAM2',
+                'break_seconds' => 10,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-stream-2',
+                'join_token_hash' => hash('sha256', 'token-stream-2'),
+                'display_name' => 'Luca',
+            ]);
+
+            $songA = Song::create([
+                'title' => 'Before',
+                'artist' => 'Band',
+                'duration_seconds' => 180,
+            ]);
+
+            $songB = Song::create([
+                'title' => 'After',
+                'artist' => 'Band',
+                'duration_seconds' => 180,
+            ]);
+
+            $first = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $songA->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $songB->id,
+                'status' => SongRequest::STATUS_QUEUED,
+                'position' => 2,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $first->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(190),
+                'expected_end_at' => now()->subSecond(),
+            ]);
+
+            $response = $this->get("/screen/{$eventNight->code}/stream");
+            $response->assertStatus(200);
+
+            $payload = $this->extractSseSnapshotPayload($response->streamedContent());
+            $this->assertSame('After', $payload['playback']['song']['title'] ?? null);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_public_media_endpoint_streams_existing_file_from_public_disk(): void
     {
         Storage::fake('public');
@@ -322,5 +604,17 @@ class PublicScreenTest extends TestCase
         $response = $this->get("/screen/{$eventNight->code}");
 
         $response->assertStatus(403);
+    }
+
+    private function extractSseSnapshotPayload(string $streamContent): array
+    {
+        $matches = [];
+        preg_match('/event: snapshot\s+data: (.+)/', $streamContent, $matches);
+        $this->assertArrayHasKey(1, $matches);
+
+        $decoded = json_decode($matches[1], true);
+        $this->assertIsArray($decoded);
+
+        return $decoded;
     }
 }
