@@ -160,9 +160,67 @@ class PublicScreenTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonPath('playback.song.title', 'Midnight Drive');
         $response->assertJsonPath('playback.song.requested_by', 'Elena');
+        $response->assertJsonPath('playback.phase', 'song');
+        $response->assertJsonPath('playback.break_remaining_seconds', 0);
+        $response->assertJsonPath('playback.next_song_preview', null);
         $response->assertJsonPath('event.code', 'SCREEN2');
         $response->assertJsonPath('event.join_url', route('public.join.show', $eventNight->code));
         $response->assertJsonPath('queue.total_pending', 0);
+    }
+
+    public function test_public_screen_state_exposes_break_phase_payload(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'BREAK1',
+            'break_seconds' => 20,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-break',
+            'join_token_hash' => hash('sha256', 'token-break'),
+            'display_name' => 'Giulia',
+        ]);
+
+        $song = Song::create([
+            'title' => 'After Break',
+            'artist' => 'Pulse',
+            'duration_seconds' => 180,
+        ]);
+
+        SongRequest::create([
+            'event_night_id' => $eventNight->id,
+            'participant_id' => $participant->id,
+            'song_id' => $song->id,
+            'status' => SongRequest::STATUS_QUEUED,
+            'position' => 1,
+        ]);
+
+        PlaybackState::create([
+            'event_night_id' => $eventNight->id,
+            'current_request_id' => null,
+            'state' => PlaybackState::STATE_BREAK,
+            'started_at' => now()->subSeconds(5),
+            'expected_end_at' => now()->addSeconds(15),
+        ]);
+
+        $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('playback.phase', 'break');
+        $response->assertJsonPath('playback.song', null);
+        $response->assertJsonPath('playback.next_song_preview.title', 'After Break');
+        $response->assertJsonPath('playback.next_song_preview.requested_by', 'Giulia');
+        $this->assertGreaterThanOrEqual(0, (int) $response->json('playback.break_remaining_seconds'));
     }
 
     public function test_public_screen_state_normalizes_local_absolute_banner_urls_to_media_route(): void
@@ -276,7 +334,7 @@ class PublicScreenTest extends TestCase
         $path = 'ad-banners/1/test.jpg';
         Storage::disk('public')->put($path, 'fake-image-content');
 
-        $response = $this->get('/media/' . $path);
+        $response = $this->get('/media/'.$path);
 
         $response->assertStatus(200);
         $response->assertStreamed();

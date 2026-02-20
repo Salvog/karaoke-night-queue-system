@@ -17,7 +17,10 @@ class RequestEtaService
         $remainingSeconds = 0;
         $playbackState = $eventNight->playbackState;
 
-        if ($playbackState && $playbackState->state === PlaybackState::STATE_PLAYING && $playbackState->expected_end_at) {
+        if ($playbackState
+            && in_array($playbackState->state, [PlaybackState::STATE_PLAYING, PlaybackState::STATE_BREAK], true)
+            && $playbackState->expected_end_at
+        ) {
             $remainingSeconds = max(0, $now->diffInSeconds($playbackState->expected_end_at, false));
         }
 

@@ -54,12 +54,17 @@ class PublicScreenService
         ])->first();
 
         $progress = $this->buildPlaybackProgress($playbackState);
+        $phase = $this->resolvePlaybackPhase($playbackState);
+        $nextSongPreview = $this->buildNextSongPreview($eventNight, $playbackState);
 
         if (! $playbackState || ! $playbackState->currentRequest || ! $playbackState->currentRequest->song) {
             return [
                 'state' => $playbackState?->state ?? PlaybackState::STATE_IDLE,
+                'phase' => $phase,
                 'started_at' => $playbackState?->started_at?->toIso8601String(),
                 'expected_end_at' => $playbackState?->expected_end_at?->toIso8601String(),
+                'break_remaining_seconds' => $phase === 'break' ? ($progress['remaining_seconds'] ?? 0) : 0,
+                'next_song_preview' => $nextSongPreview,
                 'song' => null,
                 'progress' => $progress,
             ];
@@ -69,8 +74,11 @@ class PublicScreenService
 
         return [
             'state' => $playbackState->state,
+            'phase' => $phase,
             'started_at' => $playbackState->started_at?->toIso8601String(),
             'expected_end_at' => $playbackState->expected_end_at?->toIso8601String(),
+            'break_remaining_seconds' => $phase === 'break' ? ($progress['remaining_seconds'] ?? 0) : 0,
+            'next_song_preview' => $nextSongPreview,
             'song' => [
                 'title' => $song->title,
                 'artist' => $song->artist,
@@ -168,6 +176,38 @@ class PublicScreenService
         ];
     }
 
+    private function resolvePlaybackPhase(?PlaybackState $playbackState): string
+    {
+        return $playbackState?->state === PlaybackState::STATE_BREAK ? 'break' : 'song';
+    }
+
+    private function buildNextSongPreview(EventNight $eventNight, ?PlaybackState $playbackState): ?array
+    {
+        $query = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('status', SongRequest::STATUS_QUEUED)
+            ->orderByRaw('position is null')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->with(['song', 'participant']);
+
+        if ($playbackState?->current_request_id) {
+            $query->where('id', '!=', $playbackState->current_request_id);
+        }
+
+        $nextRequest = $query->first();
+
+        if (! $nextRequest || ! $nextRequest->song) {
+            return null;
+        }
+
+        return [
+            'id' => $nextRequest->id,
+            'title' => $nextRequest->song->title,
+            'artist' => $nextRequest->song->artist,
+            'requested_by' => $this->resolveSingerName($nextRequest),
+        ];
+    }
+
     private function resolveSingerName(SongRequest $request): string
     {
         $displayName = $request->participant?->display_name;
@@ -246,12 +286,13 @@ class PublicScreenService
             return $this->resolvePublicDiskPath($relative);
         }
 
-        return Str::startsWith($value, '/') ? $value : '/' . $value;
+        return Str::startsWith($value, '/') ? $value : '/'.$value;
     }
 
     private function resolvePublicDiskPath(string $path): string
     {
         $normalized = ltrim($path, '/');
+
         return route('public.screen.media', ['path' => $normalized], false);
     }
 
@@ -283,10 +324,10 @@ class PublicScreenService
             return $value;
         }
 
-        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
-        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?'.$parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#'.$parsed['fragment'] : '';
 
-        return ($path !== '' ? $path : '/') . $query . $fragment;
+        return ($path !== '' ? $path : '/').$query.$fragment;
     }
 
     private function appUrlHost(): ?string

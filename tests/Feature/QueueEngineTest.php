@@ -32,13 +32,21 @@ class QueueEngineTest extends TestCase
 
         $this->assertSame(PlaybackState::STATE_PLAYING, $playbackState->state);
         $this->assertSame(
-            $startedAt->copy()->addSeconds(190)->toDateTimeString(),
+            $startedAt->copy()->addSeconds(180)->toDateTimeString(),
             $playbackState->expected_end_at->toDateTimeString()
         );
 
-        $queueEngine->advanceIfNeeded($eventNight, $startedAt->copy()->addSeconds(190));
+        $queueEngine->advanceIfNeeded($eventNight, $startedAt->copy()->addSeconds(180));
+
+        $breakState = PlaybackState::firstOrFail();
 
         $this->assertSame(SongRequest::STATUS_PLAYED, $requests['first']->fresh()->status);
+        $this->assertSame(PlaybackState::STATE_BREAK, $breakState->state);
+        $this->assertNull($breakState->current_request_id);
+        $this->assertSame($startedAt->copy()->addSeconds(190)->toDateTimeString(), $breakState->expected_end_at->toDateTimeString());
+
+        $queueEngine->advanceIfNeeded($eventNight, $startedAt->copy()->addSeconds(190));
+
         $this->assertSame(SongRequest::STATUS_PLAYING, $requests['second']->fresh()->status);
         $this->assertSame($requests['second']->id, PlaybackState::firstOrFail()->current_request_id);
     }
@@ -124,6 +132,27 @@ class QueueEngineTest extends TestCase
                 ->where('status', SongRequest::STATUS_PLAYING)
                 ->count()
         );
+    }
+
+    public function test_break_phase_completes_to_idle_when_queue_is_empty(): void
+    {
+        $eventNight = $this->seedEvent();
+        $requests = $this->seedRequests($eventNight);
+        $requests['second']->update(['status' => SongRequest::STATUS_CANCELED]);
+
+        $queueEngine = $this->app->make(QueueEngine::class);
+        $startedAt = Carbon::parse('2024-01-01 10:00:00');
+
+        $queueEngine->startNext($eventNight, $startedAt);
+        $queueEngine->advanceIfNeeded($eventNight, $startedAt->copy()->addSeconds(180));
+
+        $this->assertSame(PlaybackState::STATE_BREAK, PlaybackState::firstOrFail()->state);
+
+        $queueEngine->advanceIfNeeded($eventNight, $startedAt->copy()->addSeconds(190));
+
+        $playbackState = PlaybackState::firstOrFail();
+        $this->assertSame(PlaybackState::STATE_IDLE, $playbackState->state);
+        $this->assertNull($playbackState->current_request_id);
     }
 
     public function test_queue_advance_command_processes_live_events(): void

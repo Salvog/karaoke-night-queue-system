@@ -322,6 +322,30 @@
             font-weight: 700;
         }
 
+        .break-panel {
+            margin-top: 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 196, 89, 0.6);
+            background: linear-gradient(90deg, rgba(255, 150, 74, 0.25), rgba(255, 79, 154, 0.22));
+            padding: 10px 12px;
+        }
+
+        .break-title {
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #fff2c8;
+            font-size: 1.22rem;
+            line-height: 1;
+        }
+
+        .break-countdown {
+            margin-top: 6px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff8df;
+        }
+
         .progress-track {
             height: 12px;
             border-radius: 999px;
@@ -807,6 +831,11 @@
                                     <span class="end-at" id="expected-end"></span>
                                 </div>
 
+                                <div class="break-panel" id="break-panel" hidden>
+                                    <div class="break-title">Stacco tecnico</div>
+                                    <div class="break-countdown" id="break-countdown">Prossimo brano tra 0 secondi</div>
+                                </div>
+
                                 <div class="progress-track">
                                     <div class="progress-fill" id="progress-fill"></div>
                                 </div>
@@ -931,6 +960,8 @@
             progressFill: document.getElementById('progress-fill'),
             progressElapsed: document.getElementById('progress-elapsed'),
             progressRemaining: document.getElementById('progress-remaining'),
+            breakPanel: document.getElementById('break-panel'),
+            breakCountdown: document.getElementById('break-countdown'),
             managerLogo: document.getElementById('manager-logo'),
             nextArtist: document.getElementById('next-artist'),
             nextTitle: document.getElementById('next-title'),
@@ -1077,7 +1108,12 @@
             }
         };
 
-        const statusLabel = (state) => {
+        const statusLabel = (state, phase) => {
+            const normalizedPhase = (phase || '').toLowerCase();
+            if (normalizedPhase === 'break') {
+                return 'Stacco tecnico';
+            }
+
             const value = (state || '').toLowerCase();
             if (value === 'playing') {
                 return 'Live';
@@ -1168,17 +1204,40 @@
             const progress = playback.progress || {};
             const percent = Math.max(0, Math.min(100, Number(progress.percent || 0)));
 
+            const phase = (playback.phase || 'song').toLowerCase();
+            const breakRemainingSeconds = Math.max(0, Number(playback.break_remaining_seconds || progress.remaining_seconds || 0));
+            const isBreak = phase === 'break';
+            const nextSongPreview = playback.next_song_preview || null;
+
             elements.nowArtist.textContent = song?.artist || 'Palco karaoke';
-            elements.nowTitle.textContent = song?.title || 'In attesa della prossima canzone';
+            elements.nowTitle.textContent = song?.title || (isBreak ? 'Stacco tecnico in corso' : 'In attesa della prossima canzone');
             elements.nowSinger.textContent = song?.requested_by || 'Cantante in arrivo';
-            elements.playbackStatus.textContent = statusLabel(playback.state);
-            elements.playbackStatusMaster.textContent = statusLabel(playback.state);
+            elements.playbackStatus.textContent = statusLabel(playback.state, phase);
+            elements.playbackStatusMaster.textContent = statusLabel(playback.state, phase);
             elements.expectedEnd.textContent = playback.expected_end_at
-                ? `Fine prevista ${formatTime(playback.expected_end_at)}`
+                ? `${isBreak ? 'Fine stacco' : 'Fine prevista'} ${formatTime(playback.expected_end_at)}`
                 : '';
+
+            if (elements.breakPanel) {
+                elements.breakPanel.hidden = !isBreak;
+            }
+
+            if (elements.breakCountdown) {
+                if (isBreak) {
+                    const previewLabel = nextSongPreview?.title
+                        ? ` (${nextSongPreview.artist ? `${nextSongPreview.artist} - ` : ''}${nextSongPreview.title})`
+                        : '';
+                    elements.breakCountdown.textContent = `Prossimo brano tra ${Math.floor(breakRemainingSeconds)} secondi${previewLabel}`;
+                } else {
+                    elements.breakCountdown.textContent = 'Prossimo brano tra 0 secondi';
+                }
+            }
+
             elements.progressFill.style.width = `${percent}%`;
             elements.progressElapsed.textContent = formatDuration(progress.elapsed_seconds);
-            elements.progressRemaining.textContent = `Restante ${formatDuration(progress.remaining_seconds)}`;
+            elements.progressRemaining.textContent = isBreak
+                ? `Stacco restante ${formatDuration(breakRemainingSeconds)}`
+                : `Restante ${formatDuration(progress.remaining_seconds)}`;
         };
 
         const updateQueue = (queue) => {
