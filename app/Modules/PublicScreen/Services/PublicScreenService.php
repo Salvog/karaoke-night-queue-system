@@ -8,6 +8,7 @@ use App\Models\PlaybackState;
 use App\Models\SongRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class PublicScreenService
@@ -26,6 +27,7 @@ class PublicScreenService
     public function buildState(EventNight $eventNight): array
     {
         $eventNight->loadMissing(['venue', 'theme', 'adBanner']);
+        $queueSnapshot = $this->buildQueueSnapshot($eventNight);
 
         return [
             'event' => [
@@ -39,22 +41,24 @@ class PublicScreenService
                 'join_url' => route('public.join.show', $eventNight->code),
                 'screen_url' => route('public.screen.show', $eventNight->code),
             ],
-            'playback' => $this->buildPlaybackPayload($eventNight),
-            'queue' => $this->buildQueuePayload($eventNight),
+            'playback' => $this->buildPlaybackPayload($eventNight, $queueSnapshot),
+            'queue' => $this->buildQueuePayload($eventNight, $queueSnapshot),
             'theme' => $this->buildThemePayload($eventNight),
             'updated_at' => now()->toIso8601String(),
         ];
     }
 
-    public function buildPlaybackPayload(EventNight $eventNight): array
+    public function buildPlaybackPayload(EventNight $eventNight, ?array $queueSnapshot = null): array
     {
         $playbackState = $eventNight->playbackState()->with([
             'currentRequest.song',
             'currentRequest.participant',
         ])->first();
 
+        $queueSnapshot = $queueSnapshot ?? $this->buildQueueSnapshot($eventNight, includeRecent: false);
+        $nextQueuedRequest = $queueSnapshot['first_queued_request'] ?? null;
         $progress = $this->buildPlaybackProgress($playbackState);
-        $intermission = $this->buildIntermissionPayload($eventNight, $playbackState, $progress);
+        $intermission = $this->buildIntermissionPayload($eventNight, $playbackState, $progress, $nextQueuedRequest);
 
         if (! $playbackState || ! $playbackState->currentRequest || ! $playbackState->currentRequest->song) {
             return [
@@ -84,34 +88,25 @@ class PublicScreenService
         ];
     }
 
-    public function buildQueuePayload(EventNight $eventNight): array
+    public function buildQueuePayload(EventNight $eventNight, ?array $queueSnapshot = null): array
     {
         $nextCount = (int) config('public_screen.queue_next_count', 5);
-        $recentCount = (int) config('public_screen.queue_recent_count', 5);
-
-        $nextRequests = SongRequest::where('event_night_id', $eventNight->id)
-            ->where('status', SongRequest::STATUS_QUEUED)
-            ->orderByRaw('position is null')
-            ->orderBy('position')
-            ->orderBy('id')
-            ->with(['song', 'participant'])
-            ->limit($nextCount)
-            ->get();
-
-        $recentRequests = SongRequest::where('event_night_id', $eventNight->id)
-            ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED])
-            ->orderByDesc('played_at')
-            ->orderByDesc('id')
-            ->with(['song', 'participant'])
-            ->limit($recentCount)
-            ->get();
-
-        $totalPending = SongRequest::where('event_night_id', $eventNight->id)
-            ->where('status', SongRequest::STATUS_QUEUED)
-            ->count();
+        $queueSnapshot = $queueSnapshot ?? $this->buildQueueSnapshot($eventNight);
+        $nextRequests = $queueSnapshot['next_requests'] instanceof Collection
+            ? $queueSnapshot['next_requests']
+            : collect();
+        $recentRequests = $queueSnapshot['recent_requests'] instanceof Collection
+            ? $queueSnapshot['recent_requests']
+            : collect();
+        $totalPending = is_int($queueSnapshot['total_pending'] ?? null)
+            ? $queueSnapshot['total_pending']
+            : 0;
+        $visibleNextRequests = $nextCount > 0
+            ? $nextRequests->take($nextCount)->values()
+            : collect();
 
         return [
-            'next' => $nextRequests->map(fn (SongRequest $request) => [
+            'next' => $visibleNextRequests->map(fn (SongRequest $request) => [
                 'id' => $request->id,
                 'position' => $request->position,
                 'title' => $request->song?->title,
@@ -225,13 +220,16 @@ class PublicScreenService
     private function buildIntermissionPayload(
         EventNight $eventNight,
         ?PlaybackState $playbackState,
-        array $progress
+        array $progress,
+        ?SongRequest $nextQueuedRequest = null
     ): array {
         $breakSeconds = max(0, (int) $eventNight->break_seconds);
 
         if (
             ! $playbackState
             || $playbackState->state !== PlaybackState::STATE_PLAYING
+            || ! $playbackState->currentRequest
+            || ! $playbackState->currentRequest->song
             || $breakSeconds <= 0
         ) {
             return $this->emptyIntermissionPayload();
@@ -248,13 +246,17 @@ class PublicScreenService
             return $this->emptyIntermissionPayload();
         }
 
-        $nextRequest = SongRequest::where('event_night_id', $eventNight->id)
-            ->where('status', SongRequest::STATUS_QUEUED)
-            ->orderByRaw('position is null')
-            ->orderBy('position')
-            ->orderBy('id')
-            ->with(['song', 'participant'])
-            ->first();
+        $nextRequest = $nextQueuedRequest;
+
+        if (! $nextRequest) {
+            $nextRequest = SongRequest::where('event_night_id', $eventNight->id)
+                ->where('status', SongRequest::STATUS_QUEUED)
+                ->orderByRaw('position is null')
+                ->orderBy('position')
+                ->orderBy('id')
+                ->with(['song', 'participant'])
+                ->first();
+        }
 
         $nextSong = null;
 
@@ -264,6 +266,10 @@ class PublicScreenService
                 'artist' => $nextRequest->song->artist,
                 'requested_by' => $this->resolveSingerName($nextRequest),
             ];
+        }
+
+        if (! $nextSong) {
+            return $this->emptyIntermissionPayload();
         }
 
         return [
@@ -284,6 +290,51 @@ class PublicScreenService
             'ends_at' => null,
             'next_song' => null,
         ];
+    }
+
+    private function buildQueueSnapshot(EventNight $eventNight, bool $includeRecent = true): array
+    {
+        $nextCount = max(0, (int) config('public_screen.queue_next_count', 5));
+        // Keep the first queued request available for intermission logic even when next_count is 0.
+        $nextLimit = $includeRecent ? max(1, $nextCount) : 1;
+
+        $nextRequests = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('status', SongRequest::STATUS_QUEUED)
+            ->orderByRaw('position is null')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->with(['song', 'participant'])
+            ->limit($nextLimit)
+            ->get()
+            ->values();
+
+        $snapshot = [
+            'next_requests' => $nextRequests,
+            'first_queued_request' => $nextRequests->first(),
+            'recent_requests' => collect(),
+            'total_pending' => 0,
+        ];
+
+        if (! $includeRecent) {
+            return $snapshot;
+        }
+
+        $recentCount = max(0, (int) config('public_screen.queue_recent_count', 5));
+        $recentRequests = SongRequest::where('event_night_id', $eventNight->id)
+            ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED])
+            ->orderByDesc('played_at')
+            ->orderByDesc('id')
+            ->with(['song', 'participant'])
+            ->limit($recentCount)
+            ->get()
+            ->values();
+
+        $snapshot['recent_requests'] = $recentRequests;
+        $snapshot['total_pending'] = SongRequest::where('event_night_id', $eventNight->id)
+            ->where('status', SongRequest::STATUS_QUEUED)
+            ->count();
+
+        return $snapshot;
     }
 
     private function resolveMediaUrl(?string $url): ?string

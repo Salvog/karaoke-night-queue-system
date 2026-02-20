@@ -313,6 +313,83 @@ class PublicScreenTest extends TestCase
         }
     }
 
+    public function test_public_screen_state_keeps_intermission_active_even_when_queue_next_count_is_zero(): void
+    {
+        config([
+            'public_screen.queue_next_count' => 0,
+        ]);
+
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'INTERMZ0',
+                'break_seconds' => 15,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-inter-z0',
+                'join_token_hash' => hash('sha256', 'token-inter-z0'),
+                'display_name' => 'Giulia',
+            ]);
+
+            $currentSong = Song::create([
+                'title' => 'Current',
+                'artist' => 'Band',
+                'duration_seconds' => 200,
+            ]);
+
+            $nextSong = Song::create([
+                'title' => 'Next Up',
+                'artist' => 'Band',
+                'duration_seconds' => 180,
+            ]);
+
+            $currentRequest = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $currentSong->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $nextSong->id,
+                'status' => SongRequest::STATUS_QUEUED,
+                'position' => 2,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $currentRequest->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(205),
+                'expected_end_at' => now()->addSeconds(10),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.intermission.is_active', true);
+            $response->assertJsonPath('playback.intermission.next_song.title', 'Next Up');
+            $response->assertJsonCount(0, 'queue.next');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_public_screen_state_payload_marks_intermission_inactive_when_break_is_zero(): void
     {
         Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
@@ -358,6 +435,64 @@ class PublicScreenTest extends TestCase
                 'state' => PlaybackState::STATE_PLAYING,
                 'started_at' => now()->subSeconds(10),
                 'expected_end_at' => now()->addSeconds(5),
+            ]);
+
+            $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+            $response->assertStatus(200);
+            $response->assertJsonPath('playback.intermission.is_active', false);
+            $response->assertJsonPath('playback.intermission.next_song', null);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_public_screen_state_payload_marks_intermission_inactive_when_there_is_no_next_song(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 21:00:00'));
+
+        try {
+            $venue = Venue::create([
+                'name' => 'Main Room',
+                'timezone' => 'UTC',
+            ]);
+
+            $eventNight = EventNight::create([
+                'venue_id' => $venue->id,
+                'code' => 'INTERMNX',
+                'break_seconds' => 20,
+                'request_cooldown_seconds' => 0,
+                'status' => EventNight::STATUS_ACTIVE,
+                'starts_at' => now(),
+            ]);
+
+            $participant = Participant::create([
+                'event_night_id' => $eventNight->id,
+                'device_cookie_id' => 'device-inter-next',
+                'join_token_hash' => hash('sha256', 'token-inter-next'),
+                'display_name' => 'Marta',
+            ]);
+
+            $song = Song::create([
+                'title' => 'Last Song',
+                'artist' => 'Band',
+                'duration_seconds' => 200,
+            ]);
+
+            $request = SongRequest::create([
+                'event_night_id' => $eventNight->id,
+                'participant_id' => $participant->id,
+                'song_id' => $song->id,
+                'status' => SongRequest::STATUS_PLAYING,
+                'position' => 1,
+            ]);
+
+            PlaybackState::create([
+                'event_night_id' => $eventNight->id,
+                'current_request_id' => $request->id,
+                'state' => PlaybackState::STATE_PLAYING,
+                'started_at' => now()->subSeconds(190),
+                'expected_end_at' => now()->addSeconds(10),
             ]);
 
             $response = $this->getJson("/screen/{$eventNight->code}/state");

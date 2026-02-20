@@ -25,6 +25,7 @@ class AdminQueueController extends Controller
     {
         Gate::forUser($request->user('admin'))->authorize('manage-event-nights');
         $autoAdvance->ensureAdvanced($eventNight);
+        $eventNight->loadMissing(['venue', 'playbackState.currentRequest.song']);
 
         [$queue, $history] = $this->loadQueueCollections($eventNight);
 
@@ -44,7 +45,8 @@ class AdminQueueController extends Controller
         $autoAdvance->ensureAdvanced($eventNight);
 
         [$queue, $history] = $this->loadQueueCollections($eventNight);
-        $playbackState = $eventNight->playbackState;
+        $playbackState = $this->loadPlaybackState($eventNight);
+        $timezone = $this->resolveEventTimezone($eventNight);
 
         return response()->json([
             'playback' => $this->serializePlayback($eventNight, $playbackState),
@@ -52,7 +54,7 @@ class AdminQueueController extends Controller
                 'total' => $queue->count(),
                 'upcoming' => $queue->map(fn (SongRequest $songRequest) => $this->serializeQueueRequest($songRequest))->values()->all(),
             ],
-            'history' => $history->map(fn (SongRequest $songRequest) => $this->serializeHistoryRequest($songRequest, $eventNight))->values()->all(),
+            'history' => $history->map(fn (SongRequest $songRequest) => $this->serializeHistoryRequest($songRequest, $timezone))->values()->all(),
             'updated_at' => now()->toIso8601String(),
         ]);
     }
@@ -262,19 +264,35 @@ class AdminQueueController extends Controller
      */
     private function loadQueueCollections(EventNight $eventNight): array
     {
-        $eventNight->load(['venue', 'playbackState.currentRequest.song', 'songRequests.song', 'songRequests.participant']);
-
-        $queue = $eventNight->songRequests
+        // Target only relevant rows instead of loading the whole event request history on every poll.
+        $queue = SongRequest::query()
+            ->where('event_night_id', $eventNight->id)
             ->whereIn('status', [SongRequest::STATUS_QUEUED, SongRequest::STATUS_PLAYING])
-            ->sortBy(fn (SongRequest $songRequest) => [$songRequest->position ?? PHP_INT_MAX, $songRequest->id])
+            ->with(['song', 'participant'])
+            ->orderByRaw('position is null')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
             ->values();
 
-        $history = $eventNight->songRequests
+        $history = SongRequest::query()
+            ->where('event_night_id', $eventNight->id)
             ->whereIn('status', [SongRequest::STATUS_PLAYED, SongRequest::STATUS_SKIPPED, SongRequest::STATUS_CANCELED])
-            ->sortByDesc(fn (SongRequest $songRequest) => $songRequest->played_at ?? $songRequest->updated_at)
+            ->with(['song', 'participant'])
+            ->orderByRaw('COALESCE(played_at, updated_at) desc')
+            ->orderBy('id')
+            ->get()
             ->values();
 
         return [$queue, $history];
+    }
+
+    private function loadPlaybackState(EventNight $eventNight): ?PlaybackState
+    {
+        return PlaybackState::query()
+            ->where('event_night_id', $eventNight->id)
+            ->with(['currentRequest.song'])
+            ->first();
     }
 
     private function serializePlayback(EventNight $eventNight, ?PlaybackState $playbackState): array
@@ -324,10 +342,9 @@ class AdminQueueController extends Controller
         ];
     }
 
-    private function serializeHistoryRequest(SongRequest $songRequest, EventNight $eventNight): array
+    private function serializeHistoryRequest(SongRequest $songRequest, string $timezone): array
     {
         $when = $songRequest->played_at ?? $songRequest->updated_at;
-        $timezone = $eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome');
         $displayTime = '—';
 
         if ($when) {
@@ -346,5 +363,12 @@ class AdminQueueController extends Controller
             'song_title' => $songRequest->song?->title ?? 'Sconosciuta',
             'status' => $songRequest->status,
         ];
+    }
+
+    private function resolveEventTimezone(EventNight $eventNight): string
+    {
+        $eventNight->loadMissing('venue');
+
+        return $eventNight->venue?->timezone ?? config('app.timezone', 'Europe/Rome');
     }
 }

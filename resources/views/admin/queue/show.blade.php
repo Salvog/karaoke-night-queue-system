@@ -935,7 +935,7 @@
             let dragArmedRow = null;
             let pendingSnapshot = null;
 
-            const shouldDeferSnapshot = () => saveInFlight || draggedRow !== null;
+            const shouldDeferSnapshot = () => saveInFlight || draggedRow !== null || dragArmedRow !== null;
 
             const setSaveStatus = (message, state = 'idle') => {
                 if (!saveStatusElement) {

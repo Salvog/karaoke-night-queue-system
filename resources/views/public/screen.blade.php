@@ -859,7 +859,7 @@
                                 </div>
 
                                 <div class="intermission-panel" id="intermission-panel" hidden>
-                                    <div class="intermission-label">Stacco tecnico</div>
+                                    <div class="intermission-label">Preparati al tuo turno!</div>
                                     <div class="intermission-countdown" id="intermission-countdown">00:00</div>
                                     <div class="intermission-copy" id="intermission-copy">Prossimo brano tra 00:00</div>
                                     <div class="intermission-next" id="intermission-next"></div>
@@ -1133,7 +1133,7 @@
 
         const statusLabel = (state, intermission = null) => {
             if (intermission?.is_active) {
-                return 'Stacco';
+                return 'In Arrivo';
             }
 
             const value = (state || '').toLowerCase();
