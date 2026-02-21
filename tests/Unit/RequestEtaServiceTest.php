@@ -21,7 +21,7 @@ class RequestEtaServiceTest extends TestCase
     {
         $eventNight = $this->makeEventNight(['break_seconds' => 5]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(0, $service->calculateSeconds($eventNight, now()));
     }
@@ -39,9 +39,29 @@ class RequestEtaServiceTest extends TestCase
             'expected_end_at' => $now->copy()->addSeconds(120),
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
-        $this->assertSame(120, $service->calculateSeconds($eventNight, $now));
+        $this->assertSame(130, $service->calculateSeconds($eventNight, $now));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_eta_includes_remaining_song_time_plus_break_when_playing(): void
+    {
+        $eventNight = $this->makeEventNight(['break_seconds' => 15]);
+
+        $now = Carbon::parse('2024-01-01 10:00:00');
+        Carbon::setTestNow($now);
+
+        PlaybackState::create([
+            'event_night_id' => $eventNight->id,
+            'state' => PlaybackState::STATE_PLAYING,
+            'expected_end_at' => $now->copy()->addSeconds(120),
+        ]);
+
+        $service = new RequestEtaService;
+
+        $this->assertSame(135, $service->calculateSeconds($eventNight, $now));
 
         Carbon::setTestNow();
     }
@@ -81,7 +101,7 @@ class RequestEtaServiceTest extends TestCase
             'position' => 2,
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(310, $service->calculateSeconds($eventNight, now()));
     }
@@ -130,9 +150,9 @@ class RequestEtaServiceTest extends TestCase
             'expected_end_at' => $now->copy()->addSeconds(90),
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
-        $this->assertSame(290, $service->calculateSeconds($eventNight, $now));
+        $this->assertSame(300, $service->calculateSeconds($eventNight, $now));
 
         Carbon::setTestNow();
     }
@@ -146,7 +166,7 @@ class RequestEtaServiceTest extends TestCase
 
         return EventNight::create(array_merge([
             'venue_id' => $venue->id,
-            'code' => 'EVENT' . random_int(1000, 9999),
+            'code' => 'EVENT'.random_int(1000, 9999),
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
             'status' => EventNight::STATUS_ACTIVE,

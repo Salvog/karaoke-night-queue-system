@@ -22,6 +22,10 @@ class RequestEtaService
             && $playbackState->expected_end_at
         ) {
             $remainingSeconds = max(0, $now->diffInSeconds($playbackState->expected_end_at, false));
+
+            if ($playbackState->state === PlaybackState::STATE_PLAYING) {
+                $remainingSeconds += max(0, (int) $eventNight->break_seconds);
+            }
         }
 
         $queuedRequests = SongRequest::where('event_night_id', $eventNight->id)
