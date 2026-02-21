@@ -674,7 +674,7 @@
                     <div>
                         <div class="label">Conteggi coda</div>
                         <div class="value" data-queue-counts-summary>
-                            Corrente {{ $playbackState?->currentRequest ? 1 : 0 }} · Prossime {{ $queue->where('status', \\App\\Models\\SongRequest::STATUS_QUEUED)->count() }} · Storico {{ $history->count() }}
+                            Corrente {{ $playbackState?->currentRequest ? 1 : 0 }} · Prossime {{ $queue->where('status', \App\Models\SongRequest::STATUS_QUEUED)->count() }} · Storico {{ $history->count() }}
                         </div>
                     </div>
                 </div>
@@ -756,7 +756,7 @@
                     <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
                         <span class="queue-save-status" data-queue-state-badge data-state="idle" aria-live="polite">In attesa sync</span>
                         <span class="queue-save-status" data-queue-save-status data-state="idle" aria-live="polite">Pronto</span>
-                        <span class="queue-count" data-queue-next-count>{{ $queue->where('status', \\App\\Models\\SongRequest::STATUS_QUEUED)->count() }}</span>
+                        <span class="queue-count" data-queue-next-count>{{ $queue->where('status', \App\Models\SongRequest::STATUS_QUEUED)->count() }}</span>
                     </div>
                 </header>
                 <form id="queue-reorder-form" method="POST" action="{{ route('admin.queue.reorder', $eventNight) }}" class="sr-only">
