@@ -5,6 +5,7 @@ namespace App\Modules\PublicScreen\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\PublicScreen\Realtime\SseStateStore;
 use App\Modules\PublicScreen\Services\PublicScreenService;
+use App\Modules\Queue\Services\QueueAutoAdvanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +16,8 @@ class PublicScreenController extends Controller
 {
     public function __construct(
         private readonly PublicScreenService $service,
-        private readonly SseStateStore $store
+        private readonly SseStateStore $store,
+        private readonly QueueAutoAdvanceService $autoAdvance
     ) {
     }
 
@@ -26,6 +28,7 @@ class PublicScreenController extends Controller
         ])->validate();
 
         $eventNight = $this->service->findLiveEvent($validated['eventCode']);
+        $this->autoAdvance->ensureAdvanced($eventNight);
         $state = $this->service->buildState($eventNight);
 
         return response()->view('public.screen', [
@@ -45,6 +48,7 @@ class PublicScreenController extends Controller
         ])->validate();
 
         $eventNight = $this->service->findLiveEvent($validated['eventCode']);
+        $this->autoAdvance->ensureAdvanced($eventNight);
 
         return response()->json($this->service->buildState($eventNight));
     }
@@ -66,6 +70,7 @@ class PublicScreenController extends Controller
 
         if (! $this->isRealtimeEnabled()) {
             return response()->stream(function () use ($eventNight) {
+                $this->autoAdvance->ensureAdvanced($eventNight);
                 $this->sendEvent('snapshot', $this->service->buildState($eventNight));
             }, 200, $headers);
         }
@@ -82,9 +87,12 @@ class PublicScreenController extends Controller
                 'theme' => null,
             ];
 
+            $this->autoAdvance->ensureAdvanced($eventNight);
             $this->sendEvent('snapshot', $this->service->buildState($eventNight));
 
             while (! connection_aborted() && (microtime(true) - $start) < $streamSeconds) {
+                $this->autoAdvance->ensureAdvanced($eventNight);
+
                 foreach (['playback', 'queue', 'theme'] as $type) {
                     $cached = $this->store->read($eventNight, $type);
 

@@ -126,6 +126,29 @@ class QueueEngineTest extends TestCase
         );
     }
 
+
+    public function test_auto_advance_service_skips_non_active_events(): void
+    {
+        $eventNight = $this->seedEvent();
+        $eventNight->update(['status' => EventNight::STATUS_CLOSED]);
+        $requests = $this->seedRequests($eventNight);
+
+        $queueEngine = $this->app->make(QueueEngine::class);
+        $queueEngine->startNext($eventNight, Carbon::parse('2024-01-01 10:00:00'));
+
+        $playbackState = PlaybackState::firstOrFail();
+        $playbackState->update([
+            'expected_end_at' => Carbon::parse('2024-01-01 09:59:00'),
+        ]);
+
+        $autoAdvance = $this->app->make(\App\Modules\Queue\Services\QueueAutoAdvanceService::class);
+        $autoAdvance->ensureAdvanced($eventNight, Carbon::parse('2024-01-01 10:05:00'));
+
+        $this->assertSame(SongRequest::STATUS_PLAYING, $requests['first']->fresh()->status);
+        $this->assertSame(SongRequest::STATUS_QUEUED, $requests['second']->fresh()->status);
+        $this->assertSame($requests['first']->id, PlaybackState::firstOrFail()->current_request_id);
+    }
+
     public function test_queue_advance_command_processes_live_events(): void
     {
         $eventNight = $this->seedEvent();

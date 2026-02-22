@@ -350,6 +350,49 @@
             font-weight: 700;
         }
 
+        .intermission-panel {
+            margin-top: 6px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 198, 89, 0.56);
+            background: linear-gradient(135deg, rgba(92, 55, 11, 0.46), rgba(26, 18, 10, 0.7));
+            display: grid;
+            gap: 5px;
+        }
+
+        .intermission-panel[hidden] {
+            display: none;
+        }
+
+        .intermission-label {
+            font-size: 0.9rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #ffdca0;
+            font-weight: 800;
+        }
+
+        .intermission-countdown {
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            font-size: clamp(2rem, 4.2vw, 3.4rem);
+            line-height: 0.9;
+            letter-spacing: 0.05em;
+            color: #fff3c6;
+            text-shadow: 0 0 14px rgba(255, 202, 111, 0.36);
+        }
+
+        .intermission-copy {
+            font-size: 1rem;
+            color: #fbeed0;
+            font-weight: 700;
+        }
+
+        .intermission-next {
+            color: #f8e7bf;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
         .manager-brand {
             border-left: 1px solid rgba(255, 255, 255, 0.18);
             display: grid;
@@ -814,6 +857,13 @@
                                     <span id="progress-elapsed">00:00</span>
                                     <span id="progress-remaining">Restante 00:00</span>
                                 </div>
+
+                                <div class="intermission-panel" id="intermission-panel" hidden>
+                                    <div class="intermission-label">Preparati al tuo turno!</div>
+                                    <div class="intermission-countdown" id="intermission-countdown">00:00</div>
+                                    <div class="intermission-copy" id="intermission-copy">Prossimo brano tra 00:00</div>
+                                    <div class="intermission-next" id="intermission-next"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -931,6 +981,10 @@
             progressFill: document.getElementById('progress-fill'),
             progressElapsed: document.getElementById('progress-elapsed'),
             progressRemaining: document.getElementById('progress-remaining'),
+            intermissionPanel: document.getElementById('intermission-panel'),
+            intermissionCountdown: document.getElementById('intermission-countdown'),
+            intermissionCopy: document.getElementById('intermission-copy'),
+            intermissionNext: document.getElementById('intermission-next'),
             managerLogo: document.getElementById('manager-logo'),
             nextArtist: document.getElementById('next-artist'),
             nextTitle: document.getElementById('next-title'),
@@ -1077,7 +1131,11 @@
             }
         };
 
-        const statusLabel = (state) => {
+        const statusLabel = (state, intermission = null) => {
+            if (intermission?.is_active) {
+                return 'In Arrivo';
+            }
+
             const value = (state || '').toLowerCase();
             if (value === 'playing') {
                 return 'Live';
@@ -1166,19 +1224,47 @@
 
             const song = playback.song;
             const progress = playback.progress || {};
+            const intermission = playback.intermission || {};
+            const intermissionActive = intermission?.is_active === true;
             const percent = Math.max(0, Math.min(100, Number(progress.percent || 0)));
+            const intermissionCountdown = formatDuration(intermission.remaining_seconds);
+            const nextSong = intermission?.next_song || null;
+            const nextSongLine = nextSong
+                ? (nextSong.artist ? `${nextSong.artist} - ${nextSong.title}` : nextSong.title || 'Prossimo brano')
+                : null;
 
             elements.nowArtist.textContent = song?.artist || 'Palco karaoke';
             elements.nowTitle.textContent = song?.title || 'In attesa della prossima canzone';
             elements.nowSinger.textContent = song?.requested_by || 'Cantante in arrivo';
-            elements.playbackStatus.textContent = statusLabel(playback.state);
-            elements.playbackStatusMaster.textContent = statusLabel(playback.state);
-            elements.expectedEnd.textContent = playback.expected_end_at
-                ? `Fine prevista ${formatTime(playback.expected_end_at)}`
-                : '';
+            elements.playbackStatus.textContent = statusLabel(playback.state, intermission);
+            elements.playbackStatusMaster.textContent = statusLabel(playback.state, intermission);
+            elements.expectedEnd.textContent = intermissionActive
+                ? (intermission.ends_at ? `Ripartenza prevista ${formatTime(intermission.ends_at)}` : 'Ripartenza imminente')
+                : (playback.expected_end_at ? `Fine prevista ${formatTime(playback.expected_end_at)}` : '');
             elements.progressFill.style.width = `${percent}%`;
             elements.progressElapsed.textContent = formatDuration(progress.elapsed_seconds);
-            elements.progressRemaining.textContent = `Restante ${formatDuration(progress.remaining_seconds)}`;
+            elements.progressRemaining.textContent = intermissionActive
+                ? `Stacco ${intermissionCountdown}`
+                : `Restante ${formatDuration(progress.remaining_seconds)}`;
+
+            if (intermissionActive && elements.intermissionPanel) {
+                elements.intermissionPanel.hidden = false;
+                elements.intermissionCountdown.textContent = intermissionCountdown;
+                elements.intermissionCopy.textContent = `Prossimo brano tra ${intermissionCountdown}`;
+
+                if (nextSongLine) {
+                    elements.intermissionNext.textContent = nextSong?.requested_by
+                        ? `In arrivo: ${nextSongLine} • ${nextSong.requested_by}`
+                        : `In arrivo: ${nextSongLine}`;
+                } else {
+                    elements.intermissionNext.textContent = 'Nessun brano successivo in coda.';
+                }
+            } else if (elements.intermissionPanel) {
+                elements.intermissionPanel.hidden = true;
+                elements.intermissionCountdown.textContent = '00:00';
+                elements.intermissionCopy.textContent = 'Prossimo brano tra 00:00';
+                elements.intermissionNext.textContent = '';
+            }
         };
 
         const updateQueue = (queue) => {
