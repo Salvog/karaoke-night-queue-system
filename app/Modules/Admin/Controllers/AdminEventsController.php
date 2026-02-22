@@ -164,5 +164,4 @@ class AdminEventsController extends Controller
 
         return $trimmed === '' ? null : $trimmed;
     }
-
 }

@@ -18,8 +18,7 @@ class PublicScreenController extends Controller
         private readonly PublicScreenService $service,
         private readonly SseStateStore $store,
         private readonly QueueAutoAdvanceService $autoAdvance
-    ) {
-    }
+    ) {}
 
     public function show(Request $request, string $eventCode): Response
     {
@@ -129,7 +128,7 @@ class PublicScreenController extends Controller
     private function sendEvent(string $event, array $data): void
     {
         echo "event: {$event}\n";
-        echo 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+        echo 'data: '.json_encode($data, JSON_UNESCAPED_UNICODE)."\n\n";
         ob_flush();
         flush();
     }

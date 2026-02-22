@@ -7,8 +7,8 @@ use App\Models\EventNight;
 use App\Models\PlaybackState;
 use App\Models\SongRequest;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PublicScreenService
@@ -380,12 +380,13 @@ class PublicScreenService
             return $this->resolvePublicDiskPath($relative);
         }
 
-        return Str::startsWith($value, '/') ? $value : '/' . $value;
+        return Str::startsWith($value, '/') ? $value : '/'.$value;
     }
 
     private function resolvePublicDiskPath(string $path): string
     {
         $normalized = ltrim($path, '/');
+
         return route('public.screen.media', ['path' => $normalized], false);
     }
 
@@ -417,10 +418,10 @@ class PublicScreenService
             return $value;
         }
 
-        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
-        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?'.$parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#'.$parsed['fragment'] : '';
 
-        return ($path !== '' ? $path : '/') . $query . $fragment;
+        return ($path !== '' ? $path : '/').$query.$fragment;
     }
 
     private function appUrlHost(): ?string

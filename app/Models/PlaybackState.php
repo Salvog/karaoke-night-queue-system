@@ -11,7 +11,9 @@ class PlaybackState extends Model
     use HasFactory;
 
     public const STATE_IDLE = 'idle';
+
     public const STATE_PLAYING = 'playing';
+
     public const STATE_PAUSED = 'paused';
 
     public const STATES = [

@@ -19,8 +19,8 @@ class AdminSongsController extends Controller
         $artist = trim((string) $request->query('artist', ''));
 
         $songs = Song::query()
-            ->when($title !== '', fn ($query) => $query->where('title', 'like', '%' . $title . '%'))
-            ->when($artist !== '', fn ($query) => $query->where('artist', 'like', '%' . $artist . '%'))
+            ->when($title !== '', fn ($query) => $query->where('title', 'like', '%'.$title.'%'))
+            ->when($artist !== '', fn ($query) => $query->where('artist', 'like', '%'.$artist.'%'))
             ->orderBy('artist')
             ->orderBy('title')
             ->get();
@@ -31,7 +31,7 @@ class AdminSongsController extends Controller
                 'title' => $title,
                 'artist' => $artist,
             ],
-            'newSong' => new Song(),
+            'newSong' => new Song,
         ]);
     }
 

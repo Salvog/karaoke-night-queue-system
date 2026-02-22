@@ -13,9 +13,7 @@ use InvalidArgumentException;
 
 class QueueEngine
 {
-    public function __construct(private readonly RealtimePublisher $publisher)
-    {
-    }
+    public function __construct(private readonly RealtimePublisher $publisher) {}
 
     public function startNext(EventNight $eventNight, ?Carbon $now = null): ?SongRequest
     {
@@ -134,7 +132,7 @@ class QueueEngine
 
         $playbackUpdated = false;
 
-        DB::transaction(function () use ($eventNight, $songRequest, $now, &$playbackUpdated) {
+        DB::transaction(function () use ($eventNight, $songRequest, &$playbackUpdated) {
             $this->assertSameEvent($eventNight, $songRequest);
 
             $playbackState = $this->lockPlaybackState($eventNight);
@@ -313,8 +311,7 @@ class QueueEngine
         EventNight $eventNight,
         PlaybackState $playbackState,
         Carbon $now
-    ): ?SongRequest
-    {
+    ): ?SongRequest {
         $nextRequest = $this->findNextQueuedRequest($eventNight);
 
         if (! $nextRequest) {
@@ -331,8 +328,7 @@ class QueueEngine
         PlaybackState $playbackState,
         ?SongRequest $currentRequest,
         Carbon $now
-    ): ?SongRequest
-    {
+    ): ?SongRequest {
         if (! $currentRequest || ! $playbackState->expected_end_at || ! $playbackState->paused_at) {
             if ($currentRequest && $currentRequest->status === SongRequest::STATUS_PLAYING) {
                 $currentRequest->update([

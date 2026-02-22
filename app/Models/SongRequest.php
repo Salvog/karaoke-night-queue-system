@@ -12,9 +12,13 @@ class SongRequest extends Model
     use HasFactory;
 
     public const STATUS_QUEUED = 'queued';
+
     public const STATUS_PLAYING = 'playing';
+
     public const STATUS_PLAYED = 'played';
+
     public const STATUS_CANCELED = 'canceled';
+
     public const STATUS_SKIPPED = 'skipped';
 
     public const STATUSES = [

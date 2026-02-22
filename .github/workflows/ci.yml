@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
 
     steps:
@@ -43,7 +43,12 @@ jobs:
         run: composer run pint -- --test
 
       - name: Run phpstan
-        run: php -d memory_limit=512M vendor/bin/phpstan analyse
+        run: composer run stan
 
       - name: Run composer audit
-        run: composer audit --locked || (echo "composer audit failed" && exit 1)
+        run: composer run audit-safe
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

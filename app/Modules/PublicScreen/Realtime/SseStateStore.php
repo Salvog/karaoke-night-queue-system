@@ -10,8 +10,7 @@ class SseStateStore
     public function __construct(
         private readonly Repository $cache,
         private readonly int $ttlSeconds
-    ) {
-    }
+    ) {}
 
     public function write(EventNight $eventNight, string $type, array $payload): void
     {

@@ -8,9 +8,7 @@ use App\Modules\Auth\Services\AdminAuditLogger;
 
 class LogAdminAction
 {
-    public function __construct(private readonly AdminAuditLogger $logger)
-    {
-    }
+    public function __construct(private readonly AdminAuditLogger $logger) {}
 
     public function execute(AdminActionData $data): AdminAuditLog
     {

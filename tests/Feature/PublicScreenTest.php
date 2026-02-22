@@ -811,7 +811,7 @@ class PublicScreenTest extends TestCase
         $path = 'ad-banners/1/test.jpg';
         Storage::disk('public')->put($path, 'fake-image-content');
 
-        $response = $this->get('/media/' . $path);
+        $response = $this->get('/media/'.$path);
 
         $response->assertStatus(200);
         $response->assertStreamed();

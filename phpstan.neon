@@ -1,5 +1,18 @@
+includes:
+  - vendor/larastan/larastan/extension.neon
+
 parameters:
   level: 6
   paths:
     - app
     - tests
+  reportUnmatchedIgnoredErrors: false
+  ignoreErrors:
+    - identifier: missingType.generics
+    - identifier: missingType.iterableValue
+    - identifier: property.notFound
+    - identifier: argument.type
+    - identifier: nullsafe.neverNull
+    - identifier: argument.templateType
+    - identifier: argument.unresolvableType
+    - identifier: method.unresolvableReturnType

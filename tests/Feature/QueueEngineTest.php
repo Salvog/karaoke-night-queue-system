@@ -126,7 +126,6 @@ class QueueEngineTest extends TestCase
         );
     }
 
-
     public function test_auto_advance_service_skips_non_active_events(): void
     {
         $eventNight = $this->seedEvent();

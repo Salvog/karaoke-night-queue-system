@@ -10,9 +10,7 @@ class QueueAutoAdvanceService
 {
     private const LOCK_SECONDS = 1;
 
-    public function __construct(private readonly QueueEngine $queueEngine)
-    {
-    }
+    public function __construct(private readonly QueueEngine $queueEngine) {}
 
     public function ensureAdvanced(EventNight $eventNight, ?Carbon $now = null): void
     {

@@ -209,10 +209,10 @@ class AdminAdBannerController extends Controller
             return $value;
         }
 
-        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
-        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?'.$parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#'.$parsed['fragment'] : '';
 
-        return $path . $query . $fragment;
+        return $path.$query.$fragment;
     }
 
     private function appUrlHost(): ?string

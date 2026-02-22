@@ -13,7 +13,9 @@ class EventNight extends Model
     use HasFactory;
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_CLOSED = 'closed';
 
     public const STATUSES = [
