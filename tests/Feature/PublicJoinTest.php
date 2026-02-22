@@ -181,6 +181,7 @@ class PublicJoinTest extends TestCase
             'display_name' => 'Mario',
         ]);
 
+        $response->assertRedirect(route('public.join.show', $eventNight->code));
         $response->assertSessionHas('status');
         $this->assertDatabaseCount('song_requests', 1);
         $this->assertDatabaseHas('participants', [
@@ -284,7 +285,7 @@ class PublicJoinTest extends TestCase
             'pin' => null,
         ]);
 
-        $second->assertStatus(302);
+        $second->assertRedirect(route('public.join.show', $eventNight->code));
         $second->assertSessionHasErrors(['rate_limit']);
     }
 
@@ -365,6 +366,7 @@ class PublicJoinTest extends TestCase
             'pin' => '4321',
         ]);
 
+        $activate->assertRedirect(route('public.join.show', $eventNight->code));
         $activate->assertSessionHas('status');
 
         $approved = $this->withCookie(
@@ -376,6 +378,7 @@ class PublicJoinTest extends TestCase
             'display_name' => 'Lucia',
         ]);
 
+        $approved->assertRedirect(route('public.join.show', $eventNight->code));
         $approved->assertSessionHas('status');
         $this->assertDatabaseCount('song_requests', 1);
     }

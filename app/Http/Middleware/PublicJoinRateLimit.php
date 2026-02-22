@@ -64,6 +64,13 @@ class PublicJoinRateLimit
             return response()->json(['message' => $message], 429);
         }
 
+        $eventCode = (string) $request->route('eventCode');
+
+        if ($eventCode !== '') {
+            return redirect()->route('public.join.show', $eventCode)
+                ->withErrors(['rate_limit' => $message]);
+        }
+
         return back()->withErrors(['rate_limit' => $message]);
     }
 }
