@@ -38,7 +38,7 @@
                             </option>
                         @endforeach
                     </select>
-                    <p class="helper" style="margin: 6px 0 0;">Lo schermo pubblico mostra anche tutti gli sponsor attivi della location.</p>
+                    <p class="helper" style="margin: 6px 0 0;">Lo schermo pubblico mostra gli sponsor attivi configurati per questo evento.</p>
                 </div>
             </div>
 

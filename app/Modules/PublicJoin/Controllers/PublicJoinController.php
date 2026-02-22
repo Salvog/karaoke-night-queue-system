@@ -19,9 +19,7 @@ use Illuminate\Support\Str;
 
 class PublicJoinController extends Controller
 {
-    public function __construct(private readonly PublicJoinService $service)
-    {
-    }
+    public function __construct(private readonly PublicJoinService $service) {}
 
     public function show(Request $request, string $eventCode): Response
     {
@@ -76,7 +74,8 @@ class PublicJoinController extends Controller
         $participant = $this->service->resolveParticipant($eventNight, $deviceCookieId);
         $this->service->activateParticipant($eventNight, $participant, $data['pin'] ?? null);
 
-        return back()->with('status', 'Accesso confermato. Ora puoi prenotare i brani.');
+        return redirect()->route('public.join.show', $eventNight->code)
+            ->with('status', 'Accesso confermato. Ora puoi prenotare i brani.');
     }
 
     public function requestSong(Request $request, string $eventCode): RedirectResponse
@@ -114,7 +113,8 @@ class PublicJoinController extends Controller
             $data['display_name']
         );
 
-        return back()->with('status', 'Prenotazione confermata. Controlla la sezione "Le tue ultime prenotazioni".');
+        return redirect()->route('public.join.show', $eventNight->code)
+            ->with('status', 'Prenotazione confermata. Controlla la sezione "Le tue ultime prenotazioni".');
     }
 
     public function searchSongs(Request $request, string $eventCode): JsonResponse
@@ -135,7 +135,7 @@ class PublicJoinController extends Controller
 
         if ($term !== null && $term !== '') {
             $term = Str::lower($term);
-            $like = '%' . $term . '%';
+            $like = '%'.$term.'%';
 
             $query->where(function ($builder) use ($like) {
                 $builder->whereRaw('LOWER(title) LIKE ?', [$like])
@@ -436,7 +436,7 @@ class PublicJoinController extends Controller
             return 'a brevissimo';
         }
 
-        return 'tra ' . $this->formatDuration($seconds);
+        return 'tra '.$this->formatDuration($seconds);
     }
 
     private function formatDuration(int $seconds): string

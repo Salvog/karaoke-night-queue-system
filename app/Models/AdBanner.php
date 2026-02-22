@@ -12,6 +12,7 @@ class AdBanner extends Model
 
     protected $fillable = [
         'venue_id',
+        'event_night_id',
         'title',
         'subtitle',
         'image_url',
@@ -26,5 +27,10 @@ class AdBanner extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
+    }
+
+    public function eventNight(): BelongsTo
+    {
+        return $this->belongsTo(EventNight::class);
     }
 }
