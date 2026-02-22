@@ -14,6 +14,9 @@ Route::post('/e/{eventCode}/request', [PublicJoinController::class, 'requestSong
     ->middleware('public.rate_limit')
     ->name('public.join.request');
 
+Route::get('/e/{eventCode}/my-requests', [PublicJoinController::class, 'myRequests'])
+    ->name('public.join.my-requests');
+
 Route::get('/e/{eventCode}/songs', [PublicJoinController::class, 'searchSongs'])
     ->name('public.join.songs');
 
