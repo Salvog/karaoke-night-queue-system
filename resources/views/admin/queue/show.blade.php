@@ -23,6 +23,7 @@
         $eventStatusLabel = \App\Models\EventNight::STATUS_LABELS[$eventNight->status] ?? $eventNight->status;
         $expectedEndAt = $playbackState?->expected_end_at;
         $cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60);
+        $publicScreenUrl = route('public.screen.show', $eventNight->code);
         $togglePlaybackMode = $isPlaying ? 'pause' : 'play';
         $adminStateUrl = route('admin.queue.state', $eventNight);
         $adminPollMs = max(1000, (int) config('public_screen.poll_seconds', 1) * 1000);
@@ -695,7 +696,7 @@
         <section class="queue-section queue-section--overview">
             <header class="queue-section-head">
                 <div class="queue-copy">
-                    <h2>Evento in gestione</h2>
+                    <h2>Evento in gestione (Screen pubblico: <a href="{{ $publicScreenUrl }}" target="_blank" rel="noopener">{{ $publicScreenUrl }}</a>)</h2>
                     <p>Panoramica rapida della serata attiva e delle informazioni principali.</p>
                 </div>
                 <span class="queue-count">{{ $eventStatusLabel }}</span>
@@ -704,6 +705,10 @@
                 <div>
                     <div class="label">Evento</div>
                     <div class="value">#{{ $eventNight->id }} · {{ $eventNight->venue?->name ?? 'N/D' }}</div>
+                </div>
+                <div>
+                    <div class="label">Codice evento</div>
+                    <div class="value">{{ $eventNight->code }}</div>
                 </div>
                 <div>
                     <div class="label">Inizio</div>

@@ -212,6 +212,18 @@
             font-size: 0.95rem;
         }
 
+        .event-link {
+            color: #c3f3ff;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 2px;
+            word-break: break-all;
+        }
+
+        .event-link:hover {
+            color: #e2fbff;
+        }
+
         .event-card--ongoing .event-meta-item .value {
             font-size: 1.08rem;
         }
@@ -398,6 +410,10 @@
                                 <div class="label">Inizio</div>
                                 <div class="value">{{ $formatDate($event->starts_at) }}</div>
                             </div>
+                            <div class="event-meta-item">
+                                <div class="label">Screen pubblico</div>
+                                <div class="value"><a class="event-link" href="{{ route('public.screen.show', $event->code) }}" target="_blank" rel="noopener">{{ route('public.screen.show', $event->code) }}</a></div>
+                            </div>
                         </div>
                         <div class="event-actions">
                             <a class="queue-monitor-button" href="{{ route('admin.queue.show', $event) }}" aria-label="Monitora serata" title="Monitora serata">
@@ -453,6 +469,14 @@
                                     <div class="label">Inizio</div>
                                     <div class="value">{{ $formatDate($event->starts_at) }}</div>
                                 </div>
+                                <div class="event-meta-item">
+                                    <div class="label">Codice evento</div>
+                                    <div class="value">{{ $event->code }}</div>
+                                </div>
+                                <div class="event-meta-item">
+                                    <div class="label">Screen pubblico</div>
+                                    <div class="value"><a class="event-link" href="{{ route('public.screen.show', $event->code) }}" target="_blank" rel="noopener">{{ route('public.screen.show', $event->code) }}</a></div>
+                                </div>
                             </div>
                             <div class="event-actions">
                                 <a class="icon-button queue" href="{{ route('admin.queue.show', $event) }}" aria-label="Apri coda" title="Apri coda">
@@ -496,6 +520,7 @@
                         <article class="event-card event-card--secondary">
                             <div class="event-main">
                                 <div>
+                                    <div class="event-subtitle">{{ $event->code }}</div>
                                     <div class="event-title">{{ $event->venue?->name ?? 'Location non definita' }}</div>
                                 </div>
                             </div>
@@ -503,6 +528,10 @@
                                 <div class="event-meta-item">
                                     <div class="label">Inizio</div>
                                     <div class="value">{{ $formatDate($event->starts_at) }}</div>
+                                </div>
+                                <div class="event-meta-item">
+                                    <div class="label">Screen pubblico</div>
+                                    <div class="value"><a class="event-link" href="{{ route('public.screen.show', $event->code) }}" target="_blank" rel="noopener">{{ route('public.screen.show', $event->code) }}</a></div>
                                 </div>
                             </div>
                             <div class="event-actions">
