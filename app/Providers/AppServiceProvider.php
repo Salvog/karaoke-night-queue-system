@@ -4,24 +4,27 @@ namespace App\Providers;
 
 use App\Models\AdminUser;
 use App\Models\EventNight;
-use App\Policies\EventNightPolicy;
 use App\Modules\PublicScreen\Realtime\NullRealtimePublisher;
 use App\Modules\PublicScreen\Realtime\RealtimePublisher;
 use App\Modules\PublicScreen\Realtime\SseRealtimePublisher;
 use App\Modules\PublicScreen\Realtime\SseStateStore;
 use App\Modules\Queue\Services\NullRealtimeBroadcaster;
 use App\Modules\Queue\Services\RealtimeBroadcasterInterface;
+use App\Policies\EventNightPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(RealtimeBroadcasterInterface::class, function () {
-            return new NullRealtimeBroadcaster();
+            return new NullRealtimeBroadcaster;
         });
 
         $this->app->singleton(SseStateStore::class, function ($app) {
@@ -33,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(RealtimePublisher::class, function ($app) {
             if (! $this->isPublicScreenRealtimeEnabled()) {
-                return new NullRealtimePublisher();
+                return new NullRealtimePublisher;
             }
 
             return $app->make(SseRealtimePublisher::class);
@@ -42,6 +45,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('admin-login', function (Request $request) {
+            $email = (string) $request->input('email', '');
+
+            return Limit::perMinute(5)->by(strtolower($email).'|'.$request->ip());
+        });
+
         Blueprint::macro('check', function (string $expression) {
             // Simplest cross-driver option: skip unsupported CHECK constraints in the schema builder.
             return $this;

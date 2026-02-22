@@ -13,9 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class QueueManualService
 {
-    public function __construct(private readonly RealtimePublisher $publisher)
-    {
-    }
+    public function __construct(private readonly RealtimePublisher $publisher) {}
 
     public function addParticipantRequest(EventNight $eventNight, string $displayName, int $songId): SongRequest
     {

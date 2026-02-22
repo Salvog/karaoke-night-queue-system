@@ -70,8 +70,8 @@ class AdminEventCrudTest extends TestCase
 
             $response->assertOk();
             $response->assertSee('name="request_cooldown_minutes"', false);
-            $response->assertSee('value="' . $frozenNow->copy()->setTime(19, 0)->format('Y-m-d\TH:i') . '"', false);
-            $response->assertSee('value="' . $frozenNow->copy()->addDay()->setTime(2, 0)->format('Y-m-d\TH:i') . '"', false);
+            $response->assertSee('value="'.$frozenNow->copy()->setTime(19, 0)->format('Y-m-d\TH:i').'"', false);
+            $response->assertSee('value="'.$frozenNow->copy()->addDay()->setTime(2, 0)->format('Y-m-d\TH:i').'"', false);
             $response->assertSee('name="break_seconds" min="0" value="40"', false);
             $response->assertSee('value="20"', false);
             $response->assertSee('value="active" selected', false);

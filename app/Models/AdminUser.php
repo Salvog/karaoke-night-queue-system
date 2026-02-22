@@ -12,6 +12,7 @@ class AdminUser extends Authenticatable
     use Notifiable;
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_STAFF = 'staff';
 
     public const ROLES = [

@@ -53,8 +53,7 @@ class AdminThemeController extends Controller
         EventNight $eventNight,
         LogAdminAction $logger,
         RealtimePublisher $publisher
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         $adminUser = $request->user('admin');
         Gate::forUser($adminUser)->authorize('manage-event-nights');
 
@@ -185,7 +184,7 @@ class AdminThemeController extends Controller
             return $this->resolvePublicDiskPath($path);
         }
 
-        return Str::startsWith($value, '/') ? $value : '/' . $value;
+        return Str::startsWith($value, '/') ? $value : '/'.$value;
     }
 
     private function resolvePublicDiskPath(string $path): string
@@ -220,10 +219,10 @@ class AdminThemeController extends Controller
             return $value;
         }
 
-        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
-        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#' . $parsed['fragment'] : '';
+        $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?'.$parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? '#'.$parsed['fragment'] : '';
 
-        return $path . $query . $fragment;
+        return $path.$query.$fragment;
     }
 
     private function appUrlHost(): ?string

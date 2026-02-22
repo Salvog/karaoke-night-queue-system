@@ -21,7 +21,7 @@ class RequestEtaServiceTest extends TestCase
     {
         $eventNight = $this->makeEventNight(['break_seconds' => 5]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(0, $service->calculateSeconds($eventNight, now()));
     }
@@ -39,7 +39,7 @@ class RequestEtaServiceTest extends TestCase
             'expected_end_at' => $now->copy()->addSeconds(120),
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(120, $service->calculateSeconds($eventNight, $now));
 
@@ -81,7 +81,7 @@ class RequestEtaServiceTest extends TestCase
             'position' => 2,
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(310, $service->calculateSeconds($eventNight, now()));
     }
@@ -130,7 +130,7 @@ class RequestEtaServiceTest extends TestCase
             'expected_end_at' => $now->copy()->addSeconds(90),
         ]);
 
-        $service = new RequestEtaService();
+        $service = new RequestEtaService;
 
         $this->assertSame(290, $service->calculateSeconds($eventNight, $now));
 
@@ -146,7 +146,7 @@ class RequestEtaServiceTest extends TestCase
 
         return EventNight::create(array_merge([
             'venue_id' => $venue->id,
-            'code' => 'EVENT' . random_int(1000, 9999),
+            'code' => 'EVENT'.random_int(1000, 9999),
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
             'status' => EventNight::STATUS_ACTIVE,

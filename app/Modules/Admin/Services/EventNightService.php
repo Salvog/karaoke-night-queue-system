@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 class EventNightService
 {
     private const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
     private const CODE_LENGTH = 6;
 
     public function generateCode(): string

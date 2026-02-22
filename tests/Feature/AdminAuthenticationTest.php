@@ -31,4 +31,19 @@ class AdminAuthenticationTest extends TestCase
         $logoutResponse->assertRedirect('/admin/login');
         $this->assertGuest('admin');
     }
+
+    public function test_admin_login_is_rate_limited_after_too_many_attempts(): void
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->post('/admin/login', [
+                'email' => 'admin@example.com',
+                'password' => 'wrong-password',
+            ])->assertSessionHasErrors('email');
+        }
+
+        $this->post('/admin/login', [
+            'email' => 'admin@example.com',
+            'password' => 'wrong-password',
+        ])->assertStatus(429);
+    }
 }

@@ -433,7 +433,7 @@ class DemoDataSeeder extends Seeder
             ],
             [
                 'key' => 'sara_perche_ti_amo',
-                'title' => "Sara Perche Ti Amo",
+                'title' => 'Sara Perche Ti Amo',
                 'artist' => 'Ricchi e Poveri',
                 'lyrics' => 'Che confusione sara perche ti amo...',
                 'duration_seconds' => 192,
@@ -555,8 +555,8 @@ class DemoDataSeeder extends Seeder
     ): Participant {
         return Participant::create([
             'event_night_id' => $event->id,
-            'device_cookie_id' => strtolower($event->code . '-' . $deviceSuffix),
-            'join_token_hash' => hash('sha256', Str::lower($event->code . '-' . $deviceSuffix . '-token')),
+            'device_cookie_id' => strtolower($event->code.'-'.$deviceSuffix),
+            'join_token_hash' => hash('sha256', Str::lower($event->code.'-'.$deviceSuffix.'-token')),
             'display_name' => $displayName,
             'pin_verified_at' => $pinVerifiedAt,
         ]);

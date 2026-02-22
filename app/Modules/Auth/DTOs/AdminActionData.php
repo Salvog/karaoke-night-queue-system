@@ -10,6 +10,5 @@ class AdminActionData
         public readonly ?string $subjectType = null,
         public readonly ?string $subjectId = null,
         public readonly array $metadata = [],
-    ) {
-    }
+    ) {}
 }

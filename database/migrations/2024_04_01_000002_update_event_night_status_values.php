@@ -3,7 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     private const STATUS_CHECK_CONSTRAINT = 'event_nights_status_check';
 
     public function up(): void

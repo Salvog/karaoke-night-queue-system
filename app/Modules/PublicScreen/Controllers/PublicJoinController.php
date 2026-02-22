@@ -9,9 +9,7 @@ use Illuminate\Http\Request;
 
 class PublicJoinController extends Controller
 {
-    public function __construct(private readonly ResolveJoinRequest $action)
-    {
-    }
+    public function __construct(private readonly ResolveJoinRequest $action) {}
 
     public function __invoke(Request $request, string $eventCode, string $joinToken): JsonResponse
     {

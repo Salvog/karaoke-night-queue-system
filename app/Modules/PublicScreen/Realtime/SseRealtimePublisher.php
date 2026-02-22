@@ -10,8 +10,7 @@ class SseRealtimePublisher implements RealtimePublisher
     public function __construct(
         private readonly SseStateStore $store,
         private readonly PublicScreenService $service
-    ) {
-    }
+    ) {}
 
     public function publishPlaybackUpdated(EventNight $eventNight): void
     {

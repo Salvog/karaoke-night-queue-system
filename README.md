@@ -145,3 +145,23 @@ php artisan queue:advance
 ```
 
 Optional scheduler wiring is still available in `app/Console/Kernel.php` if you want proactive background advancement even without connected clients.
+
+## Security hardening
+- Login admin protetto da rate limiting (`throttle:admin-login`, 5 tentativi/min per email+IP).
+- Header di sicurezza base applicati su tutte le route web:
+  - `X-Frame-Options: SAMEORIGIN`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+
+## Production checklist
+```bash
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan test
+```
+
+Per Aruba/hosting condiviso, vedi `DEPLOY_ARUBA.md`.
