@@ -16,6 +16,10 @@ class QueueAutoAdvanceService
 
     public function ensureAdvanced(EventNight $eventNight, ?Carbon $now = null): void
     {
+        if ($eventNight->status !== EventNight::STATUS_ACTIVE) {
+            return;
+        }
+
         $now = $now ?? now();
         $lockKey = $this->lockKey($eventNight);
 
