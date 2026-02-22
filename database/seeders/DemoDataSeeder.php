@@ -30,9 +30,13 @@ class DemoDataSeeder extends Seeder
         $this->seedAdminUsers();
         $venues = $this->seedVenues();
         $themes = $this->seedThemes($venues);
-        $banners = $this->seedBanners($venues);
         $songs = $this->seedSongs();
-        $events = $this->seedEvents($venues, $themes, $banners, $now);
+        $events = $this->seedEvents($venues, $themes, $now);
+        $banners = $this->seedBanners($events);
+
+        $events['live']->update(['ad_banner_id' => $banners['happy_hour']->id]);
+        $events['upcoming']->update(['ad_banner_id' => $banners['duet']->id]);
+        $events['closed']->update(['ad_banner_id' => $banners['merch']->id]);
 
         foreach ($events as $event) {
             $this->resetEventRuntimeData($event);
@@ -231,35 +235,38 @@ class DemoDataSeeder extends Seeder
         ];
     }
 
-    private function seedBanners(array $venues): array
+    private function seedBanners(array $events): array
     {
         return [
             'happy_hour' => AdBanner::updateOrCreate(
                 [
-                    'venue_id' => $venues['rome']->id,
+                    'event_night_id' => $events['live']->id,
                     'title' => 'Happy Hour Specials',
                 ],
                 [
+                    'venue_id' => $events['live']->venue_id,
                     'image_url' => 'https://example.com/banners/happy-hour.png',
                     'is_active' => true,
                 ]
             ),
             'merch' => AdBanner::updateOrCreate(
                 [
-                    'venue_id' => $venues['rome']->id,
+                    'event_night_id' => $events['closed']->id,
                     'title' => 'Limited Merch Drop',
                 ],
                 [
+                    'venue_id' => $events['closed']->venue_id,
                     'image_url' => 'https://example.com/banners/merch.png',
                     'is_active' => false,
                 ]
             ),
             'duet' => AdBanner::updateOrCreate(
                 [
-                    'venue_id' => $venues['milan']->id,
+                    'event_night_id' => $events['upcoming']->id,
                     'title' => 'Duet Challenge',
                 ],
                 [
+                    'venue_id' => $events['upcoming']->venue_id,
                     'image_url' => 'https://example.com/banners/duet-challenge.png',
                     'is_active' => true,
                 ]
@@ -474,7 +481,7 @@ class DemoDataSeeder extends Seeder
         return $seededSongs;
     }
 
-    private function seedEvents(array $venues, array $themes, array $banners, \Illuminate\Support\Carbon $now): array
+    private function seedEvents(array $venues, array $themes, \Illuminate\Support\Carbon $now): array
     {
         $upcomingStart = $now->copy()->addDay()->setTime(19, 0);
 
@@ -484,7 +491,6 @@ class DemoDataSeeder extends Seeder
                 [
                     'venue_id' => $venues['rome']->id,
                     'theme_id' => $themes['neon']->id,
-                    'ad_banner_id' => $banners['happy_hour']->id,
                     'starts_at' => $now->copy()->subHours(2),
                     'ends_at' => $now->copy()->addHours(4),
                     'break_seconds' => 40,
@@ -503,7 +509,6 @@ class DemoDataSeeder extends Seeder
                 [
                     'venue_id' => $venues['milan']->id,
                     'theme_id' => $themes['sunset']->id,
-                    'ad_banner_id' => $banners['duet']->id,
                     'starts_at' => $upcomingStart,
                     'ends_at' => $upcomingStart->copy()->addDay()->setTime(2, 0),
                     'break_seconds' => 35,
@@ -521,7 +526,6 @@ class DemoDataSeeder extends Seeder
                 [
                     'venue_id' => $venues['rome']->id,
                     'theme_id' => $themes['neon']->id,
-                    'ad_banner_id' => $banners['merch']->id,
                     'starts_at' => $now->copy()->subDays(2)->setTime(19, 0),
                     'ends_at' => $now->copy()->subDay()->setTime(2, 0),
                     'break_seconds' => 45,

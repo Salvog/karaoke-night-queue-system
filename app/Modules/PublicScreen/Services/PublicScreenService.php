@@ -26,7 +26,7 @@ class PublicScreenService
 
     public function buildState(EventNight $eventNight): array
     {
-        $eventNight->loadMissing(['venue', 'theme', 'adBanner']);
+        $eventNight->loadMissing(['venue', 'theme']);
         $queueSnapshot = $this->buildQueueSnapshot($eventNight);
 
         return [
@@ -126,12 +126,20 @@ class PublicScreenService
 
     public function buildThemePayload(EventNight $eventNight): array
     {
-        $eventNight->loadMissing(['theme', 'adBanner']);
-        $sponsorBanners = AdBanner::where('venue_id', $eventNight->venue_id)
+        $eventNight->loadMissing(['theme']);
+
+        $selectedBanner = null;
+        if ($eventNight->ad_banner_id !== null) {
+            $selectedBanner = AdBanner::where('id', $eventNight->ad_banner_id)
+                ->where('event_night_id', $eventNight->id)
+                ->first();
+        }
+
+        $sponsorBanners = AdBanner::where('event_night_id', $eventNight->id)
             ->where('is_active', true)
             ->orderBy('title')
             ->get()
-            ->sortByDesc(fn (AdBanner $banner) => $banner->id === $eventNight->ad_banner_id)
+            ->sortByDesc(fn (AdBanner $banner) => $banner->id === $selectedBanner?->id)
             ->values();
 
         return [
@@ -139,12 +147,12 @@ class PublicScreenService
                 'name' => $eventNight->theme->name,
                 'config' => $eventNight->theme->config,
             ] : null,
-            'banner' => $eventNight->adBanner ? [
-                'title' => $eventNight->adBanner->title,
-                'subtitle' => $eventNight->adBanner->subtitle,
-                'image_url' => $this->resolveMediaUrl($eventNight->adBanner->image_url),
-                'logo_url' => $this->resolveMediaUrl($eventNight->adBanner->logo_url),
-                'is_active' => (bool) $eventNight->adBanner->is_active,
+            'banner' => $selectedBanner ? [
+                'title' => $selectedBanner->title,
+                'subtitle' => $selectedBanner->subtitle,
+                'image_url' => $this->resolveMediaUrl($selectedBanner->image_url),
+                'logo_url' => $this->resolveMediaUrl($selectedBanner->logo_url),
+                'is_active' => (bool) $selectedBanner->is_active,
             ] : null,
             'sponsor_banners' => $sponsorBanners->map(fn (AdBanner $banner) => [
                 'id' => $banner->id,

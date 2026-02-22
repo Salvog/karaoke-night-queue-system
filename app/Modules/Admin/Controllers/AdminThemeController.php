@@ -26,7 +26,7 @@ class AdminThemeController extends Controller
 
         $eventNight->load('venue');
         $themes = Theme::where('venue_id', $eventNight->venue_id)->orderBy('name')->get();
-        $ads = AdBanner::where('venue_id', $eventNight->venue_id)
+        $ads = AdBanner::where('event_night_id', $eventNight->id)
             ->orderBy('title')
             ->get()
             ->each(function (AdBanner $ad): void {
@@ -67,7 +67,7 @@ class AdminThemeController extends Controller
             'ad_banner_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('ad_banners', 'id')->where('venue_id', $eventNight->venue_id),
+                Rule::exists('ad_banners', 'id')->where('event_night_id', $eventNight->id),
             ],
             'background_image' => ['nullable', 'image', 'max:5120'],
             'remove_background_image' => ['nullable', 'boolean'],

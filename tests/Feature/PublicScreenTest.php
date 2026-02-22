@@ -32,19 +32,9 @@ class PublicScreenTest extends TestCase
             'config' => ['primaryColor' => '#ff00ff'],
         ]);
 
-        $banner = AdBanner::create([
-            'venue_id' => $venue->id,
-            'title' => 'Late Night Happy Hour',
-            'subtitle' => 'Promo drink fino a mezzanotte',
-            'image_url' => 'https://example.com/banner.png',
-            'logo_url' => 'https://example.com/banner-logo.png',
-            'is_active' => true,
-        ]);
-
         $eventNight = EventNight::create([
             'venue_id' => $venue->id,
             'theme_id' => $theme->id,
-            'ad_banner_id' => $banner->id,
             'code' => 'SCREEN1',
             'break_seconds' => 0,
             'request_cooldown_seconds' => 0,
@@ -53,6 +43,18 @@ class PublicScreenTest extends TestCase
             'brand_logo_path' => 'event-branding/screen1-logo.png',
             'overlay_texts' => ['Welcome singers!'],
         ]);
+
+        $banner = AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventNight->id,
+            'title' => 'Late Night Happy Hour',
+            'subtitle' => 'Promo drink fino a mezzanotte',
+            'image_url' => 'https://example.com/banner.png',
+            'logo_url' => 'https://example.com/banner-logo.png',
+            'is_active' => true,
+        ]);
+
+        $eventNight->update(['ad_banner_id' => $banner->id]);
 
         $participant = Participant::create([
             'event_night_id' => $eventNight->id,
@@ -577,11 +579,21 @@ class PublicScreenTest extends TestCase
             'timezone' => 'UTC',
         ]);
 
-        $path = "ad-banners/{$venue->id}/sponsor.jpg";
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN5',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $path = "ad-banners/{$eventNight->id}/sponsor.jpg";
         Storage::disk('public')->put($path, 'fake-image');
 
         $banner = AdBanner::create([
             'venue_id' => $venue->id,
+            'event_night_id' => $eventNight->id,
             'title' => 'Sponsor locale',
             'subtitle' => 'Promo',
             'image_url' => "http://localhost:8000/storage/{$path}",
@@ -589,15 +601,7 @@ class PublicScreenTest extends TestCase
             'is_active' => true,
         ]);
 
-        $eventNight = EventNight::create([
-            'venue_id' => $venue->id,
-            'ad_banner_id' => $banner->id,
-            'code' => 'SCREEN5',
-            'break_seconds' => 0,
-            'request_cooldown_seconds' => 0,
-            'status' => EventNight::STATUS_ACTIVE,
-            'starts_at' => now(),
-        ]);
+        $eventNight->update(['ad_banner_id' => $banner->id]);
 
         $response = $this->getJson("/screen/{$eventNight->code}/state");
 
@@ -606,6 +610,57 @@ class PublicScreenTest extends TestCase
         $response->assertJsonPath('theme.banner.logo_url', "/media/{$path}");
         $response->assertJsonPath('theme.sponsor_banners.0.image_url', "/media/{$path}");
         $response->assertJsonPath('theme.sponsor_banners.0.logo_url', "/media/{$path}");
+    }
+
+    public function test_public_screen_state_does_not_include_banners_from_other_events_with_same_venue(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventA = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN6A',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $eventB = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN6B',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->addHour(),
+        ]);
+
+        AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventA->id,
+            'title' => 'Sponsor Event A',
+            'image_url' => 'https://example.com/a.png',
+            'is_active' => true,
+        ]);
+
+        $bannerB = AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventB->id,
+            'title' => 'Sponsor Event B',
+            'image_url' => 'https://example.com/b.png',
+            'is_active' => true,
+        ]);
+
+        $eventB->update(['ad_banner_id' => $bannerB->id]);
+
+        $response = $this->getJson("/screen/{$eventB->code}/state");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('theme.banner.title', 'Sponsor Event B');
+        $this->assertSame('Sponsor Event B', data_get($response->json(), 'theme.sponsor_banners.0.title'));
+        $this->assertSame(1, count(data_get($response->json(), 'theme.sponsor_banners', [])));
     }
 
     public function test_public_screen_serializes_realtime_configuration_in_view(): void

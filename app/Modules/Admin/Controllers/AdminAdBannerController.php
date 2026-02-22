@@ -28,13 +28,14 @@ class AdminAdBannerController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $path = $request->file('image')->store("ad-banners/{$eventNight->venue_id}", 'public');
+        $path = $request->file('image')->store("ad-banners/{$eventNight->id}", 'public');
         $logoPath = $request->hasFile('logo')
-            ? $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public')
+            ? $request->file('logo')->store("ad-banners/{$eventNight->id}", 'public')
             : null;
 
         $banner = AdBanner::create([
             'venue_id' => $eventNight->venue_id,
+            'event_night_id' => $eventNight->id,
             'title' => $data['title'],
             'subtitle' => $this->normalizeOptionalText($data['subtitle'] ?? null),
             'image_url' => $this->resolvePublicDiskPath($path),
@@ -57,7 +58,7 @@ class AdminAdBannerController extends Controller
         Gate::forUser($adminUser)->authorize('manage-event-nights');
         abort_unless($adminUser->isAdmin(), 403);
 
-        if ($adBanner->venue_id !== $eventNight->venue_id) {
+        if ($adBanner->event_night_id !== $eventNight->id) {
             abort(404);
         }
 
@@ -72,13 +73,13 @@ class AdminAdBannerController extends Controller
 
         if ($request->hasFile('image')) {
             $this->deletePublicAsset($adBanner->image_url);
-            $path = $request->file('image')->store("ad-banners/{$eventNight->venue_id}", 'public');
+            $path = $request->file('image')->store("ad-banners/{$eventNight->id}", 'public');
             $adBanner->image_url = $this->resolvePublicDiskPath($path);
         }
 
         if ($request->hasFile('logo')) {
             $this->deletePublicAsset($adBanner->logo_url);
-            $logoPath = $request->file('logo')->store("ad-banners/{$eventNight->venue_id}", 'public');
+            $logoPath = $request->file('logo')->store("ad-banners/{$eventNight->id}", 'public');
             $adBanner->logo_url = $this->resolvePublicDiskPath($logoPath);
         } elseif ($request->boolean('remove_logo')) {
             $this->deletePublicAsset($adBanner->logo_url);
@@ -106,7 +107,7 @@ class AdminAdBannerController extends Controller
         Gate::forUser($adminUser)->authorize('manage-event-nights');
         abort_unless($adminUser->isAdmin(), 403);
 
-        if ($adBanner->venue_id !== $eventNight->venue_id) {
+        if ($adBanner->event_night_id !== $eventNight->id) {
             abort(404);
         }
 
@@ -131,12 +132,20 @@ class AdminAdBannerController extends Controller
 
     private function publishBannerUpdates(AdBanner $adBanner, RealtimePublisher $publisher): void
     {
+        if ($adBanner->event_night_id !== null) {
+            $eventNight = EventNight::find($adBanner->event_night_id);
+            if ($eventNight && $eventNight->status === EventNight::STATUS_ACTIVE) {
+                $publisher->publishThemeUpdated($eventNight);
+            }
+
+            return;
+        }
+
+        // Backward compatibility for legacy banners without event ownership.
         EventNight::where('venue_id', $adBanner->venue_id)
             ->where('status', EventNight::STATUS_ACTIVE)
             ->get()
-            ->each(
-            fn (EventNight $eventNight) => $publisher->publishThemeUpdated($eventNight)
-        );
+            ->each(fn (EventNight $eventNight) => $publisher->publishThemeUpdated($eventNight));
     }
 
     private function normalizeOptionalText(?string $value): ?string

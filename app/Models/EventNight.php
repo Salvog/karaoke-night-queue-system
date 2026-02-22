@@ -70,6 +70,11 @@ class EventNight extends Model
         return $this->belongsTo(AdBanner::class);
     }
 
+    public function adBanners(): HasMany
+    {
+        return $this->hasMany(AdBanner::class);
+    }
+
     public function participants(): HasMany
     {
         return $this->hasMany(Participant::class);

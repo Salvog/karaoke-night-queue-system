@@ -105,15 +105,6 @@ class AdminThemeAssetsTest extends TestCase
             'timezone' => 'UTC',
         ]);
 
-        $backgroundPath = "event-themes/{$venue->id}/background.jpg";
-        $logoPath = "event-branding/{$venue->id}/logo.png";
-        $bannerImagePath = "ad-banners/{$venue->id}/sponsor.jpg";
-        $bannerLogoPath = "ad-banners/{$venue->id}/sponsor-logo.png";
-        Storage::disk('public')->put($backgroundPath, 'bg');
-        Storage::disk('public')->put($logoPath, 'logo');
-        Storage::disk('public')->put($bannerImagePath, 'banner');
-        Storage::disk('public')->put($bannerLogoPath, 'banner-logo');
-
         $eventNight = EventNight::create([
             'venue_id' => $venue->id,
             'code' => 'THEME3',
@@ -121,12 +112,25 @@ class AdminThemeAssetsTest extends TestCase
             'request_cooldown_seconds' => 0,
             'status' => EventNight::STATUS_ACTIVE,
             'starts_at' => now(),
+        ]);
+
+        $backgroundPath = "event-themes/{$eventNight->id}/background.jpg";
+        $logoPath = "event-branding/{$eventNight->id}/logo.png";
+        $bannerImagePath = "ad-banners/{$eventNight->id}/sponsor.jpg";
+        $bannerLogoPath = "ad-banners/{$eventNight->id}/sponsor-logo.png";
+        Storage::disk('public')->put($backgroundPath, 'bg');
+        Storage::disk('public')->put($logoPath, 'logo');
+        Storage::disk('public')->put($bannerImagePath, 'banner');
+        Storage::disk('public')->put($bannerLogoPath, 'banner-logo');
+
+        $eventNight->update([
             'background_image_path' => $backgroundPath,
             'brand_logo_path' => $logoPath,
         ]);
 
         AdBanner::create([
             'venue_id' => $venue->id,
+            'event_night_id' => $eventNight->id,
             'title' => 'Sponsor',
             'subtitle' => 'Promo',
             'image_url' => "http://localhost:8000/storage/{$bannerImagePath}",
@@ -179,8 +183,116 @@ class AdminThemeAssetsTest extends TestCase
         $response->assertStatus(302);
 
         $banner = AdBanner::query()->firstOrFail();
-        $this->assertStringStartsWith('/media/ad-banners/'.$venue->id.'/', $banner->image_url);
-        $this->assertStringStartsWith('/media/ad-banners/'.$venue->id.'/', (string) $banner->logo_url);
+        $this->assertStringStartsWith('/media/ad-banners/'.$eventNight->id.'/', $banner->image_url);
+        $this->assertStringStartsWith('/media/ad-banners/'.$eventNight->id.'/', (string) $banner->logo_url);
+        $this->assertSame($eventNight->id, $banner->event_night_id);
+    }
+
+    public function test_admin_theme_page_hides_banners_from_other_events_on_same_venue(): void
+    {
+        Storage::fake('public');
+
+        $admin = AdminUser::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => 'password',
+            'role' => AdminUser::ROLE_ADMIN,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Hall',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventA = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME5A',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $eventB = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME5B',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->addHour(),
+        ]);
+
+        AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventA->id,
+            'title' => 'Sponsor Evento A',
+            'image_url' => '/media/ad-banners/demo-a.jpg',
+            'is_active' => true,
+        ]);
+
+        AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventB->id,
+            'title' => 'Sponsor Evento B',
+            'image_url' => '/media/ad-banners/demo-b.jpg',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->get("/admin/events/{$eventB->id}/theme-ads");
+
+        $response->assertOk();
+        $response->assertSee('Sponsor Evento B');
+        $response->assertDontSee('Sponsor Evento A');
+    }
+
+    public function test_admin_cannot_assign_banner_from_other_event_on_same_venue(): void
+    {
+        Storage::fake('public');
+
+        $admin = AdminUser::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => 'password',
+            'role' => AdminUser::ROLE_ADMIN,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Main Hall',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventA = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME6A',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $eventB = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'THEME6B',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->addHour(),
+        ]);
+
+        $bannerA = AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventA->id,
+            'title' => 'Sponsor Evento A',
+            'image_url' => '/media/ad-banners/demo-a.jpg',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventB->id}/theme-ads", [
+            'ad_banner_id' => $bannerA->id,
+        ]);
+
+        $response->assertSessionHasErrors('ad_banner_id');
+        $this->assertNull($eventB->fresh()->ad_banner_id);
     }
 
     private function fakeImageUpload(string $filename): UploadedFile
