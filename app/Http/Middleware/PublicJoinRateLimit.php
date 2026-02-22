@@ -43,7 +43,7 @@ class PublicJoinRateLimit
 
     private function tooManyAttemptsResponse(Request $request): Response
     {
-        $message = 'Too many requests. Please slow down.';
+        $message = 'Troppe richieste in poco tempo. Attendi qualche secondo e riprova.';
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 429);

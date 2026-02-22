@@ -23,7 +23,7 @@ class PublicJoinService
         $eventNight = EventNight::where('code', $eventCode)->firstOrFail();
 
         if ($eventNight->status !== EventNight::STATUS_ACTIVE) {
-            throw new AuthorizationException('Event is not active.');
+            throw new AuthorizationException('La serata non è attiva.');
         }
 
         return $eventNight;
@@ -62,7 +62,7 @@ class PublicJoinService
 
         if (! $pin || $pin !== $eventNight->join_pin) {
             throw ValidationException::withMessages([
-                'pin' => 'The provided PIN is invalid.',
+                'pin' => 'PIN non valido. Controlla e riprova.',
             ]);
         }
     }
@@ -84,10 +84,16 @@ class PublicJoinService
         EventNight $eventNight,
         Participant $participant,
         string $joinToken,
-        int $songId
+        int $songId,
+        string $displayName
     ): SongRequest {
         $this->assertJoinToken($participant, $joinToken);
         $this->assertPinVerified($eventNight, $participant);
+
+        $normalizedDisplayName = $this->normalizeDisplayName($displayName);
+        $participant->forceFill([
+            'display_name' => $normalizedDisplayName,
+        ])->save();
 
         $song = Song::findOrFail($songId);
 
@@ -135,7 +141,7 @@ class PublicJoinService
     {
         if (! hash_equals($participant->join_token_hash, $this->hashToken($joinToken))) {
             throw ValidationException::withMessages([
-                'join_token' => 'Join token is invalid.',
+                'join_token' => 'Sessione non valida. Ricarica la pagina e riprova.',
             ]);
         }
     }
@@ -148,7 +154,7 @@ class PublicJoinService
 
         if (! $participant->pin_verified_at) {
             throw ValidationException::withMessages([
-                'pin' => 'PIN activation required.',
+                'pin' => 'Per prenotare devi prima attivarti con il PIN.',
             ]);
         }
     }
@@ -162,7 +168,7 @@ class PublicJoinService
 
         if ($alreadyRequested) {
             throw ValidationException::withMessages([
-                'song_id' => 'You already requested this song for tonight.',
+                'song_id' => 'Hai già prenotato questo brano per questa serata.',
             ]);
         }
     }
@@ -190,10 +196,23 @@ class PublicJoinService
 
         $remaining = $eventNight->request_cooldown_seconds - $secondsSinceLast;
         $remainingMinutes = (int) ceil($remaining / 60);
-        $minuteLabel = $remainingMinutes === 1 ? 'minute' : 'minutes';
+        $minuteLabel = $remainingMinutes === 1 ? 'minuto' : 'minuti';
 
         throw ValidationException::withMessages([
-            'cooldown' => "Please wait {$remainingMinutes} {$minuteLabel} before requesting another song.",
+            'cooldown' => "Attendi {$remainingMinutes} {$minuteLabel} prima di prenotare un altro brano.",
         ]);
+    }
+
+    private function normalizeDisplayName(string $displayName): string
+    {
+        $normalized = trim(preg_replace('/\s+/', ' ', $displayName) ?? '');
+
+        if ($normalized === '') {
+            throw ValidationException::withMessages([
+                'display_name' => 'Inserisci il tuo nome prima di prenotare.',
+            ]);
+        }
+
+        return $normalized;
     }
 }

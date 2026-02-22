@@ -590,7 +590,7 @@
         }
 
         .queue-title {
-            margin: 4px 12px 6px;
+            margin: 1px 12px 2px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -598,12 +598,12 @@
             letter-spacing: 0.04em;
             text-transform: uppercase;
             color: #d6edff;
-            font-size: 1.28rem;
+            font-size: 1.2rem;
             line-height: 1;
         }
 
         .recent-title {
-            margin: 0 12px 4px;
+            margin: 0 12px 2px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -611,7 +611,7 @@
             letter-spacing: 0.04em;
             text-transform: uppercase;
             color: #d6edff;
-            font-size: 1.28rem;
+            font-size: 1.2rem;
             line-height: 1;
         }
 
@@ -619,7 +619,7 @@
         .recent-list {
             list-style: none;
             margin: 0;
-            padding: 0 11px 8px;
+            padding: 0 10px 4px;
             display: grid;
             gap: 0;
             align-content: start;
@@ -633,7 +633,7 @@
             display: grid;
             grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1.45fr);
             align-items: center;
-            min-height: 58px;
+            min-height: 48px;
             border: 1px solid rgba(84, 126, 182, 0.35);
             border-top: 0;
             background: rgba(12, 23, 52, 0.76);
@@ -657,7 +657,7 @@
         .song-row-num,
         .song-row-singer,
         .song-row-song {
-            padding: 11px 10px;
+            padding: 5px 9px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -668,20 +668,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             font-weight: 800;
             color: #d7e5ff;
             border-right: 1px solid rgba(84, 126, 182, 0.3);
         }
 
         .song-row-singer {
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             font-weight: 800;
             color: #f1f6ff;
         }
 
         .song-row-song {
-            font-size: 1.08rem;
+            font-size: 1.01rem;
             font-weight: 700;
             color: #eaf1ff;
         }
@@ -692,9 +692,9 @@
 
         .song-row-empty-text {
             grid-column: 1 / -1;
-            padding: 12px 11px;
+            padding: 6px 10px;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.94rem;
             color: #dce8ff;
         }
 
