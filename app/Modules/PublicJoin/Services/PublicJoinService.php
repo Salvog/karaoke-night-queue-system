@@ -14,9 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class PublicJoinService
 {
-    public function __construct(private readonly RealtimePublisher $publisher)
-    {
-    }
+    public function __construct(private readonly RealtimePublisher $publisher) {}
 
     public function findLiveEvent(string $eventCode): EventNight
     {
@@ -98,6 +96,11 @@ class PublicJoinService
         $song = Song::findOrFail($songId);
 
         $songRequest = DB::transaction(function () use ($eventNight, $participant, $song) {
+            EventNight::query()
+                ->whereKey($eventNight->id)
+                ->lockForUpdate()
+                ->first();
+
             $this->enforceCooldown($eventNight, $participant);
             $this->enforceUniqueSong($eventNight, $participant, $song);
 

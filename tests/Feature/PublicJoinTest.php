@@ -434,6 +434,98 @@ class PublicJoinTest extends TestCase
         $this->assertSame(1, SongRequest::count());
     }
 
+    public function test_songs_endpoint_uses_read_rate_limit_scope(): void
+    {
+        config([
+            'public_join.rate_limit_read_per_ip' => 1,
+            'public_join.rate_limit_read_per_participant' => 10,
+            'public_join.rate_limit_read_decay_seconds' => 60,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT8',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        Song::create([
+            'title' => 'Read Rate Song',
+            'artist' => 'Artist',
+            'duration_seconds' => 180,
+        ]);
+
+        $songsFirst = $this->getJson("/e/{$eventNight->code}/songs");
+        $songsFirst->assertOk();
+
+        $songsSecond = $this->getJson("/e/{$eventNight->code}/songs");
+        $songsSecond->assertStatus(429);
+    }
+
+    public function test_my_requests_endpoint_uses_read_rate_limit_scope_by_ip(): void
+    {
+        config([
+            'public_join.rate_limit_read_per_ip' => 1,
+            'public_join.rate_limit_read_per_participant' => 10,
+            'public_join.rate_limit_read_decay_seconds' => 60,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT9',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $song = Song::create([
+            'title' => 'Read Rate Song',
+            'artist' => 'Artist',
+            'duration_seconds' => 180,
+        ]);
+
+        $joinToken = 'join-token-read-rate';
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-read-rate',
+            'join_token_hash' => hash('sha256', $joinToken),
+            'display_name' => 'Paolo',
+        ]);
+
+        SongRequest::create([
+            'event_night_id' => $eventNight->id,
+            'participant_id' => $participant->id,
+            'song_id' => $song->id,
+            'status' => SongRequest::STATUS_QUEUED,
+            'position' => 1,
+        ]);
+
+        $first = $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->getJson("/e/{$eventNight->code}/my-requests?join_token={$joinToken}");
+        $first->assertOk();
+
+        $second = $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->getJson("/e/{$eventNight->code}/my-requests?join_token={$joinToken}");
+        $second->assertStatus(429);
+    }
+
     public function test_my_requests_endpoint_returns_personal_queue_data(): void
     {
         $venue = Venue::create([
