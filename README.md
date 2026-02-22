@@ -96,6 +96,7 @@ composer run pint
 ## Routing
 - Admin area routes: `routes/admin.php` (mounted under `/admin` with session auth middleware).
 - Public area routes: `routes/public.php` (mounted under `/public`, includes the public landing at `/public`).
+  `/public` redirects automatically to the current event when one is `active` and already started (`starts_at <= now()`); otherwise it shows the event-code entry page.
 - Public join flow: `routes/public-join.php` (landing at `/e/{eventCode}` plus activate/request POST endpoints).
 - Public screen: `routes/public-screen.php` (screen at `/screen/{eventCode}`, SSE stream at `/screen/{eventCode}/stream`).
 - Admin queue live snapshot: `GET /admin/events/{eventNight}/queue/state` (auth required).
@@ -114,11 +115,14 @@ composer run pint
 
 ## Public join flow
 - Landing (`GET /e/{eventCode}`) issues a device cookie and a join token (stored client-side).
+- Booking requires `display_name` (2-80 chars), persisted for the participant and shown on the public screen.
 - Optional PIN activation uses `event_nights.join_pin`.
 - Song requests enforce per-participant cooldown via `event_nights.request_cooldown_seconds`.
 - Cooldown messaging for participants is shown in minutes.
 - Song search (`GET /e/{eventCode}/songs`) returns paginated JSON filtered by title/artist.
 - ETA lookup (`GET /e/{eventCode}/eta`) returns JSON with estimated wait time before a new request starts.
+- Personal queue status (`GET /e/{eventCode}/my-requests`) returns participant-specific queue/history data used by the booking UI.
+- The booking UI includes a dedicated "Le tue ultime prenotazioni" panel that shows only the latest 3 personal requests with status/timeline info.
 
 ## Public screen
 - Screen (`GET /screen/{eventCode}`) shows now playing, compact next/recent queue lists, join details, join QR code, global manager branding, ticker, and sponsor cards.

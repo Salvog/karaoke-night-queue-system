@@ -209,9 +209,9 @@
 
         .layout-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
             gap: 14px;
-            align-items: start;
+            align-items: stretch;
         }
 
         .card {
@@ -222,6 +222,53 @@
             backdrop-filter: blur(7px);
             overflow: hidden;
             min-width: 0;
+        }
+
+        .booking-card {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .my-requests-card {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .songs-card {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            height: 100%;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            border-color: rgba(255, 255, 255, 0.2);
+            background:
+                radial-gradient(circle at 100% -26%, rgba(255, 255, 255, 0.08), transparent 52%),
+                linear-gradient(155deg, rgba(28, 31, 63, 0.72), rgba(20, 18, 40, 0.66));
+        }
+
+        .card--booking-focus {
+            border-color: rgba(42, 216, 255, 0.56);
+            background:
+                radial-gradient(circle at 100% -24%, rgba(42, 216, 255, 0.3), transparent 54%),
+                linear-gradient(155deg, rgba(16, 43, 76, 0.8), rgba(14, 24, 49, 0.82));
+            box-shadow:
+                0 18px 32px rgba(4, 10, 30, 0.46),
+                0 0 0 1px rgba(42, 216, 255, 0.2),
+                0 0 36px rgba(42, 216, 255, 0.24);
+        }
+
+        .card--booking-focus .card-header {
+            border-bottom-color: rgba(42, 216, 255, 0.26);
+        }
+
+        .card--booking-focus .card-title {
+            color: #b8f4ff;
+            text-shadow: 0 0 10px rgba(42, 216, 255, 0.36), 0 0 22px rgba(42, 216, 255, 0.22);
+            letter-spacing: 0.02em;
+        }
+
+        .card--booking-focus .card-subtitle {
+            color: rgba(219, 249, 255, 0.86);
         }
 
         .card-header {
@@ -370,18 +417,19 @@
 
         .song-results {
             display: grid;
-            gap: 10px;
+            grid-template-columns: 1fr;
+            gap: 0;
         }
 
         .song-result {
-            border-radius: var(--radius-sm);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(6, 12, 24, 0.68);
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            border: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            background: transparent;
+            padding: 8px 10px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
+            align-items: center;
         }
 
         .song-main {
@@ -392,7 +440,7 @@
 
         .song-title {
             margin: 0;
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #ecf6ff;
             line-height: 1.25;
             overflow-wrap: anywhere;
@@ -401,22 +449,21 @@
         .song-artist {
             margin: 0;
             color: #b8d7f5;
-            font-size: 0.88rem;
+            font-size: 0.78rem;
+            line-height: 1.28;
             overflow-wrap: anywhere;
-        }
-
-        .song-duration {
-            margin: 0;
-            color: #9dc2e8;
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
         }
 
         .song-request-form {
             margin: 0;
-            flex-shrink: 0;
+        }
+
+        .song-request-form .button {
+            width: auto;
+            min-width: 92px;
+            padding-top: 7px;
+            padding-bottom: 7px;
+            font-size: 0.82rem;
         }
 
         .pagination {
@@ -563,9 +610,64 @@
             font-weight: 500;
         }
 
+        .songs-card .card-header {
+            border-bottom-color: rgba(255, 255, 255, 0.14);
+        }
+
+        .songs-card .card-body {
+            gap: 10px;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            min-height: 0;
+        }
+
+        .songs-card .song-results {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            background: rgba(8, 16, 36, 0.58);
+            padding: 0;
+            overflow: auto;
+            align-content: start;
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        .songs-card .song-result {
+            border-bottom-color: rgba(255, 255, 255, 0.11);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 9px 10px;
+        }
+
+        .songs-card .song-result:last-child {
+            border-bottom: 0;
+        }
+
+        .songs-card .song-result:nth-child(even) {
+            background: rgba(255, 255, 255, 0.055);
+        }
+
+        .songs-card .song-result:hover {
+            background: rgba(42, 216, 255, 0.12);
+        }
+
         @media (max-width: 980px) {
             .layout-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .booking-card,
+            .my-requests-card,
+            .songs-card {
+                grid-column: auto;
+                grid-row: auto;
+                height: auto;
+            }
+
+            .songs-card {
+                display: block;
+            }
+
+            .songs-card .song-results {
+                max-height: none;
             }
         }
 
@@ -595,8 +697,12 @@
                 padding-right: 11px;
             }
 
+            .song-results {
+                grid-template-columns: 1fr;
+            }
+
             .song-result {
-                flex-direction: column;
+                grid-template-columns: 1fr;
                 align-items: stretch;
             }
 
@@ -673,14 +779,21 @@
     </section>
 
     <div class="layout-grid">
-        <section class="card">
+        <section class="card card--booking-focus booking-card">
             <div class="card-header">
                 <h2 class="card-title">Prenota una canzone</h2>
-                <p class="card-subtitle">Ricerca per titolo o artista</p>
+                <p class="card-subtitle">
+                    Inserisci il tuo nome e cerca il brano da prenotare!
+                    @php($cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60))
+                    @if ($cooldownMinutes > 0)
+                        @php($cooldownLabel = $cooldownMinutes === 1 ? 'minuto' : 'minuti')
+                        <br>Dopo una prenotazione puoi inserirne un'altra dopo {{ $cooldownMinutes }} {{ $cooldownLabel }}.
+                    @endif
+                </p>
             </div>
             <div class="card-body">
                 <div class="form-row">
-                    <label for="display-name">Il tuo nome (obbligatorio)</label>
+                    <label for="display-name">Nome *</label>
                     <input
                         id="display-name"
                         name="display_name"
@@ -692,20 +805,21 @@
                         value="{{ old('display_name', $participantName ?? '') }}"
                         required
                     >
-                    <p class="field-hint">Questo nome verrà mostrato sullo schermo pubblico quando sarà il tuo turno.</p>
                 </div>
-
-                @php($cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60))
-                @if ($cooldownMinutes > 0)
-                    @php($cooldownLabel = $cooldownMinutes === 1 ? 'minuto' : 'minuti')
-                    <p class="cooldown-note">Dopo una prenotazione puoi inserirne un'altra dopo {{ $cooldownMinutes }} {{ $cooldownLabel }}.</p>
-                @endif
 
                 <div class="search-row">
                     <label for="song-search">Cerca canzone</label>
                     <input id="song-search" type="text" class="text-input" placeholder="Digita titolo o artista...">
                 </div>
+            </div>
+        </section>
 
+        <section class="card songs-card">
+            <div class="card-header">
+                <h2 class="card-title">Brani disponibili</h2>
+                <p class="card-subtitle">Griglia rapida per prenotare</p>
+            </div>
+            <div class="card-body">
                 <p class="search-meta" id="search-meta">Carico il catalogo canzoni...</p>
 
                 <div id="song-results" class="song-results"></div>
@@ -722,10 +836,10 @@
             </div>
         </section>
 
-        <section class="card">
+        <section class="card my-requests-card">
             <div class="card-header">
-                <h2 class="card-title">Le tue prenotazioni</h2>
-                <p class="card-subtitle">Stato personale della tua coda</p>
+                <h2 class="card-title">Le tue ultime prenotazioni</h2>
+                <p class="card-subtitle"></p>
             </div>
             <div class="card-body">
                 <p class="my-requests-meta" id="my-requests-meta">Aggiornamento in corso...</p>
@@ -803,18 +917,6 @@
         elements.clientMessageText.textContent = '';
     };
 
-    const formatDuration = (seconds) => {
-        const total = Number(seconds) || 0;
-        const minutes = Math.floor(total / 60);
-        const remaining = total % 60;
-
-        if (minutes <= 0) {
-            return `${remaining}s`;
-        }
-
-        return `${minutes}m ${remaining}s`;
-    };
-
     const formatClientTime = (isoString) => {
         if (!isoString) {
             return null;
@@ -882,13 +984,8 @@
                 artist.className = 'song-artist';
                 artist.textContent = song.artist || 'Artista sconosciuto';
 
-                const duration = document.createElement('p');
-                duration.className = 'song-duration';
-                duration.textContent = `Durata ${formatDuration(song.duration_seconds)}`;
-
                 main.appendChild(title);
                 main.appendChild(artist);
-                main.appendChild(duration);
 
                 const form = document.createElement('form');
                 form.className = 'song-request-form';
@@ -997,17 +1094,37 @@
 
     const renderMyRequests = (payload) => {
         const list = Array.isArray(payload?.data) ? payload.data : [];
+        const latestList = [...list]
+            .sort((a, b) => {
+                const aTimestamp = Date.parse(a?.requested_at || '');
+                const bTimestamp = Date.parse(b?.requested_at || '');
+
+                if (Number.isNaN(aTimestamp) && Number.isNaN(bTimestamp)) {
+                    return 0;
+                }
+
+                if (Number.isNaN(aTimestamp)) {
+                    return 1;
+                }
+
+                if (Number.isNaN(bTimestamp)) {
+                    return -1;
+                }
+
+                return bTimestamp - aTimestamp;
+            })
+            .slice(0, 3);
         const meta = payload?.meta || {};
 
         elements.myRequestsList.innerHTML = '';
 
-        if (list.length === 0) {
+        if (latestList.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'empty-state';
             empty.textContent = 'Non hai ancora prenotazioni personali.';
             elements.myRequestsList.appendChild(empty);
         } else {
-            list.forEach((item) => {
+            latestList.forEach((item) => {
                 const requestItem = document.createElement('article');
                 requestItem.className = `request-item request-item--${item.status || 'queued'}`;
 

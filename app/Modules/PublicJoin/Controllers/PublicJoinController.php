@@ -114,7 +114,7 @@ class PublicJoinController extends Controller
             $data['display_name']
         );
 
-        return back()->with('status', 'Prenotazione confermata. Controlla la sezione "Le tue prenotazioni".');
+        return back()->with('status', 'Prenotazione confermata. Controlla la sezione "Le tue ultime prenotazioni".');
     }
 
     public function searchSongs(Request $request, string $eventCode): JsonResponse

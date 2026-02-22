@@ -45,6 +45,104 @@ class PublicJoinTest extends TestCase
         $this->assertNotEmpty(Participant::first()->join_token_hash);
     }
 
+    public function test_public_entry_redirects_to_active_event_when_available(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'ACTIVE99',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->get('/public');
+
+        $response->assertRedirect(route('public.join.show', $eventNight->code));
+    }
+
+    public function test_public_entry_does_not_redirect_when_active_event_has_not_started_yet(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'FUTURE01',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->addHour(),
+        ]);
+
+        $response = $this->get('/public');
+
+        $response->assertOk();
+        $response->assertSee('Codice evento');
+        $response->assertSee('Partecipa');
+    }
+
+    public function test_public_entry_redirects_to_started_active_event_when_future_active_event_exists(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $startedEvent = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'STARTED1',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->subHour(),
+        ]);
+
+        EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'FUTURE02',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now()->addHour(),
+        ]);
+
+        $response = $this->get('/public');
+
+        $response->assertRedirect(route('public.join.show', $startedEvent->code));
+    }
+
+    public function test_public_entry_shows_code_input_when_no_active_event(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'DRAFT11',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_DRAFT,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->get('/public');
+
+        $response->assertOk();
+        $response->assertSee('Codice evento');
+        $response->assertSee('Partecipa');
+        $response->assertDontSee('Schermo pubblico');
+    }
+
     public function test_request_enforces_join_token_and_cooldown(): void
     {
         $venue = Venue::create([
