@@ -17,8 +17,6 @@ class AdminThemeAssetsTest extends TestCase
 
     public function test_admin_can_update_theme_assets(): void
     {
-        $this->skipIfGdMissing();
-
         Storage::fake('public');
 
         $admin = AdminUser::create([
@@ -43,8 +41,8 @@ class AdminThemeAssetsTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventNight->id}/theme-ads", [
-            'background_image' => UploadedFile::fake()->image('background.jpg'),
-            'event_logo' => UploadedFile::fake()->image('logo.png'),
+            'background_image' => $this->fakeImageUpload('background.jpg'),
+            'event_logo' => $this->fakeImageUpload('logo.png'),
             'overlay_texts' => ['Welcome singers!', 'Tip your host'],
         ]);
 
@@ -61,8 +59,6 @@ class AdminThemeAssetsTest extends TestCase
 
     public function test_staff_cannot_upload_theme_assets(): void
     {
-        $this->skipIfGdMissing();
-
         Storage::fake('public');
 
         $staff = AdminUser::create([
@@ -87,7 +83,7 @@ class AdminThemeAssetsTest extends TestCase
         ]);
 
         $response = $this->actingAs($staff, 'admin')->post("/admin/events/{$eventNight->id}/theme-ads", [
-            'background_image' => UploadedFile::fake()->image('background.jpg'),
+            'background_image' => $this->fakeImageUpload('background.jpg'),
         ]);
 
         $response->assertStatus(403);
@@ -141,15 +137,14 @@ class AdminThemeAssetsTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->get("/admin/events/{$eventNight->id}/theme-ads");
 
         $response->assertOk();
-        $response->assertSee('src="/media/' . $backgroundPath . '"', false);
-        $response->assertSee('src="/media/' . $logoPath . '"', false);
-        $response->assertSee('src="/media/' . $bannerImagePath . '"', false);
-        $response->assertSee('src="/media/' . $bannerLogoPath . '"', false);
+        $response->assertSee('src="/media/'.$backgroundPath.'"', false);
+        $response->assertSee('src="/media/'.$logoPath.'"', false);
+        $response->assertSee('src="/media/'.$bannerImagePath.'"', false);
+        $response->assertSee('src="/media/'.$bannerLogoPath.'"', false);
     }
 
     public function test_admin_banner_upload_saves_relative_media_urls(): void
     {
-        $this->skipIfGdMissing();
         Storage::fake('public');
 
         $admin = AdminUser::create([
@@ -176,22 +171,29 @@ class AdminThemeAssetsTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->post("/admin/events/{$eventNight->id}/ad-banners", [
             'title' => 'Sponsor locale',
             'subtitle' => 'Promo',
-            'image' => UploadedFile::fake()->image('banner.jpg'),
-            'logo' => UploadedFile::fake()->image('logo.png'),
+            'image' => $this->fakeImageUpload('banner.jpg'),
+            'logo' => $this->fakeImageUpload('logo.png'),
             'is_active' => '1',
         ]);
 
         $response->assertStatus(302);
 
         $banner = AdBanner::query()->firstOrFail();
-        $this->assertStringStartsWith('/media/ad-banners/' . $venue->id . '/', $banner->image_url);
-        $this->assertStringStartsWith('/media/ad-banners/' . $venue->id . '/', (string) $banner->logo_url);
+        $this->assertStringStartsWith('/media/ad-banners/'.$venue->id.'/', $banner->image_url);
+        $this->assertStringStartsWith('/media/ad-banners/'.$venue->id.'/', (string) $banner->logo_url);
     }
 
-    private function skipIfGdMissing(): void
+    private function fakeImageUpload(string $filename): UploadedFile
     {
-        if (! extension_loaded('gd')) {
-            $this->markTestSkipped('GD extension is required for image upload tests.');
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Y8q0AAAAASUVORK5CYII=',
+            true
+        );
+
+        if ($png === false) {
+            throw new \RuntimeException('Unable to build fake image payload.');
         }
+
+        return UploadedFile::fake()->createWithContent($filename, $png);
     }
 }
