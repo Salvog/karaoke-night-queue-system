@@ -23,6 +23,7 @@
         $eventStatusLabel = \App\Models\EventNight::STATUS_LABELS[$eventNight->status] ?? $eventNight->status;
         $expectedEndAt = $playbackState?->expected_end_at;
         $cooldownMinutes = (int) ceil($eventNight->request_cooldown_seconds / 60);
+        $publicScreenUrl = route('public.screen.show', $eventNight->code);
     @endphp
 
     <style>
@@ -630,6 +631,14 @@
                 <div>
                     <div class="label">Evento</div>
                     <div class="value">#{{ $eventNight->id }} · {{ $eventNight->venue?->name ?? 'N/D' }}</div>
+                </div>
+                <div>
+                    <div class="label">Codice evento</div>
+                    <div class="value">{{ $eventNight->code }}</div>
+                </div>
+                <div>
+                    <div class="label">Screen pubblico</div>
+                    <div class="value"><a href="{{ $publicScreenUrl }}" target="_blank" rel="noopener">{{ $publicScreenUrl }}</a></div>
                 </div>
                 <div>
                     <div class="label">Inizio</div>
