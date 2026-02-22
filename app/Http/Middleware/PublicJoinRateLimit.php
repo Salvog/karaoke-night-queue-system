@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -41,7 +42,7 @@ class PublicJoinRateLimit
         return $next($request);
     }
 
-    private function tooManyAttemptsResponse(Request $request): Response
+    private function tooManyAttemptsResponse(Request $request): Response|RedirectResponse
     {
         $message = 'Troppe richieste in poco tempo. Attendi qualche secondo e riprova.';
 
@@ -49,6 +50,8 @@ class PublicJoinRateLimit
             return response()->json(['message' => $message], 429);
         }
 
-        return response($message, 429);
+        return back()
+            ->withErrors(['rate_limit' => $message])
+            ->setStatusCode(429);
     }
 }
