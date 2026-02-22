@@ -64,8 +64,6 @@ class PublicJoinRateLimit
             return response()->json(['message' => $message], 429);
         }
 
-        return back()
-            ->withErrors(['rate_limit' => $message])
-            ->setStatusCode(429);
+        return back()->withErrors(['rate_limit' => $message]);
     }
 }

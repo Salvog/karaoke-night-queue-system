@@ -284,7 +284,38 @@ class PublicJoinTest extends TestCase
             'pin' => null,
         ]);
 
-        $second->assertStatus(429);
+        $second->assertStatus(302);
+        $second->assertSessionHasErrors(['rate_limit']);
+    }
+
+    public function test_rate_limit_returns_json_429_for_api_requests(): void
+    {
+        config([
+            'public_join.rate_limit_per_ip' => 1,
+            'public_join.rate_limit_per_participant' => 1,
+            'public_join.rate_limit_decay_seconds' => 60,
+        ]);
+
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT3API',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $first = $this->getJson("/e/{$eventNight->code}/eta?join_token=abcdefgh");
+        $first->assertStatus(403);
+
+        $second = $this->getJson("/e/{$eventNight->code}/eta?join_token=abcdefgh");
+        $second->assertStatus(429)
+            ->assertJsonPath('message', 'Troppe richieste in poco tempo. Attendi qualche secondo e riprova.');
     }
 
     public function test_request_requires_pin_activation_when_configured(): void
