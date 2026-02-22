@@ -4,19 +4,17 @@ namespace App\Modules\PublicJoin\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Song;
-use App\Modules\PublicJoin\Services\RequestEtaService;
 use App\Modules\PublicJoin\Services\PublicJoinService;
+use App\Modules\PublicJoin\Services\RequestEtaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 
 class PublicJoinController extends Controller
 {
-    public function __construct(private readonly PublicJoinService $service)
-    {
-    }
+    public function __construct(private readonly PublicJoinService $service) {}
 
     public function show(Request $request, string $eventCode): Response
     {
@@ -72,6 +70,7 @@ class PublicJoinController extends Controller
         $data = $request->validate([
             'song_id' => ['required', 'integer', 'exists:songs,id'],
             'join_token' => ['required', 'string', 'min:8', 'max:64'],
+            'singer_name' => ['required', 'string', 'min:2', 'max:50'],
         ]);
 
         $deviceCookieId = $this->requireDeviceCookie($request);
@@ -82,10 +81,11 @@ class PublicJoinController extends Controller
             $eventNight,
             $participant,
             $data['join_token'],
-            (int) $data['song_id']
+            (int) $data['song_id'],
+            $data['singer_name']
         );
 
-        return back()->with('status', 'Canzone richiesta.');
+        return back()->with('status', 'Canzone prenotata con successo.');
     }
 
     public function searchSongs(Request $request, string $eventCode): JsonResponse
@@ -106,7 +106,7 @@ class PublicJoinController extends Controller
 
         if ($term !== null && $term !== '') {
             $term = Str::lower($term);
-            $like = '%' . $term . '%';
+            $like = '%'.$term.'%';
 
             $query->where(function ($builder) use ($like) {
                 $builder->whereRaw('LOWER(title) LIKE ?', [$like])
@@ -150,17 +150,33 @@ class PublicJoinController extends Controller
         ]);
     }
 
+    public function myRequests(Request $request, string $eventCode): JsonResponse
+    {
+        $data = $request->validate([
+            'join_token' => ['required', 'string', 'min:8', 'max:64'],
+        ]);
+
+        $deviceCookieId = $this->requireDeviceCookie($request);
+        $eventNight = $this->service->findLiveEvent($eventCode);
+        $participant = $this->service->resolveParticipant($eventNight, $deviceCookieId);
+        $this->service->validateJoinToken($participant, $data['join_token']);
+
+        return response()->json([
+            'data' => $this->service->buildParticipantRequestsSummary($eventNight, $participant),
+        ]);
+    }
+
     private function formatEta(int $seconds): string
     {
         if ($seconds <= 0) {
-            return 'Ready soon';
+            return 'A breve';
         }
 
         $minutes = intdiv($seconds, 60);
         $remainingSeconds = $seconds % 60;
 
         if ($minutes <= 0) {
-            return sprintf('%d sec', $remainingSeconds);
+            return sprintf('%d secondi', $remainingSeconds);
         }
 
         return sprintf('%d min %d sec', $minutes, $remainingSeconds);

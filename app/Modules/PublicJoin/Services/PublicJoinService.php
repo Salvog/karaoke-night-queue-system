@@ -14,9 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class PublicJoinService
 {
-    public function __construct(private readonly RealtimePublisher $publisher)
-    {
-    }
+    public function __construct(private readonly RealtimePublisher $publisher) {}
 
     public function findLiveEvent(string $eventCode): EventNight
     {
@@ -62,7 +60,7 @@ class PublicJoinService
 
         if (! $pin || $pin !== $eventNight->join_pin) {
             throw ValidationException::withMessages([
-                'pin' => 'The provided PIN is invalid.',
+                'pin' => 'Il PIN inserito non è valido.',
             ]);
         }
     }
@@ -84,14 +82,19 @@ class PublicJoinService
         EventNight $eventNight,
         Participant $participant,
         string $joinToken,
-        int $songId
+        int $songId,
+        string $singerName
     ): SongRequest {
         $this->assertJoinToken($participant, $joinToken);
         $this->assertPinVerified($eventNight, $participant);
 
         $song = Song::findOrFail($songId);
 
-        $songRequest = DB::transaction(function () use ($eventNight, $participant, $song) {
+        $songRequest = DB::transaction(function () use ($eventNight, $participant, $song, $singerName) {
+            $participant->forceFill([
+                'display_name' => trim($singerName),
+            ])->save();
+
             $this->enforceCooldown($eventNight, $participant);
             $this->enforceUniqueSong($eventNight, $participant, $song);
 
@@ -116,6 +119,65 @@ class PublicJoinService
         $this->assertJoinToken($participant, $joinToken);
     }
 
+    public function buildParticipantRequestsSummary(EventNight $eventNight, Participant $participant): array
+    {
+        $requests = SongRequest::query()
+            ->where('event_night_id', $eventNight->id)
+            ->where('participant_id', $participant->id)
+            ->with('song:id,title,artist')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $requests->map(function (SongRequest $request) use ($eventNight) {
+            $ahead = null;
+
+            if ($request->status === SongRequest::STATUS_QUEUED) {
+                $ahead = SongRequest::query()
+                    ->where('event_night_id', $eventNight->id)
+                    ->whereIn('status', [SongRequest::STATUS_QUEUED, SongRequest::STATUS_PLAYING])
+                    ->where('position', '<', $request->position)
+                    ->count();
+            }
+
+            return [
+                'id' => $request->id,
+                'song_title' => $request->song?->title,
+                'song_artist' => $request->song?->artist,
+                'status' => $request->status,
+                'status_label' => $this->statusLabel($request->status),
+                'position' => $request->position,
+                'when_label' => $this->whenLabel($request->status, $ahead),
+                'played_at' => $request->played_at?->toIso8601String(),
+            ];
+        })->values()->all();
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            SongRequest::STATUS_QUEUED => 'In coda',
+            SongRequest::STATUS_PLAYING => 'In esecuzione',
+            SongRequest::STATUS_PLAYED => 'Hai cantato',
+            SongRequest::STATUS_CANCELED => 'Annullata',
+            SongRequest::STATUS_SKIPPED => 'Saltata',
+            default => 'Sconosciuto',
+        };
+    }
+
+    private function whenLabel(string $status, ?int $ahead): string
+    {
+        return match ($status) {
+            SongRequest::STATUS_PLAYING => 'Stai cantando ora',
+            SongRequest::STATUS_PLAYED => 'Esibizione completata',
+            SongRequest::STATUS_CANCELED => 'Questa prenotazione è stata annullata',
+            SongRequest::STATUS_SKIPPED => 'Questa prenotazione è stata saltata',
+            SongRequest::STATUS_QUEUED => $ahead === null || $ahead <= 0
+                ? 'Sei il prossimo turno'
+                : "Mancano {$ahead} esibizioni prima di te",
+            default => 'Informazione non disponibile',
+        };
+    }
+
     public function generateDeviceCookieId(): string
     {
         return (string) Str::uuid();
@@ -135,7 +197,7 @@ class PublicJoinService
     {
         if (! hash_equals($participant->join_token_hash, $this->hashToken($joinToken))) {
             throw ValidationException::withMessages([
-                'join_token' => 'Join token is invalid.',
+                'join_token' => 'Sessione non valida. Ricarica la pagina e riprova.',
             ]);
         }
     }
@@ -148,7 +210,7 @@ class PublicJoinService
 
         if (! $participant->pin_verified_at) {
             throw ValidationException::withMessages([
-                'pin' => 'PIN activation required.',
+                'pin' => "Devi attivare l'accesso con PIN prima di prenotare.",
             ]);
         }
     }
@@ -162,7 +224,7 @@ class PublicJoinService
 
         if ($alreadyRequested) {
             throw ValidationException::withMessages([
-                'song_id' => 'You already requested this song for tonight.',
+                'song_id' => 'Hai già prenotato questo brano per stasera.',
             ]);
         }
     }
@@ -190,10 +252,10 @@ class PublicJoinService
 
         $remaining = $eventNight->request_cooldown_seconds - $secondsSinceLast;
         $remainingMinutes = (int) ceil($remaining / 60);
-        $minuteLabel = $remainingMinutes === 1 ? 'minute' : 'minutes';
+        $minuteLabel = $remainingMinutes === 1 ? 'minuto' : 'minuti';
 
         throw ValidationException::withMessages([
-            'cooldown' => "Please wait {$remainingMinutes} {$minuteLabel} before requesting another song.",
+            'cooldown' => "Attendi {$remainingMinutes} {$minuteLabel} prima di prenotare un altro brano.",
         ]);
     }
 }

@@ -80,6 +80,7 @@ class PublicJoinTest extends TestCase
         )->post("/e/{$eventNight->code}/request", [
             'song_id' => $song->id,
             'join_token' => $joinToken,
+            'singer_name' => 'Mario',
         ]);
 
         $response->assertSessionHas('status');
@@ -90,6 +91,7 @@ class PublicJoinTest extends TestCase
             ->post("/e/{$eventNight->code}/request", [
                 'song_id' => $song->id,
                 'join_token' => $joinToken,
+                'singer_name' => 'Mario',
             ]);
 
         $cooldownResponse->assertSessionHasErrors(['cooldown']);
@@ -178,6 +180,7 @@ class PublicJoinTest extends TestCase
             ->post("/e/{$eventNight->code}/request", [
                 'song_id' => $song->id,
                 'join_token' => $joinToken,
+                'singer_name' => 'Mario',
             ]);
 
         $response->assertSessionHasErrors(['pin']);
@@ -197,6 +200,7 @@ class PublicJoinTest extends TestCase
         )->post("/e/{$eventNight->code}/request", [
             'song_id' => $song->id,
             'join_token' => $joinToken,
+            'singer_name' => 'Mario',
         ]);
 
         $approved->assertSessionHas('status');
@@ -273,6 +277,7 @@ class PublicJoinTest extends TestCase
         )->post("/e/{$eventNight->code}/request", [
             'song_id' => $song->id,
             'join_token' => $joinToken,
+            'singer_name' => 'Mario',
         ])->assertSessionHas('status');
 
         $response = $this->from("/e/{$eventNight->code}")
@@ -280,9 +285,58 @@ class PublicJoinTest extends TestCase
             ->post("/e/{$eventNight->code}/request", [
                 'song_id' => $song->id,
                 'join_token' => $joinToken,
+                'singer_name' => 'Mario',
             ]);
 
         $response->assertSessionHasErrors(['song_id']);
         $this->assertSame(1, SongRequest::count());
+    }
+
+    public function test_my_requests_endpoint_returns_participant_requests_summary(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Test Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'EVENT7',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $song = Song::create([
+            'title' => 'My Song',
+            'artist' => 'My Artist',
+            'duration_seconds' => 210,
+        ]);
+
+        $joinToken = 'join-token-23456789';
+        $participant = Participant::create([
+            'event_night_id' => $eventNight->id,
+            'device_cookie_id' => 'device-my-requests',
+            'join_token_hash' => hash('sha256', $joinToken),
+            'display_name' => 'Marco',
+        ]);
+
+        SongRequest::create([
+            'event_night_id' => $eventNight->id,
+            'participant_id' => $participant->id,
+            'song_id' => $song->id,
+            'status' => SongRequest::STATUS_QUEUED,
+            'position' => 1,
+        ]);
+
+        $response = $this->withCookie(
+            config('public_join.device_cookie_name', 'device_cookie_id'),
+            $participant->device_cookie_id
+        )->get("/e/{$eventNight->code}/my-requests?join_token={$joinToken}", ['Accept' => 'application/json']);
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.song_title', 'My Song')
+            ->assertJsonPath('data.0.status_label', 'In coda');
     }
 }

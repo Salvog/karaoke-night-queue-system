@@ -20,3 +20,7 @@ Route::get('/e/{eventCode}/songs', [PublicJoinController::class, 'searchSongs'])
 Route::get('/e/{eventCode}/eta', [PublicJoinController::class, 'eta'])
     ->middleware('public.rate_limit')
     ->name('public.join.eta');
+
+Route::get('/e/{eventCode}/my-requests', [PublicJoinController::class, 'myRequests'])
+    ->middleware('public.rate_limit')
+    ->name('public.join.my_requests');
