@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Modules\Auth\Controllers\AdminAuthController;
-use App\Modules\Auth\Controllers\AdminDashboardController;
-use App\Modules\Admin\Controllers\AdminEventsController;
 use App\Modules\Admin\Controllers\AdminAdBannerController;
+use App\Modules\Admin\Controllers\AdminEventsController;
 use App\Modules\Admin\Controllers\AdminQueueController;
 use App\Modules\Admin\Controllers\AdminSongsController;
 use App\Modules\Admin\Controllers\AdminThemeController;
 use App\Modules\Admin\Controllers\AdminVenuesController;
+use App\Modules\Auth\Controllers\AdminAuthController;
+use App\Modules\Auth\Controllers\AdminDashboardController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:admin-login')->name('admin.login.submit');
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
 Route::middleware(['admin.auth', 'admin.role'])->group(function () {
