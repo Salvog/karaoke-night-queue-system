@@ -191,6 +191,17 @@ class AdminAdBannerController extends Controller
             return $normalized;
         }
 
+        $baseSegment = trim($basePath, '/');
+        $deduplicated = preg_replace(
+            '#^(?:'.preg_quote($baseSegment, '#').'/)+#',
+            $baseSegment.'/',
+            ltrim($normalized, '/')
+        );
+
+        if (is_string($deduplicated) && $deduplicated !== '') {
+            $normalized = '/'.$deduplicated;
+        }
+
         if ($normalized === $basePath || Str::startsWith($normalized, $basePath.'/')) {
             return $normalized;
         }
