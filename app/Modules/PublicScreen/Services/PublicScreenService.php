@@ -393,9 +393,13 @@ class PublicScreenService
     private function prefixAppBasePath(string $path): string
     {
         $normalized = '/'.ltrim($path, '/');
-        $basePath = rtrim((string) request()->getBaseUrl(), '/');
+        $basePath = '/'.trim((string) request()->getBasePath(), '/');
 
-        if ($basePath === '' || $basePath === '/') {
+        if ($basePath === '/' || $basePath === '') {
+            return $normalized;
+        }
+
+        if ($normalized === $basePath || Str::startsWith($normalized, $basePath.'/')) {
             return $normalized;
         }
 
