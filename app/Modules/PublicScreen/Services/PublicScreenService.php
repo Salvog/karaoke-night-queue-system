@@ -380,14 +380,26 @@ class PublicScreenService
             return $this->resolvePublicDiskPath($relative);
         }
 
-        return Str::startsWith($value, '/') ? $value : '/'.$value;
+        return $this->prefixAppBasePath(Str::startsWith($value, '/') ? $value : '/'.$value);
     }
 
     private function resolvePublicDiskPath(string $path): string
     {
         $normalized = ltrim($path, '/');
 
-        return route('public.screen.media', ['path' => $normalized], false);
+        return $this->prefixAppBasePath(route('public.screen.media', ['path' => $normalized], false));
+    }
+
+    private function prefixAppBasePath(string $path): string
+    {
+        $normalized = '/'.ltrim($path, '/');
+        $basePath = rtrim((string) request()->getBaseUrl(), '/');
+
+        if ($basePath === '' || $basePath === '/') {
+            return $normalized;
+        }
+
+        return $basePath.$normalized;
     }
 
     private function normalizeAppAbsoluteUrl(string $value): string

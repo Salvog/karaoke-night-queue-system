@@ -189,7 +189,19 @@ class AdminThemeController extends Controller
 
     private function resolvePublicDiskPath(string $path): string
     {
-        return route('public.screen.media', ['path' => ltrim($path, '/')], false);
+        return $this->prefixAppBasePath(route('public.screen.media', ['path' => ltrim($path, '/')], false));
+    }
+
+    private function prefixAppBasePath(string $path): string
+    {
+        $normalized = '/'.ltrim($path, '/');
+        $basePath = rtrim((string) request()->getBaseUrl(), '/');
+
+        if ($basePath === '' || $basePath === '/') {
+            return $normalized;
+        }
+
+        return $basePath.$normalized;
     }
 
     private function normalizeLocalAbsoluteUrl(string $value): string
