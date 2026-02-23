@@ -612,6 +612,50 @@ class PublicScreenTest extends TestCase
         $response->assertJsonPath('theme.sponsor_banners.0.logo_url', "/media/{$path}");
     }
 
+    public function test_public_screen_state_normalizes_media_urls_with_app_base_path(): void
+    {
+        Storage::fake('public');
+
+        config(['app.url' => 'https://www.salutarte.it/kn/public']);
+
+        $venue = Venue::create([
+            'name' => 'Main Room',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'SCREEN5B',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $path = "ad-banners/{$eventNight->id}/sponsor.jpg";
+        Storage::disk('public')->put($path, 'fake-image');
+
+        $banner = AdBanner::create([
+            'venue_id' => $venue->id,
+            'event_night_id' => $eventNight->id,
+            'title' => 'Sponsor base path',
+            'subtitle' => 'Promo',
+            'image_url' => "https://www.salutarte.it/kn/public/storage/{$path}",
+            'logo_url' => "https://www.salutarte.it/kn/public/media/{$path}",
+            'is_active' => true,
+        ]);
+
+        $eventNight->update(['ad_banner_id' => $banner->id]);
+
+        $response = $this->getJson("/screen/{$eventNight->code}/state");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('theme.banner.image_url', "/kn/public/media/{$path}");
+        $response->assertJsonPath('theme.banner.logo_url', "/kn/public/media/{$path}");
+        $response->assertJsonPath('theme.sponsor_banners.0.image_url', "/kn/public/media/{$path}");
+        $response->assertJsonPath('theme.sponsor_banners.0.logo_url', "/kn/public/media/{$path}");
+    }
+
     public function test_public_screen_state_does_not_include_banners_from_other_events_with_same_venue(): void
     {
         $venue = Venue::create([

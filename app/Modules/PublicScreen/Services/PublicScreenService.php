@@ -375,6 +375,15 @@ class PublicScreenService
             }
         }
 
+        $mediaPrefix = '/media/';
+        if (Str::startsWith($value, $mediaPrefix)) {
+            $path = ltrim(Str::after($value, $mediaPrefix), '/');
+
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                return $this->resolvePublicDiskPath($path);
+            }
+        }
+
         $relative = ltrim($value, '/');
         if ($relative !== '' && Storage::disk('public')->exists($relative)) {
             return $this->resolvePublicDiskPath($relative);
@@ -387,7 +396,9 @@ class PublicScreenService
     {
         $normalized = ltrim($path, '/');
 
-        return route('public.screen.media', ['path' => $normalized], false);
+        $mediaPath = route('public.screen.media', ['path' => $normalized], false);
+
+        return $this->withAppBasePath($mediaPath);
     }
 
     private function normalizeAppAbsoluteUrl(string $value): string
@@ -402,6 +413,7 @@ class PublicScreenService
         }
 
         $path = (string) ($parsed['path'] ?? '/');
+        $path = $this->stripAppBasePath($path);
         if (! Str::startsWith($path, ['/storage/', '/media/'])) {
             return $value;
         }
@@ -439,5 +451,48 @@ class PublicScreenService
         $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : null;
 
         return $host !== '' ? $host : null;
+    }
+
+    private function withAppBasePath(string $path): string
+    {
+        $basePath = $this->appBasePath();
+        if ($basePath === '' || Str::startsWith($path, $basePath.'/') || $path === $basePath) {
+            return $path;
+        }
+
+        return $basePath.$path;
+    }
+
+    private function stripAppBasePath(string $path): string
+    {
+        $basePath = $this->appBasePath();
+        if ($basePath === '') {
+            return $path;
+        }
+
+        if ($path === $basePath) {
+            return '/';
+        }
+
+        return Str::startsWith($path, $basePath.'/')
+            ? '/'.ltrim(Str::after($path, $basePath), '/')
+            : $path;
+    }
+
+    private function appBasePath(): string
+    {
+        $configured = (string) config('app.url', '');
+        if ($configured === '') {
+            return '';
+        }
+
+        $parsed = parse_url($configured);
+        if (! is_array($parsed)) {
+            return '';
+        }
+
+        $path = trim((string) ($parsed['path'] ?? ''), '/');
+
+        return $path !== '' ? '/'.$path : '';
     }
 }

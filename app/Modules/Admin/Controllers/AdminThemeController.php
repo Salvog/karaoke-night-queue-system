@@ -189,7 +189,9 @@ class AdminThemeController extends Controller
 
     private function resolvePublicDiskPath(string $path): string
     {
-        return route('public.screen.media', ['path' => ltrim($path, '/')], false);
+        $mediaPath = route('public.screen.media', ['path' => ltrim($path, '/')], false);
+
+        return $this->withAppBasePath($mediaPath);
     }
 
     private function normalizeLocalAbsoluteUrl(string $value): string
@@ -204,6 +206,7 @@ class AdminThemeController extends Controller
         }
 
         $path = (string) ($parsed['path'] ?? '/');
+        $path = $this->stripAppBasePath($path);
         if (! Str::startsWith($path, ['/storage/', '/media/'])) {
             return $value;
         }
@@ -240,5 +243,48 @@ class AdminThemeController extends Controller
         $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : '';
 
         return $host !== '' ? $host : null;
+    }
+
+    private function withAppBasePath(string $path): string
+    {
+        $basePath = $this->appBasePath();
+        if ($basePath === '' || Str::startsWith($path, $basePath.'/') || $path === $basePath) {
+            return $path;
+        }
+
+        return $basePath.$path;
+    }
+
+    private function stripAppBasePath(string $path): string
+    {
+        $basePath = $this->appBasePath();
+        if ($basePath === '') {
+            return $path;
+        }
+
+        if ($path === $basePath) {
+            return '/';
+        }
+
+        return Str::startsWith($path, $basePath.'/')
+            ? '/'.ltrim(Str::after($path, $basePath), '/')
+            : $path;
+    }
+
+    private function appBasePath(): string
+    {
+        $configured = (string) config('app.url', '');
+        if ($configured === '') {
+            return '';
+        }
+
+        $parsed = parse_url($configured);
+        if (! is_array($parsed)) {
+            return '';
+        }
+
+        $path = trim((string) ($parsed['path'] ?? ''), '/');
+
+        return $path !== '' ? '/'.$path : '';
     }
 }

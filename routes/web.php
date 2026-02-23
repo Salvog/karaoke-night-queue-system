@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\PublicJoin\Controllers\PublicEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('web')->group(function () {
@@ -12,6 +13,8 @@ Route::middleware('web')->group(function () {
 
     Route::prefix('public')
         ->group(base_path('routes/public.php'));
+
+    Route::get('/', [PublicEntryController::class, 'show'])->name('public.home');
 
     Route::group([], base_path('routes/public-join.php'));
     Route::group([], base_path('routes/public-screen.php'));

@@ -45,6 +45,27 @@ class PublicJoinTest extends TestCase
         $this->assertNotEmpty(Participant::first()->join_token_hash);
     }
 
+    public function test_root_redirects_to_active_event_when_available(): void
+    {
+        $venue = Venue::create([
+            'name' => 'Main Venue',
+            'timezone' => 'UTC',
+        ]);
+
+        $eventNight = EventNight::create([
+            'venue_id' => $venue->id,
+            'code' => 'ACTIVE00',
+            'break_seconds' => 0,
+            'request_cooldown_seconds' => 0,
+            'status' => EventNight::STATUS_ACTIVE,
+            'starts_at' => now(),
+        ]);
+
+        $response = $this->get('/');
+
+        $response->assertRedirect(route('public.join.show', $eventNight->code));
+    }
+
     public function test_public_entry_redirects_to_active_event_when_available(): void
     {
         $venue = Venue::create([
