@@ -207,6 +207,69 @@
             color: #c6f1ff;
         }
 
+
+        .fullscreen-popup {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(5, 8, 18, 0.88);
+            backdrop-filter: blur(2px);
+        }
+
+        .fullscreen-popup[hidden] {
+            display: none;
+        }
+
+        .fullscreen-popup__panel {
+            width: min(100%, 560px);
+            max-height: 100%;
+            overflow: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 158, 172, 0.54);
+            background: linear-gradient(130deg, rgba(86, 24, 40, 0.9), rgba(45, 18, 26, 0.9));
+            box-shadow: 0 18px 32px rgba(4, 9, 22, 0.46);
+            padding: 18px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .fullscreen-popup__title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #ffd3da;
+        }
+
+        .fullscreen-popup__list {
+            margin: 0;
+            padding-left: 20px;
+            display: grid;
+            gap: 6px;
+            color: #fff2f3;
+        }
+
+        @media (max-width: 640px) {
+            .fullscreen-popup {
+                padding: 0;
+            }
+
+            .fullscreen-popup__panel {
+                width: 100%;
+                height: 100%;
+                max-height: none;
+                border-radius: 0;
+                padding: 18px 14px;
+                align-content: start;
+            }
+
+            .fullscreen-popup__title {
+                font-size: 1.35rem;
+            }
+        }
+
         .layout-grid {
             display: grid;
             grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
@@ -749,6 +812,21 @@
         </section>
     @endif
 
+
+    @if ($errors->any())
+        <section class="fullscreen-popup" id="server-errors-popup" role="alertdialog" aria-modal="true" aria-labelledby="server-errors-title">
+            <div class="fullscreen-popup__panel">
+                <h2 class="fullscreen-popup__title" id="server-errors-title">Controlla i dati inseriti</h2>
+                <ul class="fullscreen-popup__list">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button class="button button-secondary" type="button" id="close-server-errors">Ho capito</button>
+            </div>
+        </section>
+    @endif
+
     <section class="notice notice--warning" role="note">
         <p class="notice-title">Se non riesci a prenotare</p>
         <p class="notice-text">Ricarica questa pagina e riprova. Se il problema continua, chiedi supporto allo staff in sala.</p>
@@ -776,6 +854,15 @@
     <section class="notice notice--info" id="client-message" role="status" aria-live="polite" hidden>
         <p class="notice-title" id="client-message-title">Informazione</p>
         <p class="notice-text" id="client-message-text"></p>
+    </section>
+
+
+    <section class="fullscreen-popup" id="client-error-popup" role="alertdialog" aria-modal="true" aria-labelledby="client-error-title" hidden>
+        <div class="fullscreen-popup__panel">
+            <h2 class="fullscreen-popup__title" id="client-error-title">Attenzione</h2>
+            <ul class="fullscreen-popup__list" id="client-error-list"></ul>
+            <button class="button button-secondary" type="button" id="close-client-error">Ho capito</button>
+        </div>
     </section>
 
     <div class="layout-grid">
@@ -814,7 +901,7 @@
             </div>
         </section>
 
-        <section class="card songs-card">
+        <section class="card songs-card" id="songs-section">
             <div class="card-header">
                 <h2 class="card-title">Brani disponibili</h2>
                 <p class="card-subtitle">Griglia rapida per prenotare</p>

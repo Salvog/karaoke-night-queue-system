@@ -23,7 +23,8 @@ class AdminSongsController extends Controller
             ->when($artist !== '', fn ($query) => $query->where('artist', 'like', '%'.$artist.'%'))
             ->orderBy('artist')
             ->orderBy('title')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
         return view('admin.songs.index', [
             'songs' => $songs,

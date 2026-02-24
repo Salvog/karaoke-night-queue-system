@@ -39,7 +39,7 @@
                 </div>
             </form>
             <div class="helper" style="margin-top: 10px;">
-                {{ $songs->count() }} risultati trovati
+                {{ $songs->total() }} risultati trovati
             </div>
         </div>
     </div>
@@ -77,6 +77,11 @@
         @endforelse
         </tbody>
     </table>
+
+    <div style="margin-top: 14px;">
+        {{ $songs->links() }}
+    </div>
+
     <script>
         (function () {
             const toggle = document.getElementById('toggle-song-form');
