@@ -380,14 +380,41 @@ class PublicScreenService
             return $this->resolvePublicDiskPath($relative);
         }
 
-        return Str::startsWith($value, '/') ? $value : '/'.$value;
+        return $this->prefixAppBasePath(Str::startsWith($value, '/') ? $value : '/'.$value);
     }
 
     private function resolvePublicDiskPath(string $path): string
     {
         $normalized = ltrim($path, '/');
 
-        return route('public.screen.media', ['path' => $normalized], false);
+        return $this->prefixAppBasePath(route('public.screen.media', ['path' => $normalized], false));
+    }
+
+    private function prefixAppBasePath(string $path): string
+    {
+        $normalized = '/'.ltrim($path, '/');
+        $basePath = '/'.trim((string) request()->getBasePath(), '/');
+
+        if ($basePath === '/' || $basePath === '') {
+            return $normalized;
+        }
+
+        $baseSegment = trim($basePath, '/');
+        $deduplicated = preg_replace(
+            '#^(?:'.preg_quote($baseSegment, '#').'/)+#',
+            $baseSegment.'/',
+            ltrim($normalized, '/')
+        );
+
+        if (is_string($deduplicated) && $deduplicated !== '') {
+            $normalized = '/'.$deduplicated;
+        }
+
+        if ($normalized === $basePath || Str::startsWith($normalized, $basePath.'/')) {
+            return $normalized;
+        }
+
+        return $basePath.$normalized;
     }
 
     private function normalizeAppAbsoluteUrl(string $value): string

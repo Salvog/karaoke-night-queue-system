@@ -869,7 +869,7 @@
 
                         <aside class="manager-brand">
                             <div class="manager-brand-label">Regia karaoke</div>
-                            <img id="manager-logo" class="manager-brand-logo" alt="Logo organizzazione" src="{{ config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg' }}">
+                            <img id="manager-logo" class="manager-brand-logo" alt="Logo organizzazione" src="{{ $state['manager_logo_url'] ?? (config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg') }}">
                         </aside>
                     </div>
                 </section>
@@ -936,7 +936,7 @@
         const stateUrl = @json(route('public.screen.state', $eventNight->code));
         const streamUrl = @json(route('public.screen.stream', $eventNight->code));
         const fallbackJoinUrl = @json(route('public.join.show', $eventNight->code));
-        const fallbackManagerLogo = @json(config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg');
+        const fallbackManagerLogo = @json($state['manager_logo_url'] ?? (config('public_screen.global_brand.logo') ?: '/images/admin/karaoke-duo.svg'));
         const qrServiceUrl = @json(config('public_screen.join_qr.service_url', 'https://api.qrserver.com/v1/create-qr-code/'));
         const qrSizeConfig = @json((int) config('public_screen.join_qr.size', 240));
         const normalizedQrSize = Number.isFinite(qrSizeConfig)
