@@ -39,7 +39,7 @@
                 </div>
             </form>
             <div class="helper" style="margin-top: 10px;">
-                {{ $songs->count() }} risultati trovati
+                {{ $songs->total() }} risultati trovati
             </div>
         </div>
     </div>
@@ -77,6 +77,102 @@
         @endforelse
         </tbody>
     </table>
+
+    @if ($songs->lastPage() > 1)
+        <style>
+            .songs-pagination {
+                margin-top: 14px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .songs-pagination__link,
+            .songs-pagination__current,
+            .songs-pagination__dots {
+                min-width: 34px;
+                height: 34px;
+                border-radius: 9px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 10px;
+                font-size: 13px;
+                font-weight: 600;
+                text-decoration: none;
+                line-height: 1;
+            }
+
+            .songs-pagination__link {
+                color: #e4e8ff;
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                background: rgba(255, 255, 255, 0.06);
+            }
+
+            .songs-pagination__link:hover {
+                background: rgba(255, 255, 255, 0.14);
+            }
+
+            .songs-pagination__link--muted {
+                opacity: 0.45;
+                pointer-events: none;
+            }
+
+            .songs-pagination__current {
+                color: #11152f;
+                border: 1px solid rgba(42, 216, 255, 0.6);
+                background: linear-gradient(180deg, rgba(87, 233, 255, 0.96), rgba(42, 216, 255, 0.88));
+            }
+
+            .songs-pagination__dots {
+                color: rgba(228, 232, 255, 0.64);
+            }
+        </style>
+
+        <nav class="songs-pagination" aria-label="Paginazione canzoni">
+            @if ($songs->onFirstPage())
+                <span class="songs-pagination__link songs-pagination__link--muted" aria-disabled="true">←</span>
+            @else
+                <a class="songs-pagination__link" href="{{ $songs->previousPageUrl() }}" rel="prev" aria-label="Pagina precedente">←</a>
+            @endif
+
+            @php
+                $startPage = max(1, $songs->currentPage() - 2);
+                $endPage = min($songs->lastPage(), $songs->currentPage() + 2);
+            @endphp
+
+            @if ($startPage > 1)
+                <a class="songs-pagination__link" href="{{ $songs->url(1) }}">1</a>
+                @if ($startPage > 2)
+                    <span class="songs-pagination__dots" aria-hidden="true">…</span>
+                @endif
+            @endif
+
+            @foreach (range($startPage, $endPage) as $page)
+                @if ($page === $songs->currentPage())
+                    <span class="songs-pagination__current" aria-current="page">{{ $page }}</span>
+                @else
+                    <a class="songs-pagination__link" href="{{ $songs->url($page) }}">{{ $page }}</a>
+                @endif
+            @endforeach
+
+            @if ($endPage < $songs->lastPage())
+                @if ($endPage < $songs->lastPage() - 1)
+                    <span class="songs-pagination__dots" aria-hidden="true">…</span>
+                @endif
+                <a class="songs-pagination__link" href="{{ $songs->url($songs->lastPage()) }}">{{ $songs->lastPage() }}</a>
+            @endif
+
+            @if ($songs->hasMorePages())
+                <a class="songs-pagination__link" href="{{ $songs->nextPageUrl() }}" rel="next" aria-label="Pagina successiva">→</a>
+            @else
+                <span class="songs-pagination__link songs-pagination__link--muted" aria-disabled="true">→</span>
+            @endif
+        </nav>
+    @endif
+
     <script>
         (function () {
             const toggle = document.getElementById('toggle-song-form');

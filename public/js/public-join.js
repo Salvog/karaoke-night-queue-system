@@ -22,6 +22,12 @@
         clientMessageText: document.getElementById('client-message-text'),
         myRequestsList: document.getElementById('my-requests-list'),
         myRequestsMeta: document.getElementById('my-requests-meta'),
+        songsSection: document.getElementById('songs-section'),
+        closeServerErrors: document.getElementById('close-server-errors'),
+        serverErrorsPopup: document.getElementById('server-errors-popup'),
+        clientErrorPopup: document.getElementById('client-error-popup'),
+        clientErrorList: document.getElementById('client-error-list'),
+        closeClientError: document.getElementById('close-client-error'),
     };
 
     if (!joinToken || !eventCode || !elements.displayNameInput || !elements.searchInput || !elements.results) {
@@ -56,6 +62,16 @@
         variants.forEach((className) => elements.clientMessage.classList.remove(className));
 
         const normalizedVariant = ['success', 'error', 'warning', 'info'].includes(variant) ? variant : 'info';
+
+        if (normalizedVariant === 'error' && elements.clientErrorPopup && elements.clientErrorList) {
+            elements.clientErrorPopup.hidden = false;
+            elements.clientErrorList.innerHTML = '';
+
+            const item = document.createElement('li');
+            item.textContent = message;
+            elements.clientErrorList.appendChild(item);
+        }
+
         elements.clientMessage.classList.add(`notice--${normalizedVariant}`);
         elements.clientMessageTitle.textContent = title;
         elements.clientMessageText.textContent = message;
@@ -66,6 +82,28 @@
         elements.clientMessage.hidden = true;
         elements.clientMessageTitle.textContent = '';
         elements.clientMessageText.textContent = '';
+
+        if (elements.clientErrorPopup) {
+            elements.clientErrorPopup.hidden = true;
+        }
+
+        if (elements.clientErrorList) {
+            elements.clientErrorList.innerHTML = '';
+        }
+    };
+
+    const blurMobileKeyboard = () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    };
+
+    const scrollToSongsSection = () => {
+        if (!elements.songsSection) {
+            return;
+        }
+
+        elements.songsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const formatClientTime = (isoString) => {
@@ -404,6 +442,43 @@
         scheduleSearch();
     });
 
+    elements.searchInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        state.query = elements.searchInput.value.trim();
+        state.page = 1;
+        blurMobileKeyboard();
+        scrollToSongsSection();
+        fetchSongs();
+    });
+
+    if (elements.closeServerErrors && elements.serverErrorsPopup) {
+        elements.closeServerErrors.addEventListener('click', () => {
+            elements.serverErrorsPopup.hidden = true;
+        });
+
+        elements.serverErrorsPopup.addEventListener('click', (event) => {
+            if (event.target === elements.serverErrorsPopup) {
+                elements.serverErrorsPopup.hidden = true;
+            }
+        });
+    }
+
+    if (elements.closeClientError && elements.clientErrorPopup) {
+        elements.closeClientError.addEventListener('click', () => {
+            elements.clientErrorPopup.hidden = true;
+        });
+
+        elements.clientErrorPopup.addEventListener('click', (event) => {
+            if (event.target === elements.clientErrorPopup) {
+                elements.clientErrorPopup.hidden = true;
+            }
+        });
+    }
+
     elements.prevPage.addEventListener('click', () => {
         if (state.page > 1) {
             state.page -= 1;
@@ -438,6 +513,8 @@
         }
 
         hiddenNameInput.value = displayName;
+        blurMobileKeyboard();
+        scrollToSongsSection();
 
         if (button) {
             button.disabled = true;
